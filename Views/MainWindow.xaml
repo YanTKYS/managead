@@ -1,0 +1,225 @@
+<Window x:Class="ManageAdTool.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="ManageAdTool MVP" Height="700" Width="1000">
+    <Grid Margin="12">
+        <TabControl>
+            <TabItem Header="ADユーザー管理">
+                <Grid Margin="8">
+                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="170"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <TextBox x:Name="SearchBox" Width="240" Margin="0,0,8,0" />
+                        <Button Content="検索" Click="Search_Click" Width="100" Margin="0,0,8,0"/>
+                        <Button Content="現在ユーザー/PCで設定補完" Click="BootstrapConfig_Click" Width="190"/>
+                    </StackPanel>
+                    <DataGrid x:Name="SearchResultGrid" Grid.Row="1" AutoGenerateColumns="False" SelectionChanged="SearchResultGrid_SelectionChanged">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="SamAccountName" Binding="{Binding SamAccountName}" Width="2*"/>
+                            <DataGridTextColumn Header="DisplayName" Binding="{Binding DisplayName}" Width="2*"/>
+                            <DataGridTextColumn Header="Mail" Binding="{Binding Mail}" Width="3*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <GroupBox Grid.Row="2" Header="属性編集 (Mail / Department / Title)" Margin="0,8,0,8">
+                        <Grid Margin="8"><Grid.ColumnDefinitions><ColumnDefinition Width="120"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><Grid.RowDefinitions><RowDefinition/><RowDefinition/><RowDefinition/></Grid.RowDefinitions>
+                            <TextBlock Text="Mail"/><TextBox x:Name="MailBox" Grid.Column="1"/>
+                            <TextBlock Text="Department" Grid.Row="1"/><TextBox x:Name="DepartmentBox" Grid.Row="1" Grid.Column="1"/>
+                            <TextBlock Text="Title" Grid.Row="2"/><TextBox x:Name="TitleBox" Grid.Row="2" Grid.Column="1"/>
+                        </Grid>
+                    </GroupBox>
+                    <StackPanel Grid.Row="3">
+                        <GroupBox Header="所属グループ操作" Margin="0,0,0,8">
+                            <StackPanel Margin="8">
+                                <TextBox x:Name="GroupListBox" IsReadOnly="True" Height="70" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                    <TextBox x:Name="AddGroupBox" Width="260" Margin="0,0,8,0" />
+                                    <Button Content="追加候補に登録" Click="StageAddGroup_Click" Width="120"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                    <TextBox x:Name="RemoveGroupBox" Width="260" Margin="0,0,8,0" />
+                                    <Button Content="削除候補に登録" Click="StageRemoveGroup_Click" Width="120"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </GroupBox>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <Button Content="差分確認" Width="100" Margin="0,0,8,0" Click="Preview_Click"/>
+                            <Button Content="更新実行" Width="100" Click="Execute_Click"/>
+                        </StackPanel>
+                        <TextBox x:Name="OutputBox" Height="180" AcceptsReturn="True" IsReadOnly="True" VerticalScrollBarVisibility="Auto"/>
+                    </StackPanel>
+                    <GroupBox Grid.Row="3" Header="グループ適用GPO確認" Margin="0,8,0,0">
+                        <StackPanel Margin="8">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <TextBox x:Name="GroupForGpoBox" Width="260" Margin="0,0,8,0"/>
+                                <Button Content="適用GPO表示" Click="LoadGroupGpoStatus_Click" Width="120" Margin="0,0,8,0"/>
+                                <Button Content="CSV出力" Click="ExportGroupGpoCsv_Click" Width="100"/>
+                            </StackPanel>
+                            <DataGrid x:Name="GroupGpoStatusGrid" AutoGenerateColumns="False" Height="140">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Group" Binding="{Binding GroupName}" Width="2*"/>
+                                    <DataGridTextColumn Header="GPO" Binding="{Binding GpoDisplayName}" Width="3*"/>
+                                    <DataGridTextColumn Header="Enforced" Binding="{Binding Enforced}" Width="*"/>
+                                    <DataGridTextColumn Header="LinkTarget" Binding="{Binding LinkTarget}" Width="3*"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </StackPanel>
+                    </GroupBox>
+
+
+                    <GroupBox Grid.Row="3" Header="期限切れアカウント一括操作" Margin="0,200,0,0">
+                        <StackPanel Margin="8">
+                            <Button Content="期限切れ一覧表示" Width="130" Click="LoadExpiredUsers_Click" Margin="0,0,0,8"/>
+                            <DataGrid x:Name="ExpiredUsersGrid" AutoGenerateColumns="False" SelectionMode="Extended" SelectionUnit="FullRow" Height="120">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="SamAccountName" Binding="{Binding SamAccountName}" Width="2*"/>
+                                    <DataGridTextColumn Header="DisplayName" Binding="{Binding DisplayName}" Width="2*"/>
+                                    <DataGridTextColumn Header="ExpiresAt" Binding="{Binding AccountExpiresAt}" Width="2*"/>
+                                    <DataGridTextColumn Header="Enabled" Binding="{Binding Enabled}" Width="*"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                <TextBox x:Name="ExtendDateBox" Width="120" Margin="0,0,8,0" ToolTip="yyyy/MM/dd"/>
+                                <Button Content="有効期限延長" Width="110" Click="ExtendSelectedUsers_Click" Margin="0,0,8,0"/>
+                                <Button Content="選択ユーザ無効化" Width="130" Click="DisableSelectedUsers_Click"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </GroupBox>
+
+
+                    <GroupBox Grid.Row="3" Header="長期未ログインユーザ無効化" Margin="0,370,0,0">
+                        <StackPanel Margin="8">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <TextBox x:Name="UserInactiveDaysBox" Width="80" Margin="0,0,8,0"/>
+                                <Button Content="未ログイン一覧表示" Click="LoadInactiveUsers_Click" Width="140"/>
+                            </StackPanel>
+                            <DataGrid x:Name="InactiveUsersGrid" AutoGenerateColumns="False" SelectionMode="Extended" SelectionUnit="FullRow" Height="100">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="SamAccountName" Binding="{Binding SamAccountName}" Width="2*"/>
+                                    <DataGridTextColumn Header="DisplayName" Binding="{Binding DisplayName}" Width="2*"/>
+                                    <DataGridTextColumn Header="LastLogonAt" Binding="{Binding LastLogonAt}" Width="2*"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            <Button Content="選択ユーザ無効化" Click="DisableInactiveUsers_Click" Width="140" Margin="0,8,0,0"/>
+                        </StackPanel>
+                    </GroupBox>
+
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="ADコンピュータ検索">
+                <StackPanel Margin="8">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <TextBox x:Name="ComputerSearchBox" Width="240" Margin="0,0,8,0"/>
+                        <Button Content="Get-ADComputer相当検索" Click="SearchComputer_Click"/>
+                    </StackPanel>
+                    <DataGrid x:Name="ComputerResultGrid" AutoGenerateColumns="False" Height="220" SelectionChanged="ComputerResultGrid_SelectionChanged">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="2*"/>
+                            <DataGridTextColumn Header="DNS" Binding="{Binding DnsHostName}" Width="3*"/>
+                            <DataGridTextColumn Header="OS" Binding="{Binding OperatingSystem}" Width="2*"/>
+                            <DataGridTextColumn Header="Enabled" Binding="{Binding Enabled}" Width="*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <TextBox x:Name="ComputerDetailBox" Margin="0,8,0,0" Height="90" IsReadOnly="True" AcceptsReturn="True"/>
+                    <GroupBox Header="長期未起動端末無効化" Margin="0,8,0,0">
+                        <StackPanel Margin="8">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <TextBox x:Name="ComputerInactiveDaysBox" Width="80" Margin="0,0,8,0"/>
+                                <Button Content="未起動一覧表示" Click="LoadInactiveComputers_Click" Width="120"/>
+                            </StackPanel>
+                            <DataGrid x:Name="InactiveComputersGrid" AutoGenerateColumns="False" SelectionMode="Extended" SelectionUnit="FullRow" Height="120">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="2*"/>
+                                    <DataGridTextColumn Header="LastBootAt" Binding="{Binding LastBootAt}" Width="2*"/>
+                                    <DataGridTextColumn Header="Enabled" Binding="{Binding Enabled}" Width="*"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            <Button Content="選択端末無効化" Click="DisableInactiveComputers_Click" Width="120" Margin="0,8,0,0"/>
+                        </StackPanel>
+                    </GroupBox>
+
+                </StackPanel>
+            </TabItem>
+
+            <TabItem Header="GPO編集">
+                <Grid Margin="8">
+                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="140"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <TextBox x:Name="GpoSearchBox" Width="240" Margin="0,0,8,0"/>
+                        <Button Content="GPO検索" Click="SearchGpo_Click" Width="100"/>
+                    </StackPanel>
+                    <DataGrid x:Name="GpoResultGrid" Grid.Row="1" AutoGenerateColumns="False" SelectionChanged="GpoResultGrid_SelectionChanged">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="2*"/>
+                            <DataGridTextColumn Header="DisplayName" Binding="{Binding DisplayName}" Width="3*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <GroupBox Grid.Row="2" Header="編集" Margin="0,8,0,8">
+                        <StackPanel Margin="8">
+                            <TextBox x:Name="GpoDescriptionBox" Margin="0,0,0,8"/>
+                            <CheckBox x:Name="UserSettingEnabledBox" Content="User Settings Enabled"/>
+                            <CheckBox x:Name="ComputerSettingEnabledBox" Content="Computer Settings Enabled"/>
+                        </StackPanel>
+                    </GroupBox>
+                    <StackPanel Grid.Row="3">
+                        <GroupBox Header="所属グループ操作" Margin="0,0,0,8">
+                            <StackPanel Margin="8">
+                                <TextBox x:Name="GroupListBox" IsReadOnly="True" Height="70" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                    <TextBox x:Name="AddGroupBox" Width="260" Margin="0,0,8,0" />
+                                    <Button Content="追加候補に登録" Click="StageAddGroup_Click" Width="120"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                    <TextBox x:Name="RemoveGroupBox" Width="260" Margin="0,0,8,0" />
+                                    <Button Content="削除候補に登録" Click="StageRemoveGroup_Click" Width="120"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </GroupBox>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <Button Content="差分確認" Width="100" Margin="0,0,8,0" Click="PreviewGpo_Click"/>
+                            <Button Content="更新実行" Width="100" Click="ExecuteGpo_Click"/>
+                        </StackPanel>
+                        <TextBox x:Name="GpoOutputBox" Height="150" AcceptsReturn="True" IsReadOnly="True" VerticalScrollBarVisibility="Auto"/>
+                    </StackPanel>
+                    <GroupBox Grid.Row="3" Header="グループ適用GPO確認" Margin="0,8,0,0">
+                        <StackPanel Margin="8">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <TextBox x:Name="GroupForGpoBox" Width="260" Margin="0,0,8,0"/>
+                                <Button Content="適用GPO表示" Click="LoadGroupGpoStatus_Click" Width="120" Margin="0,0,8,0"/>
+                                <Button Content="CSV出力" Click="ExportGroupGpoCsv_Click" Width="100"/>
+                            </StackPanel>
+                            <DataGrid x:Name="GroupGpoStatusGrid" AutoGenerateColumns="False" Height="140">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Group" Binding="{Binding GroupName}" Width="2*"/>
+                                    <DataGridTextColumn Header="GPO" Binding="{Binding GpoDisplayName}" Width="3*"/>
+                                    <DataGridTextColumn Header="Enforced" Binding="{Binding Enforced}" Width="*"/>
+                                    <DataGridTextColumn Header="LinkTarget" Binding="{Binding LinkTarget}" Width="3*"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </StackPanel>
+                    </GroupBox>
+
+
+                    <GroupBox Grid.Row="3" Header="ユーザー+コンピュータ適用GPO確認" Margin="0,170,0,0">
+                        <StackPanel Margin="8">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <TextBox x:Name="TargetUserBox" Width="180" Margin="0,0,8,0"/>
+                                <TextBox x:Name="TargetComputerBox" Width="180" Margin="0,0,8,0"/>
+                                <Button Content="適用GPO表示" Click="LoadTargetGpoStatus_Click" Width="120" Margin="0,0,8,0"/>
+                                <Button Content="CSV出力" Click="ExportTargetGpoCsv_Click" Width="100"/>
+                            </StackPanel>
+                            <DataGrid x:Name="TargetGpoStatusGrid" AutoGenerateColumns="False" Height="120">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="User" Binding="{Binding UserSamAccountName}" Width="2*"/>
+                                    <DataGridTextColumn Header="Computer" Binding="{Binding ComputerName}" Width="2*"/>
+                                    <DataGridTextColumn Header="GPO" Binding="{Binding GpoDisplayName}" Width="3*"/>
+                                    <DataGridTextColumn Header="Enforced" Binding="{Binding Enforced}" Width="*"/>
+                                    <DataGridTextColumn Header="Scope" Binding="{Binding Scope}" Width="2*"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </StackPanel>
+                    </GroupBox>
+                </Grid>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</Window>
