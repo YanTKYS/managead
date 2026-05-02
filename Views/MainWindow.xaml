@@ -9,7 +9,8 @@
                     <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="170"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                         <TextBox x:Name="SearchBox" Width="240" Margin="0,0,8,0" />
-                        <Button Content="検索" Click="Search_Click" Width="100"/>
+                        <Button Content="検索" Click="Search_Click" Width="100" Margin="0,0,8,0"/>
+                        <Button Content="現在ユーザー/PCで設定補完" Click="BootstrapConfig_Click" Width="190"/>
                     </StackPanel>
                     <DataGrid x:Name="SearchResultGrid" Grid.Row="1" AutoGenerateColumns="False" SelectionChanged="SearchResultGrid_SelectionChanged">
                         <DataGrid.Columns>

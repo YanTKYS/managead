@@ -10,6 +10,7 @@
 - ADコンピュータ検索（Get-ADComputer 相当の検索UI）
 - GPO検索・編集（Description / UserSettingEnabled / ComputerSettingEnabled）
 - `appsettings.json` でOU DN、除外アカウント、ログパスを外だし設定
+- ログイン中ユーザー/端末/ドメイン情報から `appsettings.json` を自動補完
 
 ## 設定ファイル
 `appsettings.json` の `AppPolicy.AllowedTargetOuDns` に許可OU DNを設定してください。
@@ -20,3 +21,7 @@
 
 ## ログ保存先
 `appsettings.json` の `AppPolicy.LogPath`
+
+
+## 自動補完
+UIの「現在ユーザー/PCで設定補完」ボタンで、`AllowedTargetOuDns` と `DetectedContext` を自動反映できます。

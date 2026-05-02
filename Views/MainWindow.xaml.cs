@@ -9,7 +9,7 @@ namespace ManageAdTool.Views;
 public partial class MainWindow : Window
 {
     private readonly IAdService _ad = new InMemoryAdService();
-    private readonly AppPolicy _policy = AppPolicyProvider.Load();
+    private AppPolicy _policy = AppPolicyProvider.Load();
     private readonly AuditLogService _audit;
     private AdUser? _selected;
     private GpoPolicy? _selectedGpo;
@@ -20,6 +20,13 @@ public partial class MainWindow : Window
     {
         _audit = new AuditLogService(_policy.LogPath);
         InitializeComponent();
+    }
+
+
+    private void BootstrapConfig_Click(object sender, RoutedEventArgs e)
+    {
+        _policy = AppSettingsBootstrapper.MergeFromCurrentEnvironment();
+        OutputBox.Text = "appsettings.json に現在のユーザー/PC/ドメイン情報を取り込みました。";
     }
 
     private void Search_Click(object sender, RoutedEventArgs e) => SearchResultGrid.ItemsSource = _ad.SearchUsers(SearchBox.Text.Trim());
