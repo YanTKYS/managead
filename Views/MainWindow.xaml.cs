@@ -89,6 +89,7 @@ public partial class MainWindow : Window
 
     private void Execute_Click(object sender, RoutedEventArgs e)
     {
+        EvaluateEditability();
         if (!_canEdit || _selected is null || _pending is null || _pending.Changes.Count == 0) return;
         var confirm = MessageBox.Show("表示中の差分を更新します。実行しますか？", "確認", MessageBoxButton.YesNo, MessageBoxImage.Warning);
         if (confirm != MessageBoxResult.Yes) return;
@@ -98,12 +99,12 @@ public partial class MainWindow : Window
         try
         {
             _ad.UpdateAttributes(_selected.SamAccountName, MailBox.Text.Trim(), DepartmentBox.Text.Trim(), TitleBox.Text.Trim());
-            _audit.WriteExtended(opId, executor, Environment.MachineName, _selected.DistinguishedName, "UpdateUserAttributes", _pending.Changes, success: true);
+            _audit.WriteExtended(opId, executor, Environment.MachineName, _selected.DistinguishedName, _selected.SamAccountName, Environment.UserDomainName, "1.0.0", "UpdateUserAttributes", _pending.Changes, success: true);
             OutputBox.Text += "\n\n更新成功";
         }
         catch (Exception ex)
         {
-            _audit.WriteExtended(opId, executor, Environment.MachineName, _selected.DistinguishedName, "UpdateUserAttributes", _pending.Changes, success: false, error: ex.Message);
+            _audit.WriteExtended(opId, executor, Environment.MachineName, _selected.DistinguishedName, _selected.SamAccountName, Environment.UserDomainName, "1.0.0", "UpdateUserAttributes", _pending.Changes, success: false, error: ex.Message);
             OutputBox.Text += $"\n\n更新失敗: {ex.Message}";
         }
     }

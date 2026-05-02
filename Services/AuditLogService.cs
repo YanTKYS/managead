@@ -15,9 +15,20 @@ public class AuditLogService
     }
 
     public void Write(string executor, ChangeSet changeSet, bool success, string? error = null)
-        => WriteExtended(Guid.NewGuid().ToString("N"), executor, Environment.MachineName, changeSet.TargetSamAccountName, "LegacyOperation", changeSet.Changes, success, error);
+        => WriteExtended(Guid.NewGuid().ToString("N"), executor, Environment.MachineName, changeSet.TargetSamAccountName, changeSet.TargetSamAccountName, Environment.UserDomainName, "1.0.0", "LegacyOperation", changeSet.Changes, success, error);
 
-    public void WriteExtended(string operationId, string executor, string machineName, string targetDn, string operationName, IEnumerable<FieldChange> changes, bool success, string? error = null)
+    public void WriteExtended(
+        string operationId,
+        string executor,
+        string machineName,
+        string targetDn,
+        string targetSamAccountName,
+        string domainName,
+        string appVersion,
+        string operationName,
+        IEnumerable<FieldChange> changes,
+        bool success,
+        string? error = null)
     {
         var before = changes.ToDictionary(c => c.Field, c => c.Before);
         var after = changes.ToDictionary(c => c.Field, c => c.After);
@@ -25,9 +36,12 @@ public class AuditLogService
         {
             timestamp = DateTimeOffset.UtcNow,
             operationId,
+            appVersion,
             executor,
             machineName,
+            domainName,
             targetDn,
+            targetSamAccountName,
             operationName,
             before,
             after,
