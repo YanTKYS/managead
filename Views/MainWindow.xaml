@@ -84,6 +84,24 @@
                         </StackPanel>
                     </GroupBox>
 
+
+                    <GroupBox Grid.Row="3" Header="長期未ログインユーザ無効化" Margin="0,370,0,0">
+                        <StackPanel Margin="8">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <TextBox x:Name="UserInactiveDaysBox" Width="80" Margin="0,0,8,0"/>
+                                <Button Content="未ログイン一覧表示" Click="LoadInactiveUsers_Click" Width="140"/>
+                            </StackPanel>
+                            <DataGrid x:Name="InactiveUsersGrid" AutoGenerateColumns="False" SelectionMode="Extended" SelectionUnit="FullRow" Height="100">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="SamAccountName" Binding="{Binding SamAccountName}" Width="2*"/>
+                                    <DataGridTextColumn Header="DisplayName" Binding="{Binding DisplayName}" Width="2*"/>
+                                    <DataGridTextColumn Header="LastLogonAt" Binding="{Binding LastLogonAt}" Width="2*"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            <Button Content="選択ユーザ無効化" Click="DisableInactiveUsers_Click" Width="140" Margin="0,8,0,0"/>
+                        </StackPanel>
+                    </GroupBox>
+
                 </Grid>
             </TabItem>
 
@@ -102,6 +120,23 @@
                         </DataGrid.Columns>
                     </DataGrid>
                     <TextBox x:Name="ComputerDetailBox" Margin="0,8,0,0" Height="90" IsReadOnly="True" AcceptsReturn="True"/>
+                    <GroupBox Header="長期未起動端末無効化" Margin="0,8,0,0">
+                        <StackPanel Margin="8">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <TextBox x:Name="ComputerInactiveDaysBox" Width="80" Margin="0,0,8,0"/>
+                                <Button Content="未起動一覧表示" Click="LoadInactiveComputers_Click" Width="120"/>
+                            </StackPanel>
+                            <DataGrid x:Name="InactiveComputersGrid" AutoGenerateColumns="False" SelectionMode="Extended" SelectionUnit="FullRow" Height="120">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="2*"/>
+                                    <DataGridTextColumn Header="LastBootAt" Binding="{Binding LastBootAt}" Width="2*"/>
+                                    <DataGridTextColumn Header="Enabled" Binding="{Binding Enabled}" Width="*"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            <Button Content="選択端末無効化" Click="DisableInactiveComputers_Click" Width="120" Margin="0,8,0,0"/>
+                        </StackPanel>
+                    </GroupBox>
+
                 </StackPanel>
             </TabItem>
 

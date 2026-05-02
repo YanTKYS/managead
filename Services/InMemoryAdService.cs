@@ -104,6 +104,33 @@ public class InMemoryAdService : IAdService
         }
     }
 
+
+    public IReadOnlyList<AdUser> GetUsersNotLoggedInForDays(int days, DateTimeOffset now)
+        => _users.Values.Where(u => u.LastLogonAt.HasValue && (now - u.LastLogonAt.Value).TotalDays >= days).ToList();
+
+    public IReadOnlyList<AdComputer> GetComputersNotBootedForDays(int days, DateTimeOffset now)
+        => _computers.Values.Where(c => c.LastBootAt.HasValue && (now - c.LastBootAt.Value).TotalDays >= days).ToList();
+
+    public void DisableComputers(IEnumerable<string> computerNames)
+    {
+        foreach (var name in computerNames)
+        {
+            if (_computers.TryGetValue(name, out var c))
+            {
+                _computers[name] = new AdComputer
+                {
+                    Name = c.Name,
+                    DnsHostName = c.DnsHostName,
+                    OperatingSystem = c.OperatingSystem,
+                    DistinguishedName = c.DistinguishedName,
+                    Enabled = false,
+                    LastBootAt = c.LastBootAt,
+                    LastLoggedOnUser = c.LastLoggedOnUser
+                };
+            }
+        }
+    }
+
     public IReadOnlyList<string> GetUserGroups(string samAccountName)
     {
         if (!_users.TryGetValue(samAccountName, out var user)) return Array.Empty<string>();

@@ -12,6 +12,10 @@ public interface IAdService
     IReadOnlyList<AdUser> GetExpiredUsers(DateTimeOffset now);
     void ExtendAccountExpiration(IEnumerable<string> samAccountNames, DateTimeOffset newExpiry);
     void DisableUsers(IEnumerable<string> samAccountNames);
+    IReadOnlyList<AdUser> GetUsersNotLoggedInForDays(int days, DateTimeOffset now);
+
+    IReadOnlyList<AdComputer> GetComputersNotBootedForDays(int days, DateTimeOffset now);
+    void DisableComputers(IEnumerable<string> computerNames);
 
     IReadOnlyList<string> GetUserGroups(string samAccountName);
     ChangeSet BuildGroupMembershipChangeSet(string samAccountName, IEnumerable<string> groupsToAdd, IEnumerable<string> groupsToRemove);

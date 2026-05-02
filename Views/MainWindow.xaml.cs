@@ -81,6 +81,39 @@ public partial class MainWindow : Window
         OutputBox.Text = $"{selected.Count} 件を無効化しました。";
     }
 
+
+    private void LoadInactiveUsers_Click(object sender, RoutedEventArgs e)
+    {
+        if (!int.TryParse(UserInactiveDaysBox.Text.Trim(), out var days)) return;
+        InactiveUsersGrid.ItemsSource = _ad.GetUsersNotLoggedInForDays(days, DateTimeOffset.UtcNow);
+    }
+
+    private void DisableInactiveUsers_Click(object sender, RoutedEventArgs e)
+    {
+        var selected = InactiveUsersGrid.SelectedItems.Cast<AdUser>().ToList();
+        if (selected.Count == 0) return;
+        var ok = MessageBox.Show($"{selected.Count} 件のユーザを無効化します。よろしいですか？", "注意", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+        if (ok != MessageBoxResult.Yes) return;
+        _ad.DisableUsers(selected.Select(x => x.SamAccountName));
+        OutputBox.Text = $"{selected.Count} 件のユーザを無効化しました。";
+    }
+
+    private void LoadInactiveComputers_Click(object sender, RoutedEventArgs e)
+    {
+        if (!int.TryParse(ComputerInactiveDaysBox.Text.Trim(), out var days)) return;
+        InactiveComputersGrid.ItemsSource = _ad.GetComputersNotBootedForDays(days, DateTimeOffset.UtcNow);
+    }
+
+    private void DisableInactiveComputers_Click(object sender, RoutedEventArgs e)
+    {
+        var selected = InactiveComputersGrid.SelectedItems.Cast<AdComputer>().ToList();
+        if (selected.Count == 0) return;
+        var ok = MessageBox.Show($"{selected.Count} 台の端末を無効化します。よろしいですか？", "注意", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+        if (ok != MessageBoxResult.Yes) return;
+        _ad.DisableComputers(selected.Select(x => x.Name));
+        OutputBox.Text = $"{selected.Count} 台の端末を無効化しました。";
+    }
+
     private void StageAddGroup_Click(object sender, RoutedEventArgs e)
     {
         if (string.IsNullOrWhiteSpace(AddGroupBox.Text)) return;
