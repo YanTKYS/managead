@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release version (e.g. 0.1.0)'
+        description: 'Release version (e.g. v0.1.0)'
         required: true
         type: string
 
@@ -30,7 +30,7 @@ jobs:
         id: notes
         shell: pwsh
         run: |
-          $version = "v${{ github.event.inputs.version }}"
+          $version = "${{ github.event.inputs.version }}"
           $content = Get-Content docs/release-note.md -Raw
           $pattern = "(?s)##\s+$([regex]::Escape($version))\s*\r?\n###\s+Title\s*\r?\n(?<title>.*?)\r?\n\r?\n###\s+Note\s*\r?\n(?<note>.*?)(\r?\n##\s+v|$)"
           $m = [regex]::Match($content, $pattern)
@@ -61,7 +61,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ github.event.inputs.version }}
+          tag_name: ${{ github.event.inputs.version }}
           name: ${{ steps.notes.outputs.title }}
           body: ${{ steps.notes.outputs.note }}
           files: artifacts/${{ github.event.inputs.version }}/**/*
