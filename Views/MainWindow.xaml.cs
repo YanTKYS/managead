@@ -14,7 +14,10 @@ public partial class MainWindow : Window
     private AdUser? _selected;
     private GpoPolicy? _selectedGpo;
     private ChangeSet? _pending;
+    private ChangeSet? _pendingGroup;
     private ChangeSet? _pendingGpo;
+    private readonly HashSet<string> _groupsToAdd = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _groupsToRemove = new(StringComparer.OrdinalIgnoreCase);
 
     public MainWindow()
     {
@@ -41,18 +44,43 @@ public partial class MainWindow : Window
         var lastPc = string.IsNullOrWhiteSpace(_selected.LastLogonComputer) ? null : _ad.GetComputer(_selected.LastLogonComputer);
         var pcInfo = lastPc is null ? _selected.LastLogonComputer : $"{lastPc.Name} / {lastPc.DnsHostName} / {lastPc.OperatingSystem}";
         OutputBox.Text = $"対象: {_selected.SamAccountName}\n氏名: {_selected.Name}\nDN: {_selected.DistinguishedName}\n最終ログオン日時(UTC): {_selected.LastLogonAt:yyyy-MM-dd HH:mm:ss}\n最終ログオンPC: {pcInfo}";
+        GroupListBox.Text = string.Join(Environment.NewLine, _ad.GetUserGroups(_selected.SamAccountName));
+        _groupsToAdd.Clear(); _groupsToRemove.Clear();
+    }
+
+
+    private void StageAddGroup_Click(object sender, RoutedEventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(AddGroupBox.Text)) return;
+        _groupsToAdd.Add(AddGroupBox.Text.Trim());
+        AddGroupBox.Clear();
+        OutputBox.Text += $"\n追加候補: {string.Join(", ", _groupsToAdd)}";
+    }
+
+    private void StageRemoveGroup_Click(object sender, RoutedEventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(RemoveGroupBox.Text)) return;
+        _groupsToRemove.Add(RemoveGroupBox.Text.Trim());
+        RemoveGroupBox.Clear();
+        OutputBox.Text += $"\n削除候補: {string.Join(", ", _groupsToRemove)}";
     }
 
     private void Preview_Click(object sender, RoutedEventArgs e)
     {
         if (_selected is null) return;
         _pending = _ad.BuildChangeSet(_selected, MailBox.Text.Trim(), DepartmentBox.Text.Trim(), TitleBox.Text.Trim());
-        OutputBox.Text = FormatChangePreview(_pending, "属性更新");
+        _pendingGroup = _ad.BuildGroupMembershipChangeSet(_selected.SamAccountName, _groupsToAdd, _groupsToRemove);
+        var text = FormatChangePreview(_pending, "属性更新");
+        if (_pendingGroup.Changes.Count > 0) text += "\n" + FormatChangePreview(_pendingGroup, "グループ追加/削除");
+        OutputBox.Text = text;
     }
 
     private void Execute_Click(object sender, RoutedEventArgs e)
     {
-        if (_selected is null || _pending is null || _pending.Changes.Count == 0) return;
+        if (_selected is null || _pending is null) return;
+        var hasAttr = _pending.Changes.Count > 0;
+        var hasGroup = _pendingGroup is not null && _pendingGroup.Changes.Count > 0;
+        if (!hasAttr && !hasGroup) return;
         if (!IsAllowedDn(_selected.DistinguishedName))
         {
             OutputBox.Text += "\n\n許可されていないOUのため更新を拒否しました。";
@@ -63,8 +91,12 @@ public partial class MainWindow : Window
         var executor = WindowsIdentity.GetCurrent().Name;
         try
         {
-            _ad.UpdateAttributes(_selected.SamAccountName, MailBox.Text.Trim(), DepartmentBox.Text.Trim(), TitleBox.Text.Trim());
+            if (hasAttr) _ad.UpdateAttributes(_selected.SamAccountName, MailBox.Text.Trim(), DepartmentBox.Text.Trim(), TitleBox.Text.Trim());
+            if (hasGroup) _ad.UpdateUserGroups(_selected.SamAccountName, _groupsToAdd, _groupsToRemove);
             _audit.Write(executor, _pending, true);
+            if (hasGroup && _pendingGroup is not null) _audit.Write(executor, _pendingGroup, true);
+            GroupListBox.Text = string.Join(Environment.NewLine, _ad.GetUserGroups(_selected.SamAccountName));
+            _groupsToAdd.Clear(); _groupsToRemove.Clear();
             OutputBox.Text += "\n\n更新成功";
         }
         catch (Exception ex)

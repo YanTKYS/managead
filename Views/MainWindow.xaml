@@ -27,6 +27,19 @@
                         </Grid>
                     </GroupBox>
                     <StackPanel Grid.Row="3">
+                        <GroupBox Header="所属グループ操作" Margin="0,0,0,8">
+                            <StackPanel Margin="8">
+                                <TextBox x:Name="GroupListBox" IsReadOnly="True" Height="70" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                    <TextBox x:Name="AddGroupBox" Width="260" Margin="0,0,8,0" />
+                                    <Button Content="追加候補に登録" Click="StageAddGroup_Click" Width="120"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                    <TextBox x:Name="RemoveGroupBox" Width="260" Margin="0,0,8,0" />
+                                    <Button Content="削除候補に登録" Click="StageRemoveGroup_Click" Width="120"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </GroupBox>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                             <Button Content="差分確認" Width="100" Margin="0,0,8,0" Click="Preview_Click"/>
                             <Button Content="更新実行" Width="100" Click="Execute_Click"/>
@@ -75,6 +88,19 @@
                         </StackPanel>
                     </GroupBox>
                     <StackPanel Grid.Row="3">
+                        <GroupBox Header="所属グループ操作" Margin="0,0,0,8">
+                            <StackPanel Margin="8">
+                                <TextBox x:Name="GroupListBox" IsReadOnly="True" Height="70" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                    <TextBox x:Name="AddGroupBox" Width="260" Margin="0,0,8,0" />
+                                    <Button Content="追加候補に登録" Click="StageAddGroup_Click" Width="120"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                    <TextBox x:Name="RemoveGroupBox" Width="260" Margin="0,0,8,0" />
+                                    <Button Content="削除候補に登録" Click="StageRemoveGroup_Click" Width="120"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </GroupBox>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                             <Button Content="差分確認" Width="100" Margin="0,0,8,0" Click="PreviewGpo_Click"/>
                             <Button Content="更新実行" Width="100" Click="ExecuteGpo_Click"/>

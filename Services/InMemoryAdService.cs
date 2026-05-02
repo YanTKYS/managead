@@ -51,6 +51,46 @@ public class InMemoryAdService : IAdService
         u.Mail = mail; u.Department = department; u.Title = title;
     }
 
+
+    public IReadOnlyList<string> GetUserGroups(string samAccountName)
+    {
+        if (!_users.TryGetValue(samAccountName, out var user)) return Array.Empty<string>();
+        return user.Groups.ToList();
+    }
+
+    public ChangeSet BuildGroupMembershipChangeSet(string samAccountName, IEnumerable<string> groupsToAdd, IEnumerable<string> groupsToRemove)
+    {
+        var cs = new ChangeSet { TargetSamAccountName = samAccountName };
+        foreach (var g in groupsToAdd.Where(x => !string.IsNullOrWhiteSpace(x))) cs.Changes.Add(new("AddGroup", "-", g.Trim()));
+        foreach (var g in groupsToRemove.Where(x => !string.IsNullOrWhiteSpace(x))) cs.Changes.Add(new("RemoveGroup", g.Trim(), "-"));
+        return cs;
+    }
+
+    public void UpdateUserGroups(string samAccountName, IEnumerable<string> groupsToAdd, IEnumerable<string> groupsToRemove)
+    {
+        if (!_users.TryGetValue(samAccountName, out var user)) throw new InvalidOperationException("User not found");
+        var list = user.Groups.ToList();
+        foreach (var g in groupsToRemove.Where(x => !string.IsNullOrWhiteSpace(x)))
+            list.RemoveAll(x => string.Equals(x, g.Trim(), StringComparison.OrdinalIgnoreCase));
+        foreach (var g in groupsToAdd.Where(x => !string.IsNullOrWhiteSpace(x)))
+            if (!list.Any(x => string.Equals(x, g.Trim(), StringComparison.OrdinalIgnoreCase))) list.Add(g.Trim());
+
+        _users[samAccountName] = new AdUser
+        {
+            SamAccountName = user.SamAccountName,
+            DisplayName = user.DisplayName,
+            Name = user.Name,
+            Mail = user.Mail,
+            Department = user.Department,
+            Title = user.Title,
+            Enabled = user.Enabled,
+            DistinguishedName = user.DistinguishedName,
+            LastLogonAt = user.LastLogonAt,
+            LastLogonComputer = user.LastLogonComputer,
+            Groups = list
+        };
+    }
+
     public IReadOnlyList<AdComputer> SearchComputers(string keyword) => _computers.Values.Where(c =>
         c.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
         c.DnsHostName.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||

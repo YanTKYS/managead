@@ -9,6 +9,10 @@ public interface IAdService
     ChangeSet BuildChangeSet(AdUser current, string newMail, string newDepartment, string newTitle);
     void UpdateAttributes(string samAccountName, string mail, string department, string title);
 
+    IReadOnlyList<string> GetUserGroups(string samAccountName);
+    ChangeSet BuildGroupMembershipChangeSet(string samAccountName, IEnumerable<string> groupsToAdd, IEnumerable<string> groupsToRemove);
+    void UpdateUserGroups(string samAccountName, IEnumerable<string> groupsToAdd, IEnumerable<string> groupsToRemove);
+
     IReadOnlyList<AdComputer> SearchComputers(string keyword);
     AdComputer? GetComputer(string name);
 
