@@ -1,0 +1,39 @@
+name: Release Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g. 1.0.0)'
+        required: true
+        type: string
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  release-build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: dotnet restore ManageAdTool.csproj
+
+      - name: Build Release with Version
+        run: dotnet build ManageAdTool.csproj -c Release -p:Version=${{ github.event.inputs.version }} --no-restore
+
+      - name: Publish Release
+        run: dotnet publish ManageAdTool.csproj -c Release -p:Version=${{ github.event.inputs.version }} -o artifacts/${{ github.event.inputs.version }} --no-restore
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ManageAdTool-${{ github.event.inputs.version }}
+          path: artifacts/${{ github.event.inputs.version }}
