@@ -41,6 +41,7 @@ jobs:
 
           "title=$title" >> $env:GITHUB_OUTPUT
           "normalized_version=$normalizedVersion" >> $env:GITHUB_OUTPUT
+          "archive_name=ManageAD-$version.zip" >> $env:GITHUB_OUTPUT
           "note<<EOF" >> $env:GITHUB_OUTPUT
           $note >> $env:GITHUB_OUTPUT
           "EOF" >> $env:GITHUB_OUTPUT
@@ -52,13 +53,18 @@ jobs:
         run: dotnet build ManageAdTool.csproj -c Release -p:Version=${{ steps.notes.outputs.normalized_version }} --no-restore
 
       - name: Publish Release
-        run: dotnet publish ManageAdTool.csproj -c Release -p:Version=${{ steps.notes.outputs.normalized_version }} -o artifacts/${{ github.event.inputs.version }} --no-restore
+        run: dotnet publish ManageAdTool.csproj -c Release -p:Version=${{ steps.notes.outputs.normalized_version }} -o artifacts/publish --no-restore
 
-      - name: Upload Artifacts
+      - name: Create ZIP artifact
+        shell: pwsh
+        run: |
+          Compress-Archive -Path artifacts/publish/* -DestinationPath artifacts/${{ steps.notes.outputs.archive_name }} -Force
+
+      - name: Upload ZIP Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ManageAdTool-${{ github.event.inputs.version }}
-          path: artifacts/${{ github.event.inputs.version }}
+          name: ${{ steps.notes.outputs.archive_name }}
+          path: artifacts/${{ steps.notes.outputs.archive_name }}
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -66,4 +72,4 @@ jobs:
           tag_name: ${{ github.event.inputs.version }}
           name: ${{ steps.notes.outputs.title }}
           body: ${{ steps.notes.outputs.note }}
-          files: artifacts/${{ github.event.inputs.version }}/**/*
+          files: artifacts/${{ steps.notes.outputs.archive_name }}
