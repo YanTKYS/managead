@@ -42,7 +42,7 @@
                         <TextBox x:Name="ComputerSearchBox" Width="240" Margin="0,0,8,0"/>
                         <Button Content="Get-ADComputer相当検索" Click="SearchComputer_Click"/>
                     </StackPanel>
-                    <DataGrid x:Name="ComputerResultGrid" AutoGenerateColumns="False" Height="220">
+                    <DataGrid x:Name="ComputerResultGrid" AutoGenerateColumns="False" Height="220" SelectionChanged="ComputerResultGrid_SelectionChanged">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="2*"/>
                             <DataGridTextColumn Header="DNS" Binding="{Binding DnsHostName}" Width="3*"/>
@@ -50,6 +50,7 @@
                             <DataGridTextColumn Header="Enabled" Binding="{Binding Enabled}" Width="*"/>
                         </DataGrid.Columns>
                     </DataGrid>
+                    <TextBox x:Name="ComputerDetailBox" Margin="0,8,0,0" Height="90" IsReadOnly="True" AcceptsReturn="True"/>
                 </StackPanel>
             </TabItem>
 

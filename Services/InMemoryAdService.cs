@@ -19,7 +19,8 @@ public class InMemoryAdService : IAdService
 
     private readonly Dictionary<string, AdComputer> _computers = new(StringComparer.OrdinalIgnoreCase)
     {
-        ["PC-001"] = new AdComputer { Name = "PC-001", DnsHostName = "pc-001.example.local", OperatingSystem = "Windows 11", DistinguishedName = "CN=PC-001,OU=Computers,DC=example,DC=local", Enabled = true }
+        ["PC-001"] = new AdComputer { Name = "PC-001", DnsHostName = "pc-001.example.local", OperatingSystem = "Windows 11", DistinguishedName = "CN=PC-001,OU=Computers,DC=example,DC=local", Enabled = true, LastBootAt = DateTimeOffset.UtcNow.AddHours(-8), LastLoggedOnUser = "EXAMPLE\sato.taro" },
+        ["PC-002"] = new AdComputer { Name = "PC-002", DnsHostName = "pc-002.example.local", OperatingSystem = "Windows 10", DistinguishedName = "CN=PC-002,OU=Computers,DC=example,DC=local", Enabled = true, LastBootAt = DateTimeOffset.UtcNow.AddDays(-1), LastLoggedOnUser = "EXAMPLE\tanaka.hana" }
     };
 
     private readonly Dictionary<string, GpoPolicy> _gpos = new(StringComparer.OrdinalIgnoreCase)

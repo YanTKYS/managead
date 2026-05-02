@@ -78,6 +78,13 @@ public partial class MainWindow : Window
 
     private void SearchGpo_Click(object sender, RoutedEventArgs e) => GpoResultGrid.ItemsSource = _ad.SearchGpos(GpoSearchBox.Text.Trim());
 
+    private void ComputerResultGrid_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        var selected = ComputerResultGrid.SelectedItem as AdComputer;
+        if (selected is null) return;
+        ComputerDetailBox.Text = $"対象PC: {selected.Name}\n最終起動日時(UTC): {selected.LastBootAt:yyyy-MM-dd HH:mm:ss}\n最終ログインユーザ: {selected.LastLoggedOnUser}";
+    }
+
     private void GpoResultGrid_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
     {
         _selectedGpo = GpoResultGrid.SelectedItem as GpoPolicy;
