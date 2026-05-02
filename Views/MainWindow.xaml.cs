@@ -38,7 +38,9 @@ public partial class MainWindow : Window
         MailBox.Text = _selected.Mail;
         DepartmentBox.Text = _selected.Department;
         TitleBox.Text = _selected.Title;
-        OutputBox.Text = $"対象: {_selected.SamAccountName}\nDN: {_selected.DistinguishedName}";
+        var lastPc = string.IsNullOrWhiteSpace(_selected.LastLogonComputer) ? null : _ad.GetComputer(_selected.LastLogonComputer);
+        var pcInfo = lastPc is null ? _selected.LastLogonComputer : $"{lastPc.Name} / {lastPc.DnsHostName} / {lastPc.OperatingSystem}";
+        OutputBox.Text = $"対象: {_selected.SamAccountName}\n氏名: {_selected.Name}\nDN: {_selected.DistinguishedName}\n最終ログオン日時(UTC): {_selected.LastLogonAt:yyyy-MM-dd HH:mm:ss}\n最終ログオンPC: {pcInfo}";
     }
 
     private void Preview_Click(object sender, RoutedEventArgs e)

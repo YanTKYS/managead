@@ -11,6 +11,8 @@ public class InMemoryAdService : IAdService
             SamAccountName = "sato.taro", DisplayName = "佐藤 太郎", Name = "Taro Sato",
             Mail = "taro.sato@example.local", Department = "情報政策課", Title = "主任",
             Enabled = true, DistinguishedName = "CN=Taro Sato,OU=Users,DC=example,DC=local",
+            LastLogonAt = DateTimeOffset.UtcNow.AddHours(-5),
+            LastLogonComputer = "PC-001",
             Groups = new[] { "GG_OfficeUsers", "GG_InfoPolicy" }
         }
     };

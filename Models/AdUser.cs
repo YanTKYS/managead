@@ -10,5 +10,7 @@ public class AdUser
     public string Title { get; set; } = string.Empty;
     public bool Enabled { get; init; }
     public string DistinguishedName { get; init; } = string.Empty;
+    public DateTimeOffset? LastLogonAt { get; init; }
+    public string LastLogonComputer { get; init; } = string.Empty;
     public IReadOnlyList<string> Groups { get; init; } = Array.Empty<string>();
 }
