@@ -9,13 +9,18 @@ namespace ManageAdTool.Views;
 public partial class MainWindow : Window
 {
     private readonly IAdService _ad = new InMemoryAdService();
-    private readonly AuditLogService _audit = new(@"C:\ProgramData\ManageAdTool\logs\audit.jsonl");
+    private readonly AppPolicy _policy = AppPolicyProvider.Load();
+    private readonly AuditLogService _audit;
     private AdUser? _selected;
     private GpoPolicy? _selectedGpo;
     private ChangeSet? _pending;
     private ChangeSet? _pendingGpo;
 
-    public MainWindow() => InitializeComponent();
+    public MainWindow()
+    {
+        _audit = new AuditLogService(_policy.LogPath);
+        InitializeComponent();
+    }
 
     private void Search_Click(object sender, RoutedEventArgs e) => SearchResultGrid.ItemsSource = _ad.SearchUsers(SearchBox.Text.Trim());
 
@@ -39,6 +44,11 @@ public partial class MainWindow : Window
     private void Execute_Click(object sender, RoutedEventArgs e)
     {
         if (_selected is null || _pending is null || _pending.Changes.Count == 0) return;
+        if (!IsAllowedDn(_selected.DistinguishedName))
+        {
+            OutputBox.Text += "\n\n許可されていないOUのため更新を拒否しました。";
+            return;
+        }
         if (MessageBox.Show("表示中の差分を更新します。実行しますか？", "確認", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
 
         var executor = WindowsIdentity.GetCurrent().Name;
@@ -92,6 +102,12 @@ public partial class MainWindow : Window
             _audit.Write(executor, _pendingGpo, false, ex.Message);
             GpoOutputBox.Text += $"\n\n更新失敗: {ex.Message}";
         }
+    }
+
+    private bool IsAllowedDn(string dn)
+    {
+        if (_policy.AllowedTargetOuDns.Count == 0) return true;
+        return _policy.AllowedTargetOuDns.Any(ou => dn.Contains(ou, StringComparison.OrdinalIgnoreCase));
     }
 
     private static string FormatChangePreview(ChangeSet cs, string operation)
