@@ -142,6 +142,24 @@ public partial class MainWindow : Window
         OutputBox.Text = $"{g.Name} から {u.SamAccountName} を直接削除しました。";
     }
 
+
+    private void LoadDisabledUsers_Click(object sender, RoutedEventArgs e)
+    {
+        DisabledUsersGrid.ItemsSource = _ad.GetDisabledUsers();
+    }
+
+    private void RetireSelectedUsers_Click(object sender, RoutedEventArgs e)
+    {
+        var selected = DisabledUsersGrid.SelectedItems.Cast<AdUser>().ToList();
+        if (selected.Count == 0) return;
+        var ok = MessageBox.Show($"{selected.Count} 件の退職処理（{_policy.RetiredUsersOuDn} へ移動）を実行します。よろしいですか？", "注意", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+        if (ok != MessageBoxResult.Yes) return;
+
+        _ad.RetireUsers(selected.Select(x => x.SamAccountName), _policy.RetiredUsersOuDn);
+        DisabledUsersGrid.ItemsSource = _ad.GetDisabledUsers();
+        OutputBox.Text = $"{selected.Count} 件の退職処理を実行しました。";
+    }
+
     private void StageAddGroup_Click(object sender, RoutedEventArgs e)
     {
         if (string.IsNullOrWhiteSpace(AddGroupBox.Text)) return;

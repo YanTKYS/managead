@@ -12,6 +12,8 @@ public interface IAdService
     IReadOnlyList<AdUser> GetExpiredUsers(DateTimeOffset now);
     void ExtendAccountExpiration(IEnumerable<string> samAccountNames, DateTimeOffset newExpiry);
     void DisableUsers(IEnumerable<string> samAccountNames);
+    IReadOnlyList<AdUser> GetDisabledUsers();
+    void RetireUsers(IEnumerable<string> samAccountNames, string retiredUsersOuDn);
     IReadOnlyList<AdUser> GetUsersNotLoggedInForDays(int days, DateTimeOffset now);
 
     IReadOnlyList<AdComputer> GetComputersNotBootedForDays(int days, DateTimeOffset now);

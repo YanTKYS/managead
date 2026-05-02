@@ -118,6 +118,21 @@ public class InMemoryAdService : IAdService
     }
 
 
+
+    public IReadOnlyList<AdUser> GetDisabledUsers()
+        => _users.Values.Where(u => !u.Enabled).ToList();
+
+    public void RetireUsers(IEnumerable<string> samAccountNames, string retiredUsersOuDn)
+    {
+        foreach (var sam in samAccountNames)
+        {
+            if (!_users.TryGetValue(sam, out var user)) continue;
+            var cn = user.DistinguishedName.Split(',').FirstOrDefault() ?? $"CN={user.Name}";
+            user.DistinguishedName = $"{cn},{retiredUsersOuDn}";
+            user.Enabled = false;
+        }
+    }
+
     public IReadOnlyList<AdUser> GetUsersNotLoggedInForDays(int days, DateTimeOffset now)
         => _users.Values.Where(u => u.LastLogonAt.HasValue && (now - u.LastLogonAt.Value).TotalDays >= days).ToList();
 

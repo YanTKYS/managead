@@ -120,6 +120,21 @@
                         </StackPanel>
                     </GroupBox>
 
+
+                    <GroupBox Grid.Row="3" Header="無効ユーザ退職処理" Margin="0,710,0,0">
+                        <StackPanel Margin="8">
+                            <Button Content="無効ユーザ一覧表示" Width="140" Click="LoadDisabledUsers_Click" Margin="0,0,0,8"/>
+                            <DataGrid x:Name="DisabledUsersGrid" AutoGenerateColumns="False" SelectionMode="Extended" SelectionUnit="FullRow" Height="100">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="SamAccountName" Binding="{Binding SamAccountName}" Width="2*"/>
+                                    <DataGridTextColumn Header="DisplayName" Binding="{Binding DisplayName}" Width="2*"/>
+                                    <DataGridTextColumn Header="DistinguishedName" Binding="{Binding DistinguishedName}" Width="3*"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            <Button Content="選択ユーザ退職処理実行" Width="170" Click="RetireSelectedUsers_Click" Margin="0,8,0,0"/>
+                        </StackPanel>
+                    </GroupBox>
+
                 </Grid>
             </TabItem>
 
