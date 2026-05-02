@@ -26,6 +26,19 @@ public class InMemoryAdService : IAdService
         }
     };
 
+
+    private readonly List<AdGroup> _groups = new()
+    {
+        new() { Name = "GG_OfficeUsers", DistinguishedName = "CN=GG_OfficeUsers,OU=Groups,DC=example,DC=local" },
+        new() { Name = "GG_InfoPolicy", DistinguishedName = "CN=GG_InfoPolicy,OU=Groups,DC=example,DC=local" }
+    };
+
+    private readonly Dictionary<string, HashSet<string>> _directGroupMembers = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["GG_OfficeUsers"] = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "sato.taro", "tanaka.hana" },
+        ["GG_InfoPolicy"] = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "sato.taro" }
+    };
+
     private readonly Dictionary<string, AdComputer> _computers = new(StringComparer.OrdinalIgnoreCase)
     {
         ["PC-001"] = new AdComputer { Name = "PC-001", DnsHostName = "pc-001.example.local", OperatingSystem = "Windows 11", DistinguishedName = "CN=PC-001,OU=Computers,DC=example,DC=local", Enabled = true, LastBootAt = DateTimeOffset.UtcNow.AddHours(-8), LastLoggedOnUser = "EXAMPLE\\sato.taro" },
@@ -129,6 +142,27 @@ public class InMemoryAdService : IAdService
                 };
             }
         }
+    }
+
+
+    public IReadOnlyList<AdGroup> GetGroups() => _groups;
+
+    public IReadOnlyList<AdUser> GetDirectGroupMembers(string groupName)
+    {
+        if (!_directGroupMembers.TryGetValue(groupName, out var members)) return Array.Empty<AdUser>();
+        return members.Where(_users.ContainsKey).Select(sam => _users[sam]).ToList();
+    }
+
+    public void AddDirectGroupMember(string groupName, string userSamAccountName)
+    {
+        if (!_users.ContainsKey(userSamAccountName)) return;
+        if (!_directGroupMembers.ContainsKey(groupName)) _directGroupMembers[groupName] = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        _directGroupMembers[groupName].Add(userSamAccountName);
+    }
+
+    public void RemoveDirectGroupMember(string groupName, string userSamAccountName)
+    {
+        if (_directGroupMembers.TryGetValue(groupName, out var set)) set.Remove(userSamAccountName);
     }
 
     public IReadOnlyList<string> GetUserGroups(string samAccountName)

@@ -102,6 +102,24 @@
                         </StackPanel>
                     </GroupBox>
 
+
+                    <GroupBox Grid.Row="3" Header="グループ直接所属メンバー管理" Margin="0,540,0,0">
+                        <StackPanel Margin="8">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <ComboBox x:Name="GroupSelector" Width="220" SelectionChanged="GroupSelector_SelectionChanged"/>
+                                <TextBox x:Name="DirectMemberUserBox" Width="180" Margin="8,0,8,0"/>
+                                <Button Content="追加" Width="70" Click="AddDirectMember_Click" Margin="0,0,8,0"/>
+                                <Button Content="選択ユーザ削除" Width="110" Click="RemoveDirectMember_Click"/>
+                            </StackPanel>
+                            <DataGrid x:Name="DirectMembersGrid" AutoGenerateColumns="False" SelectionMode="Single" Height="100">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="SamAccountName" Binding="{Binding SamAccountName}" Width="2*"/>
+                                    <DataGridTextColumn Header="DisplayName" Binding="{Binding DisplayName}" Width="2*"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </StackPanel>
+                    </GroupBox>
+
                 </Grid>
             </TabItem>
 

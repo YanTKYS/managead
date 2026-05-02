@@ -23,6 +23,8 @@ public partial class MainWindow : Window
     {
         _audit = new AuditLogService(_policy.LogPath);
         InitializeComponent();
+        GroupSelector.ItemsSource = _ad.GetGroups();
+        GroupSelector.DisplayMemberPath = "Name";
     }
 
 
@@ -112,6 +114,32 @@ public partial class MainWindow : Window
         if (ok != MessageBoxResult.Yes) return;
         _ad.DisableComputers(selected.Select(x => x.Name));
         OutputBox.Text = $"{selected.Count} 台の端末を無効化しました。";
+    }
+
+
+    private void GroupSelector_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (GroupSelector.SelectedItem is not AdGroup g) return;
+        DirectMembersGrid.ItemsSource = _ad.GetDirectGroupMembers(g.Name);
+    }
+
+    private void AddDirectMember_Click(object sender, RoutedEventArgs e)
+    {
+        if (GroupSelector.SelectedItem is not AdGroup g) return;
+        var sam = DirectMemberUserBox.Text.Trim();
+        if (string.IsNullOrWhiteSpace(sam)) return;
+        _ad.AddDirectGroupMember(g.Name, sam);
+        DirectMembersGrid.ItemsSource = _ad.GetDirectGroupMembers(g.Name);
+        OutputBox.Text = $"{g.Name} に {sam} を直接追加しました。";
+    }
+
+    private void RemoveDirectMember_Click(object sender, RoutedEventArgs e)
+    {
+        if (GroupSelector.SelectedItem is not AdGroup g) return;
+        if (DirectMembersGrid.SelectedItem is not AdUser u) return;
+        _ad.RemoveDirectGroupMember(g.Name, u.SamAccountName);
+        DirectMembersGrid.ItemsSource = _ad.GetDirectGroupMembers(g.Name);
+        OutputBox.Text = $"{g.Name} から {u.SamAccountName} を直接削除しました。";
     }
 
     private void StageAddGroup_Click(object sender, RoutedEventArgs e)

@@ -18,6 +18,12 @@ public interface IAdService
     void DisableComputers(IEnumerable<string> computerNames);
 
     IReadOnlyList<string> GetUserGroups(string samAccountName);
+
+    IReadOnlyList<AdGroup> GetGroups();
+    IReadOnlyList<AdUser> GetDirectGroupMembers(string groupName);
+    void AddDirectGroupMember(string groupName, string userSamAccountName);
+    void RemoveDirectGroupMember(string groupName, string userSamAccountName);
+
     ChangeSet BuildGroupMembershipChangeSet(string samAccountName, IEnumerable<string> groupsToAdd, IEnumerable<string> groupsToRemove);
     void UpdateUserGroups(string samAccountName, IEnumerable<string> groupsToAdd, IEnumerable<string> groupsToRemove);
 
