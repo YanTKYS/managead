@@ -14,7 +14,9 @@ public class DirectoryServicesAdReadService : IAdService
 
     public IReadOnlyList<AdUser> SearchUsers(string keyword)
     {
-        var list = new List<AdUser>();
+        try
+        {
+            var list = new List<AdUser>();
         foreach (var baseDn in GetSearchBases())
         {
             using var root = new DirectoryEntry($"LDAP://{baseDn}");
@@ -31,12 +33,19 @@ public class DirectoryServicesAdReadService : IAdService
                 list.Add(user);
             }
         }
-        return list;
+            return list;
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException("AD検索の実行中にエラーが発生しました。", ex);
+        }
     }
 
     public AdUser? GetUser(string samAccountName)
     {
-        foreach (var baseDn in GetSearchBases())
+        try
+        {
+            foreach (var baseDn in GetSearchBases())
         {
             using var root = new DirectoryEntry($"LDAP://{baseDn}");
             using var ds = new DirectorySearcher(root)
@@ -51,7 +60,12 @@ public class DirectoryServicesAdReadService : IAdService
             if (IsExcluded(user.SamAccountName)) return null;
             return user;
         }
-        return null;
+            return null;
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException("ADユーザー取得の実行中にエラーが発生しました。", ex);
+        }
     }
 
     public IReadOnlyList<string> GetUserGroups(string samAccountName)
@@ -94,8 +108,15 @@ public class DirectoryServicesAdReadService : IAdService
         };
     }
 
-    private IEnumerable<string> GetSearchBases() => _policy.AllowedTargetOuDns.Count > 0 ? _policy.AllowedTargetOuDns : new[] { RootFromDomain() };
-    private string RootFromDomain() => string.Join(',', Environment.UserDomainName.Split('.').Where(x => x.Length > 0).Select(x => $"DC={x}"));
+    private IEnumerable<string> GetSearchBases() => _policy.AllowedTargetOuDns.Count > 0 ? _policy.AllowedTargetOuDns : new[] { GetDefaultNamingContext() };
+
+    private static string GetDefaultNamingContext()
+    {
+        using var rootDse = new DirectoryEntry("LDAP://RootDSE");
+        var value = rootDse.Properties["defaultNamingContext"]?.Value?.ToString();
+        if (string.IsNullOrWhiteSpace(value)) throw new InvalidOperationException("defaultNamingContext を取得できませんでした。");
+        return value;
+    }
     private bool IsExcluded(string sam) => _policy.ExcludedSamAccountNames.Any(x => string.Equals(x, sam, StringComparison.OrdinalIgnoreCase));
     private static string ExtractCn(string dn)
     {

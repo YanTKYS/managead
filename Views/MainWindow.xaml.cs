@@ -24,13 +24,26 @@ public partial class MainWindow : Window
         ApplyEditability(false, "ユーザー未選択");
         if (string.Equals(_policy.ServiceMode, "DirectoryReadOnly", StringComparison.OrdinalIgnoreCase))
         {
+            MailBox.IsEnabled = false;
+            DepartmentBox.IsEnabled = false;
+            TitleBox.IsEnabled = false;
+            PreviewButton.IsEnabled = false;
             ExecuteButton.IsEnabled = false;
             EditBlockedReasonText.Text = "DirectoryReadOnly モードのため更新不可";
         }
     }
 
     private void Search_Click(object sender, RoutedEventArgs e)
-        => SearchResultGrid.ItemsSource = _ad.SearchUsers(SearchBox.Text.Trim());
+    {
+        try
+        {
+            SearchResultGrid.ItemsSource = _ad.SearchUsers(SearchBox.Text.Trim());
+        }
+        catch (Exception ex)
+        {
+            OutputBox.Text = $"検索失敗: {ex.Message}";
+        }
+    }
 
     private void SearchResultGrid_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
     {
@@ -40,7 +53,15 @@ public partial class MainWindow : Window
         MailBox.Text = _selected.Mail;
         DepartmentBox.Text = _selected.Department;
         TitleBox.Text = _selected.Title;
-        GroupListBox.Text = string.Join(Environment.NewLine, _ad.GetUserGroups(_selected.SamAccountName));
+        try
+        {
+            GroupListBox.Text = string.Join(Environment.NewLine, _ad.GetUserGroups(_selected.SamAccountName));
+        }
+        catch (Exception ex)
+        {
+            OutputBox.Text = $"詳細取得失敗: {ex.Message}";
+            GroupListBox.Text = string.Empty;
+        }
 
         EvaluateEditability();
     }
@@ -80,11 +101,12 @@ public partial class MainWindow : Window
     private void ApplyEditability(bool canEdit, string reason)
     {
         _canEdit = canEdit;
-        MailBox.IsEnabled = canEdit;
-        DepartmentBox.IsEnabled = canEdit;
-        TitleBox.IsEnabled = canEdit;
-        PreviewButton.IsEnabled = canEdit;
-        ExecuteButton.IsEnabled = canEdit && !string.Equals(_policy.ServiceMode, "DirectoryReadOnly", StringComparison.OrdinalIgnoreCase);
+        var readOnlyMode = string.Equals(_policy.ServiceMode, "DirectoryReadOnly", StringComparison.OrdinalIgnoreCase);
+        MailBox.IsEnabled = canEdit && !readOnlyMode;
+        DepartmentBox.IsEnabled = canEdit && !readOnlyMode;
+        TitleBox.IsEnabled = canEdit && !readOnlyMode;
+        PreviewButton.IsEnabled = canEdit && !readOnlyMode;
+        ExecuteButton.IsEnabled = canEdit && !readOnlyMode;
         EditBlockedReasonText.Text = reason;
     }
 
@@ -97,6 +119,12 @@ public partial class MainWindow : Window
 
     private void Execute_Click(object sender, RoutedEventArgs e)
     {
+        if (string.Equals(_policy.ServiceMode, "DirectoryReadOnly", StringComparison.OrdinalIgnoreCase))
+        {
+            OutputBox.Text = "DirectoryReadOnly モードのため更新は実行できません";
+            return;
+        }
+
         EvaluateEditability();
         if (!_canEdit || _selected is null || _pending is null || _pending.Changes.Count == 0) return;
         var confirm = MessageBox.Show("表示中の差分を更新します。実行しますか？", "確認", MessageBoxButton.YesNo, MessageBoxImage.Warning);
