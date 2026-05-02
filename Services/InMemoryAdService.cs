@@ -2,7 +2,7 @@ using ManageAdTool.Models;
 
 namespace ManageAdTool.Services;
 
-public class InMemoryAdService : IAdService, IAdFutureOperations
+public partial class InMemoryAdService : IAdService, IAdFutureOperations
 {
     private readonly Dictionary<string, AdUser> _users = new(StringComparer.OrdinalIgnoreCase)
     {

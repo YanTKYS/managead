@@ -10,6 +10,8 @@ public partial class MainWindow : Window
     private readonly AppPolicy _policy = AppPolicyProvider.Load();
     private readonly IAdService _ad;
     private readonly AuditLogService _audit;
+    private readonly UserEditPolicyService _policyService = new();
+    private readonly UserEditUseCase _useCase;
     private AdUser? _selected;
     private ChangeSet? _pending;
     private bool _canEdit;
@@ -20,6 +22,7 @@ public partial class MainWindow : Window
             ? new DirectoryServicesAdReadService(_policy)
             : new InMemoryAdService();
         _audit = new AuditLogService(_policy.LogPath);
+        _useCase = new UserEditUseCase(_ad);
         InitializeComponent();
         ApplyEditability(false, "ユーザー未選択");
         if (string.Equals(_policy.ServiceMode, "DirectoryReadOnly", StringComparison.OrdinalIgnoreCase))
@@ -76,40 +79,8 @@ public partial class MainWindow : Window
 
     private void EvaluateEditability()
     {
-        if (_selected is null)
-        {
-            ApplyEditability(false, "ユーザー未選択");
-            return;
-        }
-
-        if (_policy.ExcludedSamAccountNames.Any(x => string.Equals(x, _selected.SamAccountName, StringComparison.OrdinalIgnoreCase)))
-        {
-            ApplyEditability(false, "編集不可: 除外アカウント");
-            return;
-        }
-
-        if (_policy.AllowedTargetOuDns.Count > 0 && !_policy.AllowedTargetOuDns.Any(ou => _selected.DistinguishedName.Contains(ou, StringComparison.OrdinalIgnoreCase)))
-        {
-            ApplyEditability(false, "編集不可: 許可OU外");
-            return;
-        }
-
-        var editable = new HashSet<string>(_policy.EditableAttributes, StringComparer.OrdinalIgnoreCase);
-        var required = new[] { "mail", "department", "title" };
-        var missing = required.Where(r => !editable.Contains(r)).ToList();
-        if (missing.Count > 0)
-        {
-            ApplyEditability(false, $"編集不可: EditableAttributes不足 ({string.Join(",", missing)})");
-            return;
-        }
-
-        if (string.Equals(_policy.ServiceMode, "DirectoryReadOnly", StringComparison.OrdinalIgnoreCase))
-        {
-            ApplyEditability(false, "DirectoryReadOnly モードのため参照のみ");
-            return;
-        }
-
-        ApplyEditability(true, "編集可能");
+        var result = _policyService.Evaluate(_selected, _policy);
+        ApplyEditability(result.canEdit, result.reason);
     }
 
     private void ApplyEditability(bool canEdit, string reason)
@@ -127,7 +98,7 @@ public partial class MainWindow : Window
     private void Preview_Click(object sender, RoutedEventArgs e)
     {
         if (!_canEdit || _selected is null) return;
-        _pending = _ad.BuildChangeSet(_selected, MailBox.Text.Trim(), DepartmentBox.Text.Trim(), TitleBox.Text.Trim());
+        _pending = _useCase.BuildChangeSet(_selected, MailBox.Text.Trim(), DepartmentBox.Text.Trim(), TitleBox.Text.Trim());
         OutputBox.Text = FormatChangePreview(_pending, "属性更新");
     }
 
@@ -148,7 +119,7 @@ public partial class MainWindow : Window
         var opId = Guid.NewGuid().ToString("N");
         try
         {
-            _ad.UpdateAttributes(_selected.SamAccountName, MailBox.Text.Trim(), DepartmentBox.Text.Trim(), TitleBox.Text.Trim());
+            _useCase.UpdateAttributes(_selected.SamAccountName, MailBox.Text.Trim(), DepartmentBox.Text.Trim(), TitleBox.Text.Trim());
             _audit.WriteExtended(opId, executor, Environment.MachineName, _selected.DistinguishedName, _selected.SamAccountName, Environment.UserDomainName, "1.0.0", "UpdateUserAttributes", _pending.Changes, success: true);
             OutputBox.Text += "\n\n更新成功";
         }
