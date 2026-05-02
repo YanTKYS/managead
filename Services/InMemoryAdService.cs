@@ -8,28 +8,30 @@ public class InMemoryAdService : IAdService
     {
         ["sato.taro"] = new AdUser
         {
-            SamAccountName = "sato.taro",
-            DisplayName = "佐藤 太郎",
-            Name = "Taro Sato",
-            Mail = "taro.sato@example.local",
-            Department = "情報政策課",
-            Title = "主任",
-            Enabled = true,
-            DistinguishedName = "CN=Taro Sato,OU=Users,DC=example,DC=local",
+            SamAccountName = "sato.taro", DisplayName = "佐藤 太郎", Name = "Taro Sato",
+            Mail = "taro.sato@example.local", Department = "情報政策課", Title = "主任",
+            Enabled = true, DistinguishedName = "CN=Taro Sato,OU=Users,DC=example,DC=local",
             Groups = new[] { "GG_OfficeUsers", "GG_InfoPolicy" }
         }
     };
 
-    public IReadOnlyList<AdUser> SearchUsers(string keyword)
-        => _users.Values
-            .Where(u => u.SamAccountName.Contains(keyword, StringComparison.OrdinalIgnoreCase)
-                     || u.DisplayName.Contains(keyword, StringComparison.OrdinalIgnoreCase)
-                     || u.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase)
-                     || u.Mail.Contains(keyword, StringComparison.OrdinalIgnoreCase))
-            .ToList();
+    private readonly Dictionary<string, AdComputer> _computers = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["PC-001"] = new AdComputer { Name = "PC-001", DnsHostName = "pc-001.example.local", OperatingSystem = "Windows 11", DistinguishedName = "CN=PC-001,OU=Computers,DC=example,DC=local", Enabled = true }
+    };
 
-    public AdUser? GetUser(string samAccountName)
-        => _users.TryGetValue(samAccountName, out var user) ? user : null;
+    private readonly Dictionary<string, GpoPolicy> _gpos = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["{1111-2222}"] = new GpoPolicy { Id = "{1111-2222}", DisplayName = "Default Workstation Policy", Description = "Base policy", UserSettingsEnabled = true, ComputerSettingsEnabled = true }
+    };
+
+    public IReadOnlyList<AdUser> SearchUsers(string keyword) => _users.Values.Where(u =>
+        u.SamAccountName.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
+        u.DisplayName.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
+        u.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
+        u.Mail.Contains(keyword, StringComparison.OrdinalIgnoreCase)).ToList();
+
+    public AdUser? GetUser(string samAccountName) => _users.TryGetValue(samAccountName, out var user) ? user : null;
 
     public ChangeSet BuildChangeSet(AdUser current, string newMail, string newDepartment, string newTitle)
     {
@@ -43,8 +45,34 @@ public class InMemoryAdService : IAdService
     public void UpdateAttributes(string samAccountName, string mail, string department, string title)
     {
         if (!_users.TryGetValue(samAccountName, out var u)) throw new InvalidOperationException("User not found");
-        u.Mail = mail;
-        u.Department = department;
-        u.Title = title;
+        u.Mail = mail; u.Department = department; u.Title = title;
+    }
+
+    public IReadOnlyList<AdComputer> SearchComputers(string keyword) => _computers.Values.Where(c =>
+        c.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
+        c.DnsHostName.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
+        c.OperatingSystem.Contains(keyword, StringComparison.OrdinalIgnoreCase)).ToList();
+
+    public AdComputer? GetComputer(string name) => _computers.TryGetValue(name, out var c) ? c : null;
+
+    public IReadOnlyList<GpoPolicy> SearchGpos(string keyword) => _gpos.Values.Where(g =>
+        g.Id.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
+        g.DisplayName.Contains(keyword, StringComparison.OrdinalIgnoreCase)).ToList();
+
+    public ChangeSet BuildGpoChangeSet(GpoPolicy current, string newDescription, bool userEnabled, bool computerEnabled)
+    {
+        var cs = new ChangeSet { TargetSamAccountName = current.DisplayName };
+        if (!string.Equals(current.Description, newDescription, StringComparison.Ordinal)) cs.Changes.Add(new("Description", current.Description, newDescription));
+        if (current.UserSettingsEnabled != userEnabled) cs.Changes.Add(new("UserSettingsEnabled", current.UserSettingsEnabled.ToString(), userEnabled.ToString()));
+        if (current.ComputerSettingsEnabled != computerEnabled) cs.Changes.Add(new("ComputerSettingsEnabled", current.ComputerSettingsEnabled.ToString(), computerEnabled.ToString()));
+        return cs;
+    }
+
+    public void UpdateGpo(string id, string description, bool userEnabled, bool computerEnabled)
+    {
+        if (!_gpos.TryGetValue(id, out var g)) throw new InvalidOperationException("GPO not found");
+        g.Description = description;
+        g.UserSettingsEnabled = userEnabled;
+        g.ComputerSettingsEnabled = computerEnabled;
     }
 }

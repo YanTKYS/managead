@@ -8,4 +8,11 @@ public interface IAdService
     AdUser? GetUser(string samAccountName);
     ChangeSet BuildChangeSet(AdUser current, string newMail, string newDepartment, string newTitle);
     void UpdateAttributes(string samAccountName, string mail, string department, string title);
+
+    IReadOnlyList<AdComputer> SearchComputers(string keyword);
+    AdComputer? GetComputer(string name);
+
+    IReadOnlyList<GpoPolicy> SearchGpos(string keyword);
+    ChangeSet BuildGpoChangeSet(GpoPolicy current, string newDescription, bool userEnabled, bool computerEnabled);
+    void UpdateGpo(string id, string description, bool userEnabled, bool computerEnabled);
 }
