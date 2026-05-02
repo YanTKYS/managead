@@ -1,34 +1,52 @@
 # ManageAdTool (MVP)
 
-閉域ネットワーク向けの Active Directory 管理デスクトップツールの MVP です。
+閉域ネットワーク向けの Active Directory 管理支援ツール（MVP）です。  
+**現在は安全側の小さな範囲に限定**して実装しています。
 
-## 実装済み
-- ADユーザー検索（氏名からログインID検索を含む）、属性編集（Mail / Department / Title）、所属グループの追加・削除、グループ直接所属メンバーの表示/追加/削除（直接参加のみ）
-- 変更差分確認と実行前確認
-- 期限切れアカウント一覧表示、Ctrl複数選択で有効期限延長/無効化（無効化は警告ダイアログ）
-- XX日以上未ログインのユーザ一覧表示と複数無効化（警告ダイアログ）
-- XX日以上未起動の端末一覧表示と複数無効化（警告ダイアログ）
-- 無効ユーザ一覧表示と複数選択退職処理（appsettings.json の RetiredUsersOuDn へ移動）
-- 実行結果表示（処理結果欄・テキスト選択可・コピーボタン付き）
-- ユーザー詳細で最終ログオン日時と最終ログオンPC情報を表示
+## 実装済み（現在のMVP範囲）
+- ADユーザー検索（SamAccountName / DisplayName / 氏名 / Mail）
+- ユーザー詳細表示
+- 所属グループ表示（参照）
+- 属性編集対象の限定（mail / department / title）
+- 変更差分確認
+- 実行前確認ダイアログ
 - 監査ログ出力（JSON Lines）
-- ADコンピュータ検索（部分一致）と、選択時の最終起動日時・最終ログインユーザ表示
-- GPO検索・編集（Description / UserSettingEnabled / ComputerSettingEnabled）
-- グループごとの適用中GPO状況表示とCSV出力
-- ADユーザー名 + ADコンピュータ指定での適用中GPO状況表示とCSV出力
-- `appsettings.json` でOU DN、除外アカウント、ログパスを外だし設定
-- ログイン中ユーザー/端末/ドメイン情報から `appsettings.json` を自動補完
+- 処理結果欄（テキスト選択・コピー可能）
 
-## 設定ファイル
-`appsettings.json` の `AppPolicy.AllowedTargetOuDns` に許可OU DNを設定してください。
+## ServiceMode
+`appsettings.json` の `AppPolicy.ServiceMode` で動作モードを切り替えます。
 
-## 現在の制約
-- `InMemoryAdService` はデモ用です。
-- 実運用では `DirectoryServices` と `GroupPolicy` モジュール連携実装に置き換えてください。
+- `InMemory`
+  - デモ・画面確認用モード
+  - 実AD接続は行いません
+- `DirectoryReadOnly`
+  - 実ADの**読み取り専用**モード
+  - ユーザー検索 / 詳細表示 / 所属グループ表示のみ
+  - **AD更新は実行しません（更新ボタン無効）**
 
-## ログ保存先
-`appsettings.json` の `AppPolicy.LogPath`
+## 実AD検証時の appsettings.json 設定例
+```json
+{
+  "AppPolicy": {
+    "ServiceMode": "DirectoryReadOnly",
+    "AllowedTargetOuDns": [
+      "OU=Users,DC=example,DC=local"
+    ],
+    "ExcludedSamAccountNames": [
+      "administrator",
+      "krbtgt"
+    ],
+    "EditableAttributes": ["mail", "department", "title"],
+    "LogPath": "C:\\ProgramData\\ManageAdTool\\logs\\audit.jsonl"
+  }
+}
+```
 
+## 現在の制約（重要）
+- 実AD更新機能（書き込み）は**未実装**です。
+- `DirectoryReadOnly` は読み取り専用であり、AD更新しません。
+- グループ追加・削除、GPO操作、ユーザー無効化、退職処理、端末無効化は**現在のMVP対象外**です。
+- 書き込み機能は将来、**検証OU限定**で安全制御を追加した上で別途実装予定です。
 
-## 自動補完
-UIの「現在ユーザー/PCで設定補完」ボタンで、`AllowedTargetOuDns` と `DetectedContext` を自動反映できます。
+## 今後の検討事項
+- 詳細は `docs/backlog.md` を参照してください。
