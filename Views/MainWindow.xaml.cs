@@ -117,6 +117,29 @@ public partial class MainWindow : Window
         ComputerDetailBox.Text = $"対象PC: {selected.Name}\n最終起動日時(UTC): {selected.LastBootAt:yyyy-MM-dd HH:mm:ss}\n最終ログインユーザ: {selected.LastLoggedOnUser}";
     }
 
+
+    private void LoadGroupGpoStatus_Click(object sender, RoutedEventArgs e)
+    {
+        var group = GroupForGpoBox.Text.Trim();
+        if (string.IsNullOrWhiteSpace(group)) return;
+        GroupGpoStatusGrid.ItemsSource = _ad.GetAppliedGposForGroup(group);
+    }
+
+    private void ExportGroupGpoCsv_Click(object sender, RoutedEventArgs e)
+    {
+        var group = GroupForGpoBox.Text.Trim();
+        if (string.IsNullOrWhiteSpace(group)) return;
+        var data = _ad.GetAppliedGposForGroup(group);
+        var path = Path.Combine(Environment.CurrentDirectory, $"group-gpo-{group}.csv");
+        using var sw = new StreamWriter(path, false, Encoding.UTF8);
+        sw.WriteLine("GroupName,GpoDisplayName,Enforced,LinkTarget");
+        foreach (var r in data)
+        {
+            sw.WriteLine($""{r.GroupName}","{r.GpoDisplayName}","{r.Enforced}","{r.LinkTarget}"");
+        }
+        GpoOutputBox.Text = $"CSV出力完了: {path}";
+    }
+
     private void GpoResultGrid_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
     {
         _selectedGpo = GpoResultGrid.SelectedItem as GpoPolicy;

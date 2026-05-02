@@ -19,13 +19,22 @@ public class InMemoryAdService : IAdService
 
     private readonly Dictionary<string, AdComputer> _computers = new(StringComparer.OrdinalIgnoreCase)
     {
-        ["PC-001"] = new AdComputer { Name = "PC-001", DnsHostName = "pc-001.example.local", OperatingSystem = "Windows 11", DistinguishedName = "CN=PC-001,OU=Computers,DC=example,DC=local", Enabled = true, LastBootAt = DateTimeOffset.UtcNow.AddHours(-8), LastLoggedOnUser = "EXAMPLE\sato.taro" },
+        ["PC-001"] = new AdComputer { Name = "PC-001", DnsHostName = "pc-001.example.local", OperatingSystem = "Windows 11", DistinguishedName = "CN=PC-001,OU=Computers,DC=example,DC=local", Enabled = true, LastBootAt = DateTimeOffset.UtcNow.AddHours(-8), LastLoggedOnUser = "EXAMPLE\\sato.taro" },
         ["PC-002"] = new AdComputer { Name = "PC-002", DnsHostName = "pc-002.example.local", OperatingSystem = "Windows 10", DistinguishedName = "CN=PC-002,OU=Computers,DC=example,DC=local", Enabled = true, LastBootAt = DateTimeOffset.UtcNow.AddDays(-1), LastLoggedOnUser = "EXAMPLE\tanaka.hana" }
     };
 
     private readonly Dictionary<string, GpoPolicy> _gpos = new(StringComparer.OrdinalIgnoreCase)
     {
         ["{1111-2222}"] = new GpoPolicy { Id = "{1111-2222}", DisplayName = "Default Workstation Policy", Description = "Base policy", UserSettingsEnabled = true, ComputerSettingsEnabled = true }
+    };
+
+    private readonly Dictionary<string, List<GroupGpoStatus>> _groupGpoMap = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["GG_InfoPolicy"] = new List<GroupGpoStatus>
+        {
+            new() { GroupName = "GG_InfoPolicy", GpoDisplayName = "Default Workstation Policy", Enforced = true, LinkTarget = "OU=Users,DC=example,DC=local" },
+            new() { GroupName = "GG_InfoPolicy", GpoDisplayName = "Security Baseline", Enforced = false, LinkTarget = "OU=Computers,DC=example,DC=local" }
+        }
     };
 
     public IReadOnlyList<AdUser> SearchUsers(string keyword) => _users.Values.Where(u =>
@@ -117,5 +126,10 @@ public class InMemoryAdService : IAdService
         g.Description = description;
         g.UserSettingsEnabled = userEnabled;
         g.ComputerSettingsEnabled = computerEnabled;
+    }
+
+    public IReadOnlyList<GroupGpoStatus> GetAppliedGposForGroup(string groupName)
+    {
+        return _groupGpoMap.TryGetValue(groupName, out var list) ? list : new List<GroupGpoStatus>();
     }
 }

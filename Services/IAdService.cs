@@ -19,4 +19,6 @@ public interface IAdService
     IReadOnlyList<GpoPolicy> SearchGpos(string keyword);
     ChangeSet BuildGpoChangeSet(GpoPolicy current, string newDescription, bool userEnabled, bool computerEnabled);
     void UpdateGpo(string id, string description, bool userEnabled, bool computerEnabled);
+
+    IReadOnlyList<GroupGpoStatus> GetAppliedGposForGroup(string groupName);
 }
