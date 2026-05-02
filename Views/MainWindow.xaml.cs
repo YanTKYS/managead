@@ -29,15 +29,23 @@ public partial class MainWindow : Window
             TitleBox.IsEnabled = false;
             PreviewButton.IsEnabled = false;
             ExecuteButton.IsEnabled = false;
-            EditBlockedReasonText.Text = "DirectoryReadOnly モードのため更新不可";
+            EditBlockedReasonText.Text = "DirectoryReadOnly モードのため参照のみ";
         }
     }
 
     private void Search_Click(object sender, RoutedEventArgs e)
     {
+        var keyword = SearchBox.Text.Trim();
+        if (string.IsNullOrWhiteSpace(keyword) || keyword.Length <= 1)
+        {
+            OutputBox.Text = "検索語は2文字以上入力してください";
+            SearchResultGrid.ItemsSource = Array.Empty<AdUser>();
+            return;
+        }
+
         try
         {
-            SearchResultGrid.ItemsSource = _ad.SearchUsers(SearchBox.Text.Trim());
+            SearchResultGrid.ItemsSource = _ad.SearchUsers(keyword);
         }
         catch (Exception ex)
         {
@@ -92,6 +100,12 @@ public partial class MainWindow : Window
         if (missing.Count > 0)
         {
             ApplyEditability(false, $"編集不可: EditableAttributes不足 ({string.Join(",", missing)})");
+            return;
+        }
+
+        if (string.Equals(_policy.ServiceMode, "DirectoryReadOnly", StringComparison.OrdinalIgnoreCase))
+        {
+            ApplyEditability(false, "DirectoryReadOnly モードのため参照のみ");
             return;
         }
 

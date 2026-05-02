@@ -14,6 +14,8 @@ public class DirectoryServicesAdReadService : IAdService
 
     public IReadOnlyList<AdUser> SearchUsers(string keyword)
     {
+        if (string.IsNullOrWhiteSpace(keyword) || keyword.Trim().Length <= 1) return Array.Empty<AdUser>();
+
         try
         {
             var list = new List<AdUser>();
