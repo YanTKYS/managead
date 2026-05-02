@@ -1,0 +1,75 @@
+name: Release Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g. v0.1.0)'
+        required: true
+        type: string
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+permissions:
+  contents: write
+
+jobs:
+  release-build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Extract release title/note from docs/release-note.md
+        id: notes
+        shell: pwsh
+        run: |
+          $version = "${{ github.event.inputs.version }}"
+          $content = Get-Content docs/release-note.md -Raw
+          $pattern = "(?s)##\s+$([regex]::Escape($version))\s*\r?\n###\s+Title\s*\r?\n(?<title>.*?)\r?\n\r?\n###\s+Note\s*\r?\n(?<note>.*?)(\r?\n##\s+v|$)"
+          $m = [regex]::Match($content, $pattern)
+          if (-not $m.Success) { throw "release-note.md に $version の記載がありません" }
+          $title = $m.Groups['title'].Value.Trim()
+          $note = $m.Groups['note'].Value.Trim()
+          $normalizedVersion = $version -replace "^v", ""
+
+          "title=$title" >> $env:GITHUB_OUTPUT
+          "normalized_version=$normalizedVersion" >> $env:GITHUB_OUTPUT
+          "archive_name=ManageAD-$version.zip" >> $env:GITHUB_OUTPUT
+          "note<<EOF" >> $env:GITHUB_OUTPUT
+          $note >> $env:GITHUB_OUTPUT
+          "EOF" >> $env:GITHUB_OUTPUT
+
+      - name: Restore
+        run: dotnet restore ManageAdTool.csproj
+
+      - name: Build Release with Version
+        run: dotnet build ManageAdTool.csproj -c Release -p:Version=${{ steps.notes.outputs.normalized_version }} --no-restore
+
+      - name: Publish Release
+        run: dotnet publish ManageAdTool.csproj -c Release -p:Version=${{ steps.notes.outputs.normalized_version }} -o artifacts/publish --no-restore
+
+      - name: Create ZIP artifact
+        shell: pwsh
+        run: |
+          Compress-Archive -Path artifacts/publish/* -DestinationPath artifacts/${{ steps.notes.outputs.archive_name }} -Force
+
+      - name: Upload ZIP Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.notes.outputs.archive_name }}
+          path: artifacts/${{ steps.notes.outputs.archive_name }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.version }}
+          name: ${{ steps.notes.outputs.title }}
+          body: ${{ steps.notes.outputs.note }}
+          files: artifacts/${{ steps.notes.outputs.archive_name }}
