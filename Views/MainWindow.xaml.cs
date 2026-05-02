@@ -7,8 +7,8 @@ namespace ManageAdTool.Views;
 
 public partial class MainWindow : Window
 {
-    private readonly IAdService _ad = new InMemoryAdService();
     private readonly AppPolicy _policy = AppPolicyProvider.Load();
+    private readonly IAdService _ad;
     private readonly AuditLogService _audit;
     private AdUser? _selected;
     private ChangeSet? _pending;
@@ -16,9 +16,17 @@ public partial class MainWindow : Window
 
     public MainWindow()
     {
+        _ad = string.Equals(_policy.ServiceMode, "DirectoryReadOnly", StringComparison.OrdinalIgnoreCase)
+            ? new DirectoryServicesAdReadService(_policy)
+            : new InMemoryAdService();
         _audit = new AuditLogService(_policy.LogPath);
         InitializeComponent();
         ApplyEditability(false, "ユーザー未選択");
+        if (string.Equals(_policy.ServiceMode, "DirectoryReadOnly", StringComparison.OrdinalIgnoreCase))
+        {
+            ExecuteButton.IsEnabled = false;
+            EditBlockedReasonText.Text = "DirectoryReadOnly モードのため更新不可";
+        }
     }
 
     private void Search_Click(object sender, RoutedEventArgs e)
@@ -76,7 +84,7 @@ public partial class MainWindow : Window
         DepartmentBox.IsEnabled = canEdit;
         TitleBox.IsEnabled = canEdit;
         PreviewButton.IsEnabled = canEdit;
-        ExecuteButton.IsEnabled = canEdit;
+        ExecuteButton.IsEnabled = canEdit && !string.Equals(_policy.ServiceMode, "DirectoryReadOnly", StringComparison.OrdinalIgnoreCase);
         EditBlockedReasonText.Text = reason;
     }
 
