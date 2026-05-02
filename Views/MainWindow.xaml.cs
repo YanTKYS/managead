@@ -61,6 +61,10 @@ public partial class MainWindow : Window
 
         SetButtonsEnabledByHandler(editButtons, enabled);
     }
+
+    private void SetButtonsEnabledByHandler(IEnumerable<string> _handlerNames, bool _enabled)
+    {
+        // 実行系は各ハンドラ先頭で編集モードを検証するため、現時点では no-op。
     }
 
 
@@ -294,7 +298,7 @@ public partial class MainWindow : Window
         sw.WriteLine("GroupName,GpoDisplayName,Enforced,LinkTarget");
         foreach (var r in data)
         {
-            sw.WriteLine($""{r.GroupName}","{r.GpoDisplayName}","{r.Enforced}","{r.LinkTarget}"");
+            sw.WriteLine($"\"{r.GroupName}\",\"{r.GpoDisplayName}\",\"{r.Enforced}\",\"{r.LinkTarget}\"");
         }
         GpoOutputBox.Text = $"CSV出力完了: {path}";
     }
@@ -319,7 +323,7 @@ public partial class MainWindow : Window
         sw.WriteLine("UserSamAccountName,ComputerName,GpoDisplayName,Enforced,Scope");
         foreach (var r in data)
         {
-            sw.WriteLine($""{r.UserSamAccountName}","{r.ComputerName}","{r.GpoDisplayName}","{r.Enforced}","{r.Scope}"");
+            sw.WriteLine($"\"{r.UserSamAccountName}\",\"{r.ComputerName}\",\"{r.GpoDisplayName}\",\"{r.Enforced}\",\"{r.Scope}\"");
         }
         GpoOutputBox.Text = $"CSV出力完了: {path}";
     }
