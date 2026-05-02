@@ -37,6 +37,12 @@ public class InMemoryAdService : IAdService
         }
     };
 
+    private readonly List<TargetGpoStatus> _targetGpoStatuses = new()
+    {
+        new() { UserSamAccountName = "sato.taro", ComputerName = "PC-001", GpoDisplayName = "Default Workstation Policy", Enforced = true, Scope = "User+Computer" },
+        new() { UserSamAccountName = "sato.taro", ComputerName = "PC-001", GpoDisplayName = "Security Baseline", Enforced = false, Scope = "Computer" }
+    };
+
     public IReadOnlyList<AdUser> SearchUsers(string keyword) => _users.Values.Where(u =>
         u.SamAccountName.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
         u.DisplayName.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
@@ -131,5 +137,12 @@ public class InMemoryAdService : IAdService
     public IReadOnlyList<GroupGpoStatus> GetAppliedGposForGroup(string groupName)
     {
         return _groupGpoMap.TryGetValue(groupName, out var list) ? list : new List<GroupGpoStatus>();
+    }
+
+    public IReadOnlyList<TargetGpoStatus> GetAppliedGposForUserAndComputer(string userSamAccountName, string computerName)
+    {
+        return _targetGpoStatuses.Where(x =>
+            x.UserSamAccountName.Equals(userSamAccountName, StringComparison.OrdinalIgnoreCase) &&
+            x.ComputerName.Equals(computerName, StringComparison.OrdinalIgnoreCase)).ToList();
     }
 }

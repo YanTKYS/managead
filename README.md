@@ -11,6 +11,7 @@
 - ADコンピュータ検索（部分一致）と、選択時の最終起動日時・最終ログインユーザ表示
 - GPO検索・編集（Description / UserSettingEnabled / ComputerSettingEnabled）
 - グループごとの適用中GPO状況表示とCSV出力
+- ADユーザー名 + ADコンピュータ指定での適用中GPO状況表示とCSV出力
 - `appsettings.json` でOU DN、除外アカウント、ログパスを外だし設定
 - ログイン中ユーザー/端末/ドメイン情報から `appsettings.json` を自動補完
 

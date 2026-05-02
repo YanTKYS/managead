@@ -21,4 +21,5 @@ public interface IAdService
     void UpdateGpo(string id, string description, bool userEnabled, bool computerEnabled);
 
     IReadOnlyList<GroupGpoStatus> GetAppliedGposForGroup(string groupName);
+    IReadOnlyList<TargetGpoStatus> GetAppliedGposForUserAndComputer(string userSamAccountName, string computerName);
 }

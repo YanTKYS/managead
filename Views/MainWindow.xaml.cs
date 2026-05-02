@@ -140,6 +140,31 @@ public partial class MainWindow : Window
         GpoOutputBox.Text = $"CSV出力完了: {path}";
     }
 
+
+    private void LoadTargetGpoStatus_Click(object sender, RoutedEventArgs e)
+    {
+        var user = TargetUserBox.Text.Trim();
+        var computer = TargetComputerBox.Text.Trim();
+        if (string.IsNullOrWhiteSpace(user) || string.IsNullOrWhiteSpace(computer)) return;
+        TargetGpoStatusGrid.ItemsSource = _ad.GetAppliedGposForUserAndComputer(user, computer);
+    }
+
+    private void ExportTargetGpoCsv_Click(object sender, RoutedEventArgs e)
+    {
+        var user = TargetUserBox.Text.Trim();
+        var computer = TargetComputerBox.Text.Trim();
+        if (string.IsNullOrWhiteSpace(user) || string.IsNullOrWhiteSpace(computer)) return;
+        var data = _ad.GetAppliedGposForUserAndComputer(user, computer);
+        var path = Path.Combine(Environment.CurrentDirectory, $"target-gpo-{user}-{computer}.csv");
+        using var sw = new StreamWriter(path, false, Encoding.UTF8);
+        sw.WriteLine("UserSamAccountName,ComputerName,GpoDisplayName,Enforced,Scope");
+        foreach (var r in data)
+        {
+            sw.WriteLine($""{r.UserSamAccountName}","{r.ComputerName}","{r.GpoDisplayName}","{r.Enforced}","{r.Scope}"");
+        }
+        GpoOutputBox.Text = $"CSV出力完了: {path}";
+    }
+
     private void GpoResultGrid_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
     {
         _selectedGpo = GpoResultGrid.SelectedItem as GpoPolicy;

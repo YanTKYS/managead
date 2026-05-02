@@ -143,6 +143,26 @@
                         </StackPanel>
                     </GroupBox>
 
+
+                    <GroupBox Grid.Row="3" Header="ユーザー+コンピュータ適用GPO確認" Margin="0,170,0,0">
+                        <StackPanel Margin="8">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <TextBox x:Name="TargetUserBox" Width="180" Margin="0,0,8,0"/>
+                                <TextBox x:Name="TargetComputerBox" Width="180" Margin="0,0,8,0"/>
+                                <Button Content="適用GPO表示" Click="LoadTargetGpoStatus_Click" Width="120" Margin="0,0,8,0"/>
+                                <Button Content="CSV出力" Click="ExportTargetGpoCsv_Click" Width="100"/>
+                            </StackPanel>
+                            <DataGrid x:Name="TargetGpoStatusGrid" AutoGenerateColumns="False" Height="120">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="User" Binding="{Binding UserSamAccountName}" Width="2*"/>
+                                    <DataGridTextColumn Header="Computer" Binding="{Binding ComputerName}" Width="2*"/>
+                                    <DataGridTextColumn Header="GPO" Binding="{Binding GpoDisplayName}" Width="3*"/>
+                                    <DataGridTextColumn Header="Enforced" Binding="{Binding Enforced}" Width="*"/>
+                                    <DataGridTextColumn Header="Scope" Binding="{Binding Scope}" Width="2*"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </StackPanel>
+                    </GroupBox>
                 </Grid>
             </TabItem>
         </TabControl>
