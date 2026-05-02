@@ -37,8 +37,10 @@ jobs:
           if (-not $m.Success) { throw "release-note.md に $version の記載がありません" }
           $title = $m.Groups['title'].Value.Trim()
           $note = $m.Groups['note'].Value.Trim()
+          $normalizedVersion = $version -replace "^v", ""
 
           "title=$title" >> $env:GITHUB_OUTPUT
+          "normalized_version=$normalizedVersion" >> $env:GITHUB_OUTPUT
           "note<<EOF" >> $env:GITHUB_OUTPUT
           $note >> $env:GITHUB_OUTPUT
           "EOF" >> $env:GITHUB_OUTPUT
@@ -47,10 +49,10 @@ jobs:
         run: dotnet restore ManageAdTool.csproj
 
       - name: Build Release with Version
-        run: dotnet build ManageAdTool.csproj -c Release -p:Version=${{ github.event.inputs.version }} --no-restore
+        run: dotnet build ManageAdTool.csproj -c Release -p:Version=${{ steps.notes.outputs.normalized_version }} --no-restore
 
       - name: Publish Release
-        run: dotnet publish ManageAdTool.csproj -c Release -p:Version=${{ github.event.inputs.version }} -o artifacts/${{ github.event.inputs.version }} --no-restore
+        run: dotnet publish ManageAdTool.csproj -c Release -p:Version=${{ steps.notes.outputs.normalized_version }} -o artifacts/${{ github.event.inputs.version }} --no-restore
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
