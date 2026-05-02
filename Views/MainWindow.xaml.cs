@@ -25,6 +25,7 @@ public partial class MainWindow : Window
         InitializeComponent();
         GroupSelector.ItemsSource = _ad.GetGroups();
         GroupSelector.DisplayMemberPath = "Name";
+        ApplyEditMode(false);
     }
 
 
@@ -32,6 +33,34 @@ public partial class MainWindow : Window
     {
         _policy = AppSettingsBootstrapper.MergeFromCurrentEnvironment();
         OutputBox.Text = "appsettings.json に現在のユーザー/PC/ドメイン情報を取り込みました。";
+    }
+
+
+    private void EditModeToggle_Changed(object sender, RoutedEventArgs e)
+    {
+        ApplyEditMode(EditModeToggle.IsChecked == true);
+    }
+
+    private void ApplyEditMode(bool enabled)
+    {
+        MailBox.IsEnabled = enabled;
+        DepartmentBox.IsEnabled = enabled;
+        TitleBox.IsEnabled = enabled;
+        AddGroupBox.IsEnabled = enabled;
+        RemoveGroupBox.IsEnabled = enabled;
+        ExtendDateBox.IsEnabled = enabled;
+        DirectMemberUserBox.IsEnabled = enabled;
+
+        var editButtons = new[]
+        {
+            "Preview_Click", "Execute_Click", "StageAddGroup_Click", "StageRemoveGroup_Click",
+            "ExtendSelectedUsers_Click", "DisableSelectedUsers_Click", "DisableInactiveUsers_Click",
+            "DisableInactiveComputers_Click", "RetireSelectedUsers_Click", "AddDirectMember_Click",
+            "RemoveDirectMember_Click", "ExecuteGpo_Click", "ExportGroupGpoCsv_Click", "ExportTargetGpoCsv_Click"
+        };
+
+        SetButtonsEnabledByHandler(editButtons, enabled);
+    }
     }
 
     private void Search_Click(object sender, RoutedEventArgs e) => SearchResultGrid.ItemsSource = _ad.SearchUsers(SearchBox.Text.Trim());
@@ -59,6 +88,7 @@ public partial class MainWindow : Window
 
     private void ExtendSelectedUsers_Click(object sender, RoutedEventArgs e)
     {
+        if (EditModeToggle.IsChecked != true) return;
         var selected = ExpiredUsersGrid.SelectedItems.Cast<AdUser>().ToList();
         if (selected.Count == 0) return;
         if (!DateTimeOffset.TryParseExact(ExtendDateBox.Text.Trim(), "yyyy/MM/dd", null, System.Globalization.DateTimeStyles.None, out var date))
@@ -73,6 +103,7 @@ public partial class MainWindow : Window
 
     private void DisableSelectedUsers_Click(object sender, RoutedEventArgs e)
     {
+        if (EditModeToggle.IsChecked != true) return;
         var selected = ExpiredUsersGrid.SelectedItems.Cast<AdUser>().ToList();
         if (selected.Count == 0) return;
         var ok = MessageBox.Show($"{selected.Count} 件を無効化します。よろしいですか？", "注意", MessageBoxButton.YesNo, MessageBoxImage.Warning);
@@ -92,6 +123,7 @@ public partial class MainWindow : Window
 
     private void DisableInactiveUsers_Click(object sender, RoutedEventArgs e)
     {
+        if (EditModeToggle.IsChecked != true) return;
         var selected = InactiveUsersGrid.SelectedItems.Cast<AdUser>().ToList();
         if (selected.Count == 0) return;
         var ok = MessageBox.Show($"{selected.Count} 件のユーザを無効化します。よろしいですか？", "注意", MessageBoxButton.YesNo, MessageBoxImage.Warning);
@@ -108,6 +140,7 @@ public partial class MainWindow : Window
 
     private void DisableInactiveComputers_Click(object sender, RoutedEventArgs e)
     {
+        if (EditModeToggle.IsChecked != true) return;
         var selected = InactiveComputersGrid.SelectedItems.Cast<AdComputer>().ToList();
         if (selected.Count == 0) return;
         var ok = MessageBox.Show($"{selected.Count} 台の端末を無効化します。よろしいですか？", "注意", MessageBoxButton.YesNo, MessageBoxImage.Warning);
@@ -125,6 +158,7 @@ public partial class MainWindow : Window
 
     private void AddDirectMember_Click(object sender, RoutedEventArgs e)
     {
+        if (EditModeToggle.IsChecked != true) return;
         if (GroupSelector.SelectedItem is not AdGroup g) return;
         var sam = DirectMemberUserBox.Text.Trim();
         if (string.IsNullOrWhiteSpace(sam)) return;
@@ -135,6 +169,7 @@ public partial class MainWindow : Window
 
     private void RemoveDirectMember_Click(object sender, RoutedEventArgs e)
     {
+        if (EditModeToggle.IsChecked != true) return;
         if (GroupSelector.SelectedItem is not AdGroup g) return;
         if (DirectMembersGrid.SelectedItem is not AdUser u) return;
         _ad.RemoveDirectGroupMember(g.Name, u.SamAccountName);
@@ -150,6 +185,7 @@ public partial class MainWindow : Window
 
     private void RetireSelectedUsers_Click(object sender, RoutedEventArgs e)
     {
+        if (EditModeToggle.IsChecked != true) return;
         var selected = DisabledUsersGrid.SelectedItems.Cast<AdUser>().ToList();
         if (selected.Count == 0) return;
         var ok = MessageBox.Show($"{selected.Count} 件の退職処理（{_policy.RetiredUsersOuDn} へ移動）を実行します。よろしいですか？", "注意", MessageBoxButton.YesNo, MessageBoxImage.Warning);
@@ -188,6 +224,7 @@ public partial class MainWindow : Window
 
     private void Execute_Click(object sender, RoutedEventArgs e)
     {
+        if (EditModeToggle.IsChecked != true) return;
         if (_selected is null || _pending is null) return;
         var hasAttr = _pending.Changes.Count > 0;
         var hasGroup = _pendingGroup is not null && _pendingGroup.Changes.Count > 0;
@@ -294,6 +331,7 @@ public partial class MainWindow : Window
 
     private void ExecuteGpo_Click(object sender, RoutedEventArgs e)
     {
+        if (EditModeToggle.IsChecked != true) return;
         if (_selectedGpo is null || _pendingGpo is null || _pendingGpo.Changes.Count == 0) return;
         if (MessageBox.Show("表示中のGPO差分を更新します。実行しますか？", "確認", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
 

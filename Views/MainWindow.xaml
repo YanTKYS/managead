@@ -10,7 +10,8 @@
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                         <TextBox x:Name="SearchBox" Width="240" Margin="0,0,8,0" />
                         <Button Content="検索" Click="Search_Click" Width="100" Margin="0,0,8,0"/>
-                        <Button Content="現在ユーザー/PCで設定補完" Click="BootstrapConfig_Click" Width="190"/>
+                        <Button Content="現在ユーザー/PCで設定補完" Click="BootstrapConfig_Click" Width="190" Margin="0,0,8,0"/>
+                        <CheckBox x:Name="EditModeToggle" Content="編集モード" Checked="EditModeToggle_Changed" Unchecked="EditModeToggle_Changed"/>
                     </StackPanel>
                     <DataGrid x:Name="SearchResultGrid" Grid.Row="1" AutoGenerateColumns="False" SelectionChanged="SearchResultGrid_SelectionChanged">
                         <DataGrid.Columns>
