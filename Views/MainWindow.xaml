@@ -45,7 +45,12 @@
                             <Button Content="差分確認" Width="100" Margin="0,0,8,0" Click="Preview_Click"/>
                             <Button Content="更新実行" Width="100" Click="Execute_Click"/>
                         </StackPanel>
-                        <TextBox x:Name="OutputBox" Height="180" AcceptsReturn="True" IsReadOnly="True" VerticalScrollBarVisibility="Auto"/>
+                        <GroupBox Header="処理結果欄" Margin="0,4,0,0">
+                            <StackPanel>
+                                <Button Content="結果をコピー" Width="100" HorizontalAlignment="Left" Margin="0,0,0,4" Click="CopyOutput_Click"/>
+                                <TextBox x:Name="OutputBox" Height="160" AcceptsReturn="True" IsReadOnly="True" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </GroupBox>
                     </StackPanel>
                     <GroupBox Grid.Row="3" Header="グループ適用GPO確認" Margin="0,8,0,0">
                         <StackPanel Margin="8">
@@ -212,7 +217,12 @@
                             <Button Content="差分確認" Width="100" Margin="0,0,8,0" Click="PreviewGpo_Click"/>
                             <Button Content="更新実行" Width="100" Click="ExecuteGpo_Click"/>
                         </StackPanel>
-                        <TextBox x:Name="GpoOutputBox" Height="150" AcceptsReturn="True" IsReadOnly="True" VerticalScrollBarVisibility="Auto"/>
+                        <GroupBox Header="処理結果欄" Margin="0,4,0,0">
+                            <StackPanel>
+                                <Button Content="結果をコピー" Width="100" HorizontalAlignment="Left" Margin="0,0,0,4" Click="CopyGpoOutput_Click"/>
+                                <TextBox x:Name="GpoOutputBox" Height="130" AcceptsReturn="True" IsReadOnly="True" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </GroupBox>
                     </StackPanel>
                     <GroupBox Grid.Row="3" Header="グループ適用GPO確認" Margin="0,8,0,0">
                         <StackPanel Margin="8">

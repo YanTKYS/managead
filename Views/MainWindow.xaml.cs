@@ -63,6 +63,17 @@ public partial class MainWindow : Window
     }
     }
 
+
+    private void CopyOutput_Click(object sender, RoutedEventArgs e)
+    {
+        if (!string.IsNullOrWhiteSpace(OutputBox.Text)) Clipboard.SetText(OutputBox.Text);
+    }
+
+    private void CopyGpoOutput_Click(object sender, RoutedEventArgs e)
+    {
+        if (!string.IsNullOrWhiteSpace(GpoOutputBox.Text)) Clipboard.SetText(GpoOutputBox.Text);
+    }
+
     private void Search_Click(object sender, RoutedEventArgs e) => SearchResultGrid.ItemsSource = _ad.SearchUsers(SearchBox.Text.Trim());
 
     private void SearchResultGrid_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
