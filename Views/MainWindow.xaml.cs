@@ -49,6 +49,38 @@ public partial class MainWindow : Window
     }
 
 
+
+    private void LoadExpiredUsers_Click(object sender, RoutedEventArgs e)
+    {
+        ExpiredUsersGrid.ItemsSource = _ad.GetExpiredUsers(DateTimeOffset.UtcNow);
+    }
+
+    private void ExtendSelectedUsers_Click(object sender, RoutedEventArgs e)
+    {
+        var selected = ExpiredUsersGrid.SelectedItems.Cast<AdUser>().ToList();
+        if (selected.Count == 0) return;
+        if (!DateTimeOffset.TryParseExact(ExtendDateBox.Text.Trim(), "yyyy/MM/dd", null, System.Globalization.DateTimeStyles.None, out var date))
+        {
+            MessageBox.Show("日付は yyyy/MM/dd で入力してください。");
+            return;
+        }
+        _ad.ExtendAccountExpiration(selected.Select(x => x.SamAccountName), date);
+        ExpiredUsersGrid.ItemsSource = _ad.GetExpiredUsers(DateTimeOffset.UtcNow);
+        OutputBox.Text = $"{selected.Count} 件の有効期限を {date:yyyy/MM/dd} へ延長しました。";
+    }
+
+    private void DisableSelectedUsers_Click(object sender, RoutedEventArgs e)
+    {
+        var selected = ExpiredUsersGrid.SelectedItems.Cast<AdUser>().ToList();
+        if (selected.Count == 0) return;
+        var ok = MessageBox.Show($"{selected.Count} 件を無効化します。よろしいですか？", "注意", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+        if (ok != MessageBoxResult.Yes) return;
+
+        _ad.DisableUsers(selected.Select(x => x.SamAccountName));
+        ExpiredUsersGrid.ItemsSource = _ad.GetExpiredUsers(DateTimeOffset.UtcNow);
+        OutputBox.Text = $"{selected.Count} 件を無効化しました。";
+    }
+
     private void StageAddGroup_Click(object sender, RoutedEventArgs e)
     {
         if (string.IsNullOrWhiteSpace(AddGroupBox.Text)) return;

@@ -64,6 +64,26 @@
                         </StackPanel>
                     </GroupBox>
 
+
+                    <GroupBox Grid.Row="3" Header="期限切れアカウント一括操作" Margin="0,200,0,0">
+                        <StackPanel Margin="8">
+                            <Button Content="期限切れ一覧表示" Width="130" Click="LoadExpiredUsers_Click" Margin="0,0,0,8"/>
+                            <DataGrid x:Name="ExpiredUsersGrid" AutoGenerateColumns="False" SelectionMode="Extended" SelectionUnit="FullRow" Height="120">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="SamAccountName" Binding="{Binding SamAccountName}" Width="2*"/>
+                                    <DataGridTextColumn Header="DisplayName" Binding="{Binding DisplayName}" Width="2*"/>
+                                    <DataGridTextColumn Header="ExpiresAt" Binding="{Binding AccountExpiresAt}" Width="2*"/>
+                                    <DataGridTextColumn Header="Enabled" Binding="{Binding Enabled}" Width="*"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                <TextBox x:Name="ExtendDateBox" Width="120" Margin="0,0,8,0" ToolTip="yyyy/MM/dd"/>
+                                <Button Content="有効期限延長" Width="110" Click="ExtendSelectedUsers_Click" Margin="0,0,8,0"/>
+                                <Button Content="選択ユーザ無効化" Width="130" Click="DisableSelectedUsers_Click"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </GroupBox>
+
                 </Grid>
             </TabItem>
 

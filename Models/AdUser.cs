@@ -8,7 +8,8 @@ public class AdUser
     public string Mail { get; set; } = string.Empty;
     public string Department { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;
-    public bool Enabled { get; init; }
+    public bool Enabled { get; set; }
+    public DateTimeOffset? AccountExpiresAt { get; set; }
     public string DistinguishedName { get; init; } = string.Empty;
     public DateTimeOffset? LastLogonAt { get; init; }
     public string LastLogonComputer { get; init; } = string.Empty;

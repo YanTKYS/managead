@@ -10,10 +10,19 @@ public class InMemoryAdService : IAdService
         {
             SamAccountName = "sato.taro", DisplayName = "佐藤 太郎", Name = "Taro Sato",
             Mail = "taro.sato@example.local", Department = "情報政策課", Title = "主任",
-            Enabled = true, DistinguishedName = "CN=Taro Sato,OU=Users,DC=example,DC=local",
+            Enabled = true, AccountExpiresAt = DateTimeOffset.UtcNow.AddDays(-1), DistinguishedName = "CN=Taro Sato,OU=Users,DC=example,DC=local",
             LastLogonAt = DateTimeOffset.UtcNow.AddHours(-5),
             LastLogonComputer = "PC-001",
             Groups = new[] { "GG_OfficeUsers", "GG_InfoPolicy" }
+        },
+        ["tanaka.hana"] = new AdUser
+        {
+            SamAccountName = "tanaka.hana", DisplayName = "田中 花", Name = "Hana Tanaka",
+            Mail = "hana.tanaka@example.local", Department = "総務課", Title = "担当",
+            Enabled = true, AccountExpiresAt = DateTimeOffset.UtcNow.AddDays(-2), DistinguishedName = "CN=Hana Tanaka,OU=Users,DC=example,DC=local",
+            LastLogonAt = DateTimeOffset.UtcNow.AddDays(-3),
+            LastLogonComputer = "PC-002",
+            Groups = new[] { "GG_OfficeUsers" }
         }
     };
 
@@ -67,6 +76,34 @@ public class InMemoryAdService : IAdService
     }
 
 
+
+
+    public IReadOnlyList<AdUser> GetExpiredUsers(DateTimeOffset now)
+        => _users.Values.Where(u => u.AccountExpiresAt.HasValue && u.AccountExpiresAt.Value < now).ToList();
+
+    public void ExtendAccountExpiration(IEnumerable<string> samAccountNames, DateTimeOffset newExpiry)
+    {
+        foreach (var sam in samAccountNames)
+        {
+            if (_users.TryGetValue(sam, out var user))
+            {
+                user.AccountExpiresAt = newExpiry;
+                user.Enabled = true;
+            }
+        }
+    }
+
+    public void DisableUsers(IEnumerable<string> samAccountNames)
+    {
+        foreach (var sam in samAccountNames)
+        {
+            if (_users.TryGetValue(sam, out var user))
+            {
+                user.Enabled = false;
+            }
+        }
+    }
+
     public IReadOnlyList<string> GetUserGroups(string samAccountName)
     {
         if (!_users.TryGetValue(samAccountName, out var user)) return Array.Empty<string>();
@@ -99,6 +136,7 @@ public class InMemoryAdService : IAdService
             Department = user.Department,
             Title = user.Title,
             Enabled = user.Enabled,
+            AccountExpiresAt = user.AccountExpiresAt,
             DistinguishedName = user.DistinguishedName,
             LastLogonAt = user.LastLogonAt,
             LastLogonComputer = user.LastLogonComputer,
