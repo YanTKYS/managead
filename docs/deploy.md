@@ -13,15 +13,18 @@
 ## 3. 配置先
 1. 閉域端末上の配置先フォルダを作成する（例: `C:\Apps\ManageAdTool`）
 2. ZIP を展開する
+3. `ManageAdTool.exe` と実行に必要なファイルは ZIP 展開先直下に配置されます（例: `C:\Apps\ManageAdTool\ManageAdTool.exe`）
+4. リリース成果物は self-contained 形式のため、対象端末に .NET Desktop Runtime を別途インストールする必要はありません
 
 ## 4. appsettings.json の編集
-1. `appsettings.InMemory.sample.json` もしくは `appsettings.DirectoryReadOnly.sample.json` をコピーして `appsettings.json` を作成する
+1. 展開先直下で `appsettings.InMemory.sample.json` もしくは `appsettings.DirectoryReadOnly.sample.json` をコピーして `appsettings.json` を作成する
 2. 環境に合わせて OU DN / 除外ユーザー / ログ出力先を調整する
 3. DirectoryReadOnly 利用時は `AllowedTargetOuDns` を検証用OUのみに限定する
 
 ## 5. InMemory での初回起動確認
 1. `ServiceMode` を `InMemory` に設定して起動する
-2. テストユーザー検索とユーザー詳細表示ができることを確認する
+2. 展開先直下の `ManageAdTool.exe` を起動する
+3. テストユーザー検索とユーザー詳細表示ができることを確認する
 
 ## 6. DirectoryReadOnly 検証への移行
 - 実AD接続の読み取り専用検証は `docs/validation-readonly.md` を参照して実施する

@@ -10,6 +10,7 @@ on:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  RUNTIME_IDENTIFIER: win-x64
 
 permissions:
   contents: write
@@ -47,13 +48,21 @@ jobs:
           "EOF" >> $env:GITHUB_OUTPUT
 
       - name: Restore
-        run: dotnet restore ManageAdTool.csproj
+        run: dotnet restore ManageAdTool.csproj -r ${{ env.RUNTIME_IDENTIFIER }}
 
       - name: Build Release with Version
-        run: dotnet build ManageAdTool.csproj -c Release -p:Version=${{ steps.notes.outputs.normalized_version }} --no-restore
+        run: dotnet build ManageAdTool.csproj -c Release -r ${{ env.RUNTIME_IDENTIFIER }} -p:Version=${{ steps.notes.outputs.normalized_version }} --no-restore
 
-      - name: Publish Release
-        run: dotnet publish ManageAdTool.csproj -c Release -p:Version=${{ steps.notes.outputs.normalized_version }} -o artifacts/publish --no-restore
+      - name: Publish self-contained Release
+        run: dotnet publish ManageAdTool.csproj -c Release -r ${{ env.RUNTIME_IDENTIFIER }} --self-contained true -p:Version=${{ steps.notes.outputs.normalized_version }} -o artifacts/package --no-restore
+
+      - name: Add release docs and sample configs
+        shell: pwsh
+        run: |
+          Copy-Item docs/deploy.md artifacts/package/deploy.md -Force
+          Copy-Item docs/validation-readonly.md artifacts/package/validation-readonly.md -Force
+          Copy-Item appsettings.InMemory.sample.json artifacts/package/ -Force
+          Copy-Item appsettings.DirectoryReadOnly.sample.json artifacts/package/ -Force
 
       - name: Prepare release package
         shell: pwsh
