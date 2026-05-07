@@ -17,9 +17,12 @@
 4. リリース成果物は self-contained 形式のため、対象端末に .NET Desktop Runtime を別途インストールする必要はありません
 
 ## 4. appsettings.json の編集
-1. 展開先直下で `appsettings.InMemory.sample.json` もしくは `appsettings.DirectoryReadOnly.sample.json` をコピーして `appsettings.json` を作成する
+1. 展開先直下で利用モードに応じた sample appsettings をコピーして `appsettings.json` を作成する
+   - `appsettings.InMemory.sample.json`
+   - `appsettings.DirectoryReadOnly.sample.json`
+   - `appsettings.DirectoryLimitedWrite.sample.json`
 2. 環境に合わせて OU DN / 除外ユーザー / ログ出力先を調整する
-3. DirectoryReadOnly 利用時は `AllowedTargetOuDns` を検証用OUのみに限定する
+3. DirectoryReadOnly / DirectoryLimitedWrite 利用時は `AllowedTargetOuDns` を検証用OUのみに限定する
 
 ## 5. InMemory での初回起動確認
 1. `ServiceMode` を `InMemory` に設定して起動する
@@ -30,6 +33,10 @@
 - 実AD接続の読み取り専用検証は `docs/validation-readonly.md` を参照して実施する
 - DirectoryReadOnly では更新操作は実行できない（更新ボタン無効）
 
+## 7. DirectoryLimitedWrite 検証への移行
+- 検証OU限定・3属性限定の書き込み検証は `docs/validation-limited-write.md` を参照して実施する
+- 本番ユーザーでは実施しない
+
 ## 注意
-- 本バージョンでは実AD更新機能（書き込み）は未実装。
-- グループ操作、GPO操作、無効化、退職処理はMVP範囲外。
+- DirectoryLimitedWrite の更新対象は `mail` / `department` / `title` の3属性のみ。
+- グループ操作、GPO操作、無効化、退職処理、OU移動、一括処理はMVP範囲外。

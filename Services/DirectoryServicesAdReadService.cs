@@ -5,11 +5,11 @@ namespace ManageAdTool.Services;
 
 public class DirectoryServicesAdReadService : IAdService
 {
-    private readonly AppPolicy _policy;
+    protected readonly AppPolicy Policy;
 
     public DirectoryServicesAdReadService(AppPolicy policy)
     {
-        _policy = policy;
+        Policy = policy;
     }
 
     public IReadOnlyList<AdUser> SearchUsers(string keyword)
@@ -19,22 +19,22 @@ public class DirectoryServicesAdReadService : IAdService
         try
         {
             var list = new List<AdUser>();
-        foreach (var baseDn in GetSearchBases())
-        {
-            using var root = new DirectoryEntry($"LDAP://{baseDn}");
-            using var ds = new DirectorySearcher(root)
+            foreach (var baseDn in GetSearchBases())
             {
-                Filter = $"(&(objectClass=user)(!(objectClass=computer))(|(sAMAccountName=*{EscapeLdap(keyword)}*)(displayName=*{EscapeLdap(keyword)}*)(name=*{EscapeLdap(keyword)}*)(mail=*{EscapeLdap(keyword)}*)))",
-                PageSize = 200
-            };
-            ds.PropertiesToLoad.AddRange(new[] { "samAccountName", "displayName", "name", "mail", "department", "title", "distinguishedName", "memberOf" });
-            foreach (SearchResult r in ds.FindAll())
-            {
-                var user = DirectoryServicesUserMapper.MapUser(r);
-                if (IsExcluded(user.SamAccountName)) continue;
-                list.Add(user);
+                using var root = new DirectoryEntry($"LDAP://{baseDn}");
+                using var ds = new DirectorySearcher(root)
+                {
+                    Filter = $"(&(objectClass=user)(!(objectClass=computer))(|(sAMAccountName=*{EscapeLdap(keyword)}*)(displayName=*{EscapeLdap(keyword)}*)(name=*{EscapeLdap(keyword)}*)(mail=*{EscapeLdap(keyword)}*)))",
+                    PageSize = 200
+                };
+                ds.PropertiesToLoad.AddRange(new[] { "samAccountName", "displayName", "name", "mail", "department", "title", "distinguishedName", "memberOf" });
+                foreach (SearchResult r in ds.FindAll())
+                {
+                    var user = DirectoryServicesUserMapper.MapUser(r);
+                    if (IsExcluded(user.SamAccountName)) continue;
+                    list.Add(user);
+                }
             }
-        }
             return list;
         }
         catch (Exception ex)
@@ -48,20 +48,20 @@ public class DirectoryServicesAdReadService : IAdService
         try
         {
             foreach (var baseDn in GetSearchBases())
-        {
-            using var root = new DirectoryEntry($"LDAP://{baseDn}");
-            using var ds = new DirectorySearcher(root)
             {
-                Filter = $"(&(objectClass=user)(sAMAccountName={EscapeLdap(samAccountName)}))",
-                PageSize = 1
-            };
-            ds.PropertiesToLoad.AddRange(new[] { "samAccountName", "displayName", "name", "mail", "department", "title", "distinguishedName", "memberOf" });
-            var r = ds.FindOne();
-            if (r is null) continue;
-            var user = DirectoryServicesUserMapper.MapUser(r);
-            if (IsExcluded(user.SamAccountName)) return null;
-            return user;
-        }
+                using var root = new DirectoryEntry($"LDAP://{baseDn}");
+                using var ds = new DirectorySearcher(root)
+                {
+                    Filter = $"(&(objectClass=user)(sAMAccountName={EscapeLdap(samAccountName)}))",
+                    PageSize = 1
+                };
+                ds.PropertiesToLoad.AddRange(new[] { "samAccountName", "displayName", "name", "mail", "department", "title", "distinguishedName", "memberOf" });
+                var r = ds.FindOne();
+                if (r is null) continue;
+                var user = DirectoryServicesUserMapper.MapUser(r);
+                if (IsExcluded(user.SamAccountName)) return null;
+                return user;
+            }
             return null;
         }
         catch (Exception ex)
@@ -85,9 +85,20 @@ public class DirectoryServicesAdReadService : IAdService
         return cs;
     }
 
-    public void UpdateAttributes(string samAccountName, string mail, string department, string title)
+    public virtual void UpdateAttributes(string samAccountName, string mail, string department, string title)
         => throw new NotSupportedException("DirectoryReadOnly mode does not support updates.");
-    private IEnumerable<string> GetSearchBases() => _policy.AllowedTargetOuDns.Count > 0 ? _policy.AllowedTargetOuDns : new[] { GetDefaultNamingContext() };
+
+    protected IEnumerable<string> GetSearchBases() => Policy.AllowedTargetOuDns.Count > 0 ? Policy.AllowedTargetOuDns : new[] { GetDefaultNamingContext() };
+
+    protected bool IsExcluded(string sam) => Policy.ExcludedSamAccountNames.Any(x => string.Equals(x, sam, StringComparison.OrdinalIgnoreCase));
+
+    protected bool IsInAllowedTargetOu(string distinguishedName)
+        => Policy.AllowedTargetOuDns.Any(ou => IsUnderOu(distinguishedName, ou));
+
+    protected static bool IsUnderOu(string distinguishedName, string ouDn)
+        => !string.IsNullOrWhiteSpace(distinguishedName)
+            && !string.IsNullOrWhiteSpace(ouDn)
+            && distinguishedName.EndsWith($",{ouDn}", StringComparison.OrdinalIgnoreCase);
 
     private static string GetDefaultNamingContext()
     {
@@ -96,6 +107,6 @@ public class DirectoryServicesAdReadService : IAdService
         if (string.IsNullOrWhiteSpace(value)) throw new InvalidOperationException("defaultNamingContext を取得できませんでした。");
         return value;
     }
-    private bool IsExcluded(string sam) => _policy.ExcludedSamAccountNames.Any(x => string.Equals(x, sam, StringComparison.OrdinalIgnoreCase));
-    private static string EscapeLdap(string value) => value.Replace("\\", "\\5c").Replace("*", "\\2a").Replace("(", "\\28").Replace(")", "\\29").Replace("\0", "\\00");
+
+    protected static string EscapeLdap(string value) => value.Replace("\\", "\\5c").Replace("*", "\\2a").Replace("(", "\\28").Replace(")", "\\29").Replace("\0", "\\00");
 }
