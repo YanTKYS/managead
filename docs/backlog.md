@@ -2,6 +2,7 @@
 
 ## Next
 - DirectoryServicesAdReadService の検索パフォーマンス検証（PageSize、PropertiesToLoad最適化）。
+- 検索結果が多すぎる場合に備えた最大表示件数の設定化（例: `MaxSearchResults`）と、上限超過時の利用者向けメッセージ表示を検討。
 - 監査ログのローテーション・改ざん検知（ハッシュチェーン）検討。
 - ServiceModeごとのUI表示制御をViewModel化（現状はcode-behind）。
 - 例外メッセージの利用者向け/管理者向け分離。

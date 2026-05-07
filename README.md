@@ -46,7 +46,8 @@
 ## v0.1.0 ステータス
 - v0.1.0 はリリース済みです。
 - InMemory での起動とテストユーザー情報取得は確認済みです。
-- 実ADでの DirectoryReadOnly 検証は未実施です。
+- DirectoryReadOnly で実ADのユーザー情報取得と所属グループ情報取得を確認済みです。
+- 実AD更新機能は未実装・未実施です。
 - 詳細手順は `docs/validation-readonly.md` と `docs/deploy.md` を参照してください。
 - リリースZIPでは `ManageAdTool.exe` と実行に必要なファイルを ZIP 展開先直下に配置します。
 - リリースZIPは self-contained 形式で .NET Desktop Runtime を同梱するため、利用端末への別途インストールは不要です。
