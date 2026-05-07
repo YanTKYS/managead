@@ -42,6 +42,15 @@
 }
 ```
 
+
+## v0.1.0 ステータス
+- v0.1.0 はリリース済みです。
+- InMemory での起動とテストユーザー情報取得は確認済みです。
+- 実ADでの DirectoryReadOnly 検証は未実施です。
+- 詳細手順は `docs/validation-readonly.md` と `docs/deploy.md` を参照してください。
+- リリースZIPでは `ManageAdTool.exe` と実行に必要なファイルを ZIP 展開先直下に配置します。
+- リリースZIPは self-contained 形式で .NET Desktop Runtime を同梱するため、利用端末への別途インストールは不要です。
+
 ## 現在の制約（重要）
 - 実AD更新機能（書き込み）は**未実装**です。
 - `DirectoryReadOnly` は読み取り専用であり、AD更新しません。
