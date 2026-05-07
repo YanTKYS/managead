@@ -48,10 +48,13 @@ public partial class MainWindow : Window
 
         try
         {
-            SearchResultGrid.ItemsSource = _ad.SearchUsers(keyword);
+            var results = _ad.SearchUsers(keyword);
+            SearchResultGrid.ItemsSource = results;
+            OutputBox.Text = $"検索結果: {results.Count}件";
         }
         catch (Exception ex)
         {
+            SearchResultGrid.ItemsSource = Array.Empty<AdUser>();
             OutputBox.Text = $"検索失敗: {ex.Message}";
         }
     }
