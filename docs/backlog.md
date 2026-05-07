@@ -2,12 +2,17 @@
 
 ## Next
 - DirectoryServicesAdReadService の検索パフォーマンス検証（PageSize、PropertiesToLoad最適化）。
-- 監査ログのローテーション・改ざん検知（ハッシュチェーン）検討。
+- 検索結果が多すぎる場合に備えた最大表示件数の設定化（例: `MaxSearchResults`）と、上限超過時の利用者向けメッセージ表示を検討。
 - ServiceModeごとのUI表示制御をViewModel化（現状はcode-behind）。
 - 例外メッセージの利用者向け/管理者向け分離。
 
+## v0.2.0 後の課題
+- DirectoryLimitedWrite 更新後検証の強化（更新後再取得結果と監査ログの突合）。
+- 監査ログのローテーション・改ざん検知（ハッシュチェーン）検討。
+- 承認フロー（二重承認、申請/承認ログ）の設計検討。
+- 一括処理は安全設計・承認フロー・ロールバック方針を整理した後に検討。
+
 ## Future
-- 書き込み可能な DirectoryServicesAdWriteService（MVP後段）
 - グループ操作/GPO操作の安全設計再導入（二重承認含む）
 
 ## AD実運用検討（キャッシュ）
