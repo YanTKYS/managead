@@ -7,6 +7,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
+    <!-- Read-only policy: exclude the removed limited-write implementation even if a stale local file remains in the workspace. -->
+    <Compile Remove="Services\DirectoryServicesAdLimitedWriteService.cs" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="System.DirectoryServices" Version="8.0.0" />
   </ItemGroup>
 </Project>

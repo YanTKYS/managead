@@ -82,15 +82,6 @@ public partial class InMemoryAdService : IAdService, IAdFutureOperations
         return cs;
     }
 
-    public void UpdateAttributes(string samAccountName, string mail, string department, string title)
-    {
-        if (!_users.TryGetValue(samAccountName, out var u)) throw new InvalidOperationException("User not found");
-        u.Mail = mail; u.Department = department; u.Title = title;
-    }
-
-
-
-
     public IReadOnlyList<AdUser> GetExpiredUsers(DateTimeOffset now)
         => _users.Values.Where(u => u.AccountExpiresAt.HasValue && u.AccountExpiresAt.Value < now).ToList();
 

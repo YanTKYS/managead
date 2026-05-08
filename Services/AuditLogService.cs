@@ -29,7 +29,8 @@ public class AuditLogService
         string operationName,
         IEnumerable<FieldChange> changes,
         bool success,
-        string? error = null)
+        string? error = null,
+        string? serviceMode = null)
     {
         var before = changes.ToDictionary(c => c.Field, c => c.Before);
         var after = changes.ToDictionary(c => c.Field, c => c.After);
@@ -44,6 +45,7 @@ public class AuditLogService
             targetDn,
             targetSamAccountName,
             operationName,
+            serviceMode,
             before,
             after,
             success,
