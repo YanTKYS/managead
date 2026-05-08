@@ -296,6 +296,44 @@ public partial class MainWindow : Window
         return string.Join(Environment.NewLine, lines) + Environment.NewLine;
     }
 
+    private static string BuildSearchResultsCsv(IEnumerable<AdUser> users)
+    {
+        var lines = new List<string>
+        {
+            string.Join(",", new[]
+            {
+                "SamAccountName",
+                "DisplayName",
+                "Name",
+                "Mail",
+                "Department",
+                "Title",
+                "Enabled",
+                "UserAccountControl",
+                "LastLogonTimestamp",
+                "AccountExpires",
+                "DistinguishedName"
+            }.Select(CsvEscape))
+        };
+
+        lines.AddRange(users.Select(user => string.Join(",", new[]
+        {
+            user.SamAccountName,
+            user.DisplayName,
+            user.Name,
+            user.Mail,
+            user.Department,
+            user.Title,
+            FormatBool(user.Enabled),
+            FormatNullable(user.UserAccountControl),
+            FormatDateTime(user.LastLogonAt),
+            FormatDateTime(user.AccountExpiresAt),
+            user.DistinguishedName
+        }.Select(CsvEscape))));
+
+        return string.Join(Environment.NewLine, lines) + Environment.NewLine;
+    }
+
     private static string FormatChangePreview(ChangeSet cs, string operation)
     {
         if (cs.Changes.Count == 0) return "差分なし（更新不要）";
