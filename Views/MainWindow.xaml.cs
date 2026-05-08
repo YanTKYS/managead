@@ -110,6 +110,30 @@ public partial class MainWindow : Window
         OutputBox.Text = "参照専用ツールのため、AD更新は実行できません";
     }
 
+    private static bool PendingMatchesRequestedValues(ChangeSet pending, AdUser selected, string mail, string department, string title)
+    {
+        var expectedMail = GetExpectedValue(pending, "Mail", selected.Mail);
+        var expectedDepartment = GetExpectedValue(pending, "Department", selected.Department);
+        var expectedTitle = GetExpectedValue(pending, "Title", selected.Title);
+
+        return string.Equals(expectedMail, mail, StringComparison.Ordinal)
+            && string.Equals(expectedDepartment, department, StringComparison.Ordinal)
+            && string.Equals(expectedTitle, title, StringComparison.Ordinal);
+    }
+
+    private static string GetExpectedValue(ChangeSet pending, string field, string currentValue)
+        => pending.Changes.FirstOrDefault(c => string.Equals(c.Field, field, StringComparison.Ordinal))?.After ?? currentValue;
+
+    private static string FormatUpdateSuccess(AdUser user)
+        => string.Join(Environment.NewLine, new[]
+        {
+            "更新成功",
+            $"対象: {user.SamAccountName}",
+            $"mail: {user.Mail}",
+            $"department: {user.Department}",
+            $"title: {user.Title}"
+        });
+
     private static string FormatChangePreview(ChangeSet cs, string operation)
     {
         if (cs.Changes.Count == 0) return "差分なし（更新不要）";

@@ -89,6 +89,8 @@ public class DirectoryServicesAdReadService : IAdService
 
     private bool IsExcluded(string sam) => Policy.ExcludedSamAccountNames.Any(x => string.Equals(x, sam, StringComparison.OrdinalIgnoreCase));
 
+    private bool IsExcluded(string sam) => _policy.ExcludedSamAccountNames.Any(x => string.Equals(x, sam, StringComparison.OrdinalIgnoreCase));
+
     private static string GetDefaultNamingContext()
     {
         using var rootDse = new DirectoryEntry("LDAP://RootDSE");
