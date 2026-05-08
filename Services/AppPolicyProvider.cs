@@ -25,6 +25,9 @@ public static class AppPolicyProvider
             EditableAttributes = node.TryGetProperty("EditableAttributes", out var ed)
                 ? ed.EnumerateArray().Select(x => x.GetString() ?? string.Empty).Where(x => x.Length > 0).ToList()
                 : new List<string> { "mail", "department", "title" },
+            UserDetailDisplayAttributes = node.TryGetProperty("UserDetailDisplayAttributes", out var display)
+                ? display.EnumerateArray().Select(x => x.GetString() ?? string.Empty).Where(x => x.Length > 0).ToList()
+                : new AppPolicy().UserDetailDisplayAttributes,
             LogPath = node.TryGetProperty("LogPath", out var log) ? (log.GetString() ?? @"C:\ProgramData\ManageAdTool\logs\audit.jsonl") : @"C:\ProgramData\ManageAdTool\logs\audit.jsonl",
             RetiredUsersOuDn = node.TryGetProperty("RetiredUsersOuDn", out var retiredOu) ? (retiredOu.GetString() ?? "OU=RetiredUsers,DC=example,DC=local") : "OU=RetiredUsers,DC=example,DC=local",
             ServiceMode = node.TryGetProperty("ServiceMode", out var sm) ? (sm.GetString() ?? "InMemory") : "InMemory"

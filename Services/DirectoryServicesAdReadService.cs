@@ -13,8 +13,12 @@ public class DirectoryServicesAdReadService : IAdService
     }
 
     public IReadOnlyList<AdUser> SearchUsers(string keyword)
+        => SearchUsers(new AdUserSearchCriteria { Keyword = keyword });
+
+    public IReadOnlyList<AdUser> SearchUsers(AdUserSearchCriteria criteria)
     {
-        if (string.IsNullOrWhiteSpace(keyword) || keyword.Trim().Length <= 1) return Array.Empty<AdUser>();
+        var keyword = criteria.Keyword.Trim();
+        if (string.IsNullOrWhiteSpace(keyword) || keyword.Length <= 1) return Array.Empty<AdUser>();
 
         try
         {
@@ -24,10 +28,10 @@ public class DirectoryServicesAdReadService : IAdService
                 using var root = new DirectoryEntry($"LDAP://{baseDn}");
                 using var ds = new DirectorySearcher(root)
                 {
-                    Filter = $"(&(objectClass=user)(!(objectClass=computer))(|(sAMAccountName=*{EscapeLdap(keyword)}*)(displayName=*{EscapeLdap(keyword)}*)(name=*{EscapeLdap(keyword)}*)(mail=*{EscapeLdap(keyword)}*)))",
+                    Filter = BuildUserSearchFilter(criteria),
                     PageSize = 200
                 };
-                ds.PropertiesToLoad.AddRange(new[] { "samAccountName", "displayName", "name", "mail", "department", "title", "distinguishedName", "memberOf", "lastLogonTimestamp", "accountExpires", "userAccountControl" });
+                AddUserProperties(ds);
                 foreach (SearchResult r in ds.FindAll())
                 {
                     var user = DirectoryServicesUserMapper.MapUser(r);
@@ -55,7 +59,7 @@ public class DirectoryServicesAdReadService : IAdService
                     Filter = $"(&(objectClass=user)(sAMAccountName={EscapeLdap(samAccountName)}))",
                     PageSize = 1
                 };
-                ds.PropertiesToLoad.AddRange(new[] { "samAccountName", "displayName", "name", "mail", "department", "title", "distinguishedName", "memberOf", "lastLogonTimestamp", "accountExpires", "userAccountControl" });
+                AddUserProperties(ds);
                 var r = ds.FindOne();
                 if (r is null) continue;
                 var user = DirectoryServicesUserMapper.MapUser(r);
@@ -76,6 +80,75 @@ public class DirectoryServicesAdReadService : IAdService
         return user?.Groups ?? Array.Empty<string>();
     }
 
+
+    public IReadOnlyList<AdGroup> SearchGroups(string keyword)
+    {
+        var term = keyword.Trim();
+        if (string.IsNullOrWhiteSpace(term) || term.Length <= 1) return Array.Empty<AdGroup>();
+
+        try
+        {
+            var list = new List<AdGroup>();
+            foreach (var baseDn in GetSearchBases())
+            {
+                using var root = new DirectoryEntry($"LDAP://{baseDn}");
+                using var ds = new DirectorySearcher(root)
+                {
+                    Filter = $"(&(objectClass=group)(|(cn=*{EscapeLdap(term)}*)(name=*{EscapeLdap(term)}*)(sAMAccountName=*{EscapeLdap(term)}*)))",
+                    PageSize = 200
+                };
+                ds.PropertiesToLoad.AddRange(new[] { "cn", "name", "distinguishedName" });
+                foreach (SearchResult r in ds.FindAll())
+                {
+                    list.Add(new AdGroup
+                    {
+                        Name = GetProperty(r, "cn", GetProperty(r, "name", string.Empty)),
+                        DistinguishedName = GetProperty(r, "distinguishedName", string.Empty)
+                    });
+                }
+            }
+
+            return list.OrderBy(g => g.Name, StringComparer.OrdinalIgnoreCase).ToList();
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException("ADグループ検索の実行中にエラーが発生しました。", ex);
+        }
+    }
+
+    public IReadOnlyList<AdUser> GetGroupMembers(string groupName)
+    {
+        try
+        {
+            var groupDn = ResolveGroupDistinguishedName(groupName);
+            if (string.IsNullOrWhiteSpace(groupDn)) return Array.Empty<AdUser>();
+
+            var members = new List<AdUser>();
+            foreach (var baseDn in GetSearchBases())
+            {
+                using var root = new DirectoryEntry($"LDAP://{baseDn}");
+                using var ds = new DirectorySearcher(root)
+                {
+                    Filter = $"(&(objectClass=user)(!(objectClass=computer))(memberOf={EscapeLdap(groupDn)}))",
+                    PageSize = 200
+                };
+                AddUserProperties(ds);
+                foreach (SearchResult r in ds.FindAll())
+                {
+                    var user = DirectoryServicesUserMapper.MapUser(r);
+                    if (IsExcluded(user.SamAccountName)) continue;
+                    members.Add(user);
+                }
+            }
+
+            return members.OrderBy(u => u.SamAccountName, StringComparer.OrdinalIgnoreCase).ToList();
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException("ADグループメンバー取得の実行中にエラーが発生しました。", ex);
+        }
+    }
+
     public ChangeSet BuildChangeSet(AdUser current, string newMail, string newDepartment, string newTitle)
     {
         var cs = new ChangeSet { TargetSamAccountName = current.SamAccountName };
@@ -84,6 +157,43 @@ public class DirectoryServicesAdReadService : IAdService
         if (!string.Equals(current.Title, newTitle, StringComparison.Ordinal)) cs.Changes.Add(new("Title", current.Title, newTitle));
         return cs;
     }
+
+
+    private string BuildUserSearchFilter(AdUserSearchCriteria criteria)
+    {
+        var keyword = EscapeLdap(criteria.Keyword.Trim());
+        var filters = new List<string>
+        {
+            "(objectClass=user)",
+            "(!(objectClass=computer))",
+            $"(|(sAMAccountName=*{keyword}*)(displayName=*{keyword}*)(name=*{keyword}*)(mail=*{keyword}*))"
+        };
+
+        if (!string.IsNullOrWhiteSpace(criteria.Department)) filters.Add($"(department=*{EscapeLdap(criteria.Department.Trim())}*)");
+        if (criteria.HasMail == true) filters.Add("(mail=*)");
+        if (criteria.HasMail == false) filters.Add("(!(mail=*))");
+        if (!criteria.IncludeDisabled) filters.Add("(!(userAccountControl:1.2.840.113556.1.4.803:=2))");
+
+        return $"(&{string.Concat(filters)})";
+    }
+
+    private string ResolveGroupDistinguishedName(string groupName)
+    {
+        if (groupName.Contains("=", StringComparison.Ordinal) && groupName.Contains(",", StringComparison.Ordinal)) return groupName;
+
+        foreach (var group in SearchGroups(groupName))
+        {
+            if (string.Equals(group.Name, groupName, StringComparison.OrdinalIgnoreCase)) return group.DistinguishedName;
+        }
+
+        return SearchGroups(groupName).FirstOrDefault()?.DistinguishedName ?? string.Empty;
+    }
+
+    private static void AddUserProperties(DirectorySearcher ds)
+        => ds.PropertiesToLoad.AddRange(new[] { "samAccountName", "displayName", "name", "mail", "department", "title", "distinguishedName", "memberOf", "lastLogonTimestamp", "accountExpires", "userAccountControl" });
+
+    private static string GetProperty(SearchResult r, string name, string fallback)
+        => r.Properties.Contains(name) && r.Properties[name].Count > 0 ? r.Properties[name][0]?.ToString() ?? fallback : fallback;
 
     private IEnumerable<string> GetSearchBases() => Policy.AllowedTargetOuDns.Count > 0 ? Policy.AllowedTargetOuDns : new[] { GetDefaultNamingContext() };
 

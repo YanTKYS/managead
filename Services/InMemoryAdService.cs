@@ -65,11 +65,23 @@ public partial class InMemoryAdService : IAdService, IAdFutureOperations
         new() { UserSamAccountName = "sato.taro", ComputerName = "PC-001", GpoDisplayName = "Security Baseline", Enforced = false, Scope = "Computer" }
     };
 
-    public IReadOnlyList<AdUser> SearchUsers(string keyword) => _users.Values.Where(u =>
-        u.SamAccountName.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
-        u.DisplayName.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
-        u.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
-        u.Mail.Contains(keyword, StringComparison.OrdinalIgnoreCase)).ToList();
+    public IReadOnlyList<AdUser> SearchUsers(string keyword)
+        => SearchUsers(new AdUserSearchCriteria { Keyword = keyword });
+
+    public IReadOnlyList<AdUser> SearchUsers(AdUserSearchCriteria criteria)
+    {
+        var keyword = criteria.Keyword.Trim();
+        return _users.Values.Where(u =>
+            (keyword.Length == 0 ||
+                u.SamAccountName.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
+                u.DisplayName.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
+                u.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
+                u.Mail.Contains(keyword, StringComparison.OrdinalIgnoreCase)) &&
+            (string.IsNullOrWhiteSpace(criteria.Department) || u.Department.Contains(criteria.Department.Trim(), StringComparison.OrdinalIgnoreCase)) &&
+            (!criteria.HasMail.HasValue || criteria.HasMail.Value == !string.IsNullOrWhiteSpace(u.Mail)) &&
+            (criteria.IncludeDisabled || u.Enabled))
+            .ToList();
+    }
 
     public AdUser? GetUser(string samAccountName) => _users.TryGetValue(samAccountName, out var user) ? user : null;
 
@@ -152,6 +164,19 @@ public partial class InMemoryAdService : IAdService, IAdFutureOperations
 
 
     public IReadOnlyList<AdGroup> GetGroups() => _groups;
+
+    public IReadOnlyList<AdGroup> SearchGroups(string keyword)
+    {
+        var term = keyword.Trim();
+        if (term.Length <= 1) return Array.Empty<AdGroup>();
+        return _groups.Where(g =>
+            g.Name.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+            g.DistinguishedName.Contains(term, StringComparison.OrdinalIgnoreCase))
+            .OrderBy(g => g.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    public IReadOnlyList<AdUser> GetGroupMembers(string groupName) => GetDirectGroupMembers(groupName);
 
     public IReadOnlyList<AdUser> GetDirectGroupMembers(string groupName)
     {
