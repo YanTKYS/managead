@@ -26,6 +26,7 @@
     ],
     "EditableAttributes": ["mail", "department", "title"],
     "LogPath": "C:\\ProgramData\\ManageAdTool\\logs\\audit.jsonl",
+    "MaxSearchResults": 200,
     "UserDetailDisplayAttributes": [
       "SamAccountName",
       "DisplayName",
