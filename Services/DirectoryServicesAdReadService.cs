@@ -85,20 +85,9 @@ public class DirectoryServicesAdReadService : IAdService
         return cs;
     }
 
-    public virtual void UpdateAttributes(string samAccountName, string mail, string department, string title)
-        => throw new NotSupportedException("DirectoryReadOnly mode does not support updates.");
+    private IEnumerable<string> GetSearchBases() => _policy.AllowedTargetOuDns.Count > 0 ? _policy.AllowedTargetOuDns : new[] { GetDefaultNamingContext() };
 
-    protected IEnumerable<string> GetSearchBases() => Policy.AllowedTargetOuDns.Count > 0 ? Policy.AllowedTargetOuDns : new[] { GetDefaultNamingContext() };
-
-    protected bool IsExcluded(string sam) => Policy.ExcludedSamAccountNames.Any(x => string.Equals(x, sam, StringComparison.OrdinalIgnoreCase));
-
-    protected bool IsInAllowedTargetOu(string distinguishedName)
-        => Policy.AllowedTargetOuDns.Any(ou => IsUnderOu(distinguishedName, ou));
-
-    protected static bool IsUnderOu(string distinguishedName, string ouDn)
-        => !string.IsNullOrWhiteSpace(distinguishedName)
-            && !string.IsNullOrWhiteSpace(ouDn)
-            && distinguishedName.EndsWith($",{ouDn}", StringComparison.OrdinalIgnoreCase);
+    private bool IsExcluded(string sam) => _policy.ExcludedSamAccountNames.Any(x => string.Equals(x, sam, StringComparison.OrdinalIgnoreCase));
 
     private static string GetDefaultNamingContext()
     {
@@ -108,5 +97,5 @@ public class DirectoryServicesAdReadService : IAdService
         return value;
     }
 
-    protected static string EscapeLdap(string value) => value.Replace("\\", "\\5c").Replace("*", "\\2a").Replace("(", "\\28").Replace(")", "\\29").Replace("\0", "\\00");
+    private static string EscapeLdap(string value) => value.Replace("\\", "\\5c").Replace("*", "\\2a").Replace("(", "\\28").Replace(")", "\\29").Replace("\0", "\\00");
 }

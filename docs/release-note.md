@@ -5,7 +5,7 @@
 ManageAdTool MVP 初版（InMemory / DirectoryReadOnly 対応）
 
 ### Note
-- WPFベースのMVP画面を追加（ユーザー検索、詳細表示、mail/department/title編集、差分確認、実行前確認、監査ログ出力）。
+- WPFベースのMVP画面を追加（ユーザー検索、詳細表示、mail/department/title比較、差分確認、処理結果欄）。
 - InMemoryAdService を追加し、閉域検証向けにデモ運用を可能化。
 - DirectoryServicesAdReadService（読み取り専用）を追加し、実AD検索/詳細/所属グループ表示に対応。
 - AppPolicy / appsettings.json による AllowedTargetOuDns・ExcludedSamAccountNames・EditableAttributes・ServiceMode などの制御を実装。
@@ -13,11 +13,11 @@ ManageAdTool MVP 初版（InMemory / DirectoryReadOnly 対応）
 
 ## v0.2.0
 ### Title
-ManageAdTool DirectoryLimitedWrite 検証OU限定書き込み対応
+ManageAdTool 参照専用AD確認支援ツール 強化版
 
 ### Note
-- DirectoryLimitedWrite ServiceMode を追加し、検証OU配下のユーザーに対する mail / department / title の3属性限定更新に対応。
-- DirectoryReadOnly は引き続き完全参照モードとして維持。
-- 更新前の再取得、許可OU/除外アカウント確認、差分確認必須、更新後再取得結果表示、serviceMode付き監査ログを追加。
-- グループ操作、GPO操作、無効化、退職処理、OU移動、一括処理は未実装のまま維持。
-- DirectoryLimitedWrite 用 sample appsettings と検証手順書を追加。
+- 実AD更新ツールではなく、参照専用のAD確認支援ツールとして育てる方針に変更。
+- 書き込み用ServiceMode / DirectoryServicesAdWriteService は実装しない方針。
+- DirectoryReadOnly による実ADユーザー情報取得・所属グループ取得・検索結果件数表示を継続強化。
+- v0.2.0 はユーザー詳細表示項目拡充、グループ検索、グループメンバー一覧、CSV出力、参照ログなどの参照機能強化を検討。
+- グループ追加・削除、GPO編集、ユーザー無効化、退職処理、OU移動、一括更新は未実装のまま維持。

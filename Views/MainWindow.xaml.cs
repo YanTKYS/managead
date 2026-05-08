@@ -1,4 +1,3 @@
-using System.Security.Principal;
 using System.Windows;
 using ManageAdTool.Models;
 using ManageAdTool.Services;
@@ -9,7 +8,6 @@ public partial class MainWindow : Window
 {
     private readonly AppPolicy _policy = AppPolicyProvider.Load();
     private readonly IAdService _ad;
-    private readonly AuditLogService _audit;
     private readonly UserEditPolicyService _policyService = new();
     private readonly UserEditUseCase _useCase;
     private AdUser? _selected;
@@ -18,13 +16,9 @@ public partial class MainWindow : Window
 
     public MainWindow()
     {
-        _ad = _policy.ServiceMode switch
-        {
-            var mode when string.Equals(mode, "DirectoryReadOnly", StringComparison.OrdinalIgnoreCase) => new DirectoryServicesAdReadService(_policy),
-            var mode when string.Equals(mode, "DirectoryLimitedWrite", StringComparison.OrdinalIgnoreCase) => new DirectoryServicesAdLimitedWriteService(_policy),
-            _ => new InMemoryAdService()
-        };
-        _audit = new AuditLogService(_policy.LogPath);
+        _ad = string.Equals(_policy.ServiceMode, "DirectoryReadOnly", StringComparison.OrdinalIgnoreCase)
+            ? new DirectoryServicesAdReadService(_policy)
+            : new InMemoryAdService();
         _useCase = new UserEditUseCase(_ad);
         InitializeComponent();
         ApplyEditability(false, "ユーザー未選択");
@@ -100,7 +94,7 @@ public partial class MainWindow : Window
         DepartmentBox.IsEnabled = canEdit && !readOnlyMode;
         TitleBox.IsEnabled = canEdit && !readOnlyMode;
         PreviewButton.IsEnabled = canEdit && !readOnlyMode;
-        ExecuteButton.IsEnabled = canEdit && !readOnlyMode;
+        ExecuteButton.IsEnabled = false;
         EditBlockedReasonText.Text = reason;
     }
 
@@ -108,95 +102,12 @@ public partial class MainWindow : Window
     {
         if (!_canEdit || _selected is null) return;
         _pending = _useCase.BuildChangeSet(_selected, MailBox.Text.Trim(), DepartmentBox.Text.Trim(), TitleBox.Text.Trim());
-        OutputBox.Text = FormatChangePreview(_pending, "属性更新");
+        OutputBox.Text = FormatChangePreview(_pending, "属性比較");
     }
 
     private void Execute_Click(object sender, RoutedEventArgs e)
     {
-        if (string.Equals(_policy.ServiceMode, "DirectoryReadOnly", StringComparison.OrdinalIgnoreCase))
-        {
-            OutputBox.Text = "DirectoryReadOnly モードのため更新は実行できません";
-            return;
-        }
-
-        EvaluateEditability();
-        if (_selected is null)
-        {
-            OutputBox.Text = "更新不可: ユーザー未選択";
-            return;
-        }
-
-        if (_pending is null || _pending.Changes.Count == 0)
-        {
-            OutputBox.Text = "更新不可: 差分確認を実施してください";
-            return;
-        }
-
-        if (!_canEdit)
-        {
-            OutputBox.Text = $"更新不可: {EditBlockedReasonText.Text}";
-            return;
-        }
-
-        var requestedMail = MailBox.Text.Trim();
-        var requestedDepartment = DepartmentBox.Text.Trim();
-        var requestedTitle = TitleBox.Text.Trim();
-        if (!PendingMatchesRequestedValues(_pending, _selected, requestedMail, requestedDepartment, requestedTitle))
-        {
-            OutputBox.Text = "更新不可: 差分確認後に入力値が変更されています。再度、差分確認を実施してください";
-            return;
-        }
-
-        AdUser? current;
-        ChangeSet currentChangeSet;
-        try
-        {
-            current = _ad.GetUser(_selected.SamAccountName);
-            if (current is null)
-            {
-                OutputBox.Text = "更新不可: 対象ユーザーが存在しません";
-                return;
-            }
-
-            var policyResult = _policyService.Evaluate(current, _policy);
-            if (!policyResult.canEdit)
-            {
-                OutputBox.Text = $"更新不可: {policyResult.reason}";
-                return;
-            }
-
-            currentChangeSet = _useCase.BuildChangeSet(current, requestedMail, requestedDepartment, requestedTitle);
-            if (currentChangeSet.Changes.Count == 0)
-            {
-                OutputBox.Text = "差分なし（更新不要）";
-                return;
-            }
-        }
-        catch (Exception ex)
-        {
-            OutputBox.Text = $"更新前確認失敗: {ex.Message}";
-            return;
-        }
-
-        var confirm = MessageBox.Show("表示中の差分を更新します。実行しますか？", "確認", MessageBoxButton.YesNo, MessageBoxImage.Warning);
-        if (confirm != MessageBoxResult.Yes) return;
-
-        var executor = WindowsIdentity.GetCurrent().Name;
-        var opId = Guid.NewGuid().ToString("N");
-        try
-        {
-            _useCase.UpdateAttributes(current.SamAccountName, requestedMail, requestedDepartment, requestedTitle);
-            var updated = _ad.GetUser(current.SamAccountName);
-            _audit.WriteExtended(opId, executor, Environment.MachineName, current.DistinguishedName, current.SamAccountName, Environment.UserDomainName, "1.0.0", "UpdateUserAttributes", currentChangeSet.Changes, success: true, serviceMode: _policy.ServiceMode);
-            _selected = updated ?? current;
-            _pending = null;
-            OutputBox.Text = FormatUpdateSuccess(updated ?? current);
-        }
-        catch (Exception ex)
-        {
-            _audit.WriteExtended(opId, executor, Environment.MachineName, current.DistinguishedName, current.SamAccountName, Environment.UserDomainName, "1.0.0", "UpdateUserAttributes", currentChangeSet.Changes, success: false, error: ex.Message, serviceMode: _policy.ServiceMode);
-            OutputBox.Text = $"更新失敗: {ex.Message}";
-        }
+        OutputBox.Text = "参照専用ツールのため、AD更新は実行できません";
     }
 
     private static bool PendingMatchesRequestedValues(ChangeSet pending, AdUser selected, string mail, string department, string title)

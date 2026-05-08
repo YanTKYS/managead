@@ -1,10 +1,15 @@
 # デプロイ手順（閉域端末向け）
 
-本手順は ManageAdTool v0.1.0 を閉域端末へ配置し、初回確認を行うための手順です。
+本手順は ManageAdTool を閉域端末へ配置し、初回確認を行うための手順です。
+本ツールは参照専用のAD確認支援ツールであり、実AD更新は行いません。
 
 ## 1. リリース成果物の取得
 1. GitHub Releases から対象バージョンの ZIP 成果物を取得する
 2. ハッシュ値（必要に応じて）を確認する
+
+## CIビルド運用
+- 通常ビルドは PR 作成時には実行せず、`main` への merge 後の push を契機に実行します。
+- 必要に応じて GitHub Actions の `workflow_dispatch` から手動実行します。
 
 ## 2. 閉域端末への持ち込み
 1. 許可された媒体で ZIP 成果物を閉域端末へ搬送する
@@ -20,23 +25,20 @@
 1. 展開先直下で利用モードに応じた sample appsettings をコピーして `appsettings.json` を作成する
    - `appsettings.InMemory.sample.json`
    - `appsettings.DirectoryReadOnly.sample.json`
-   - `appsettings.DirectoryLimitedWrite.sample.json`
 2. 環境に合わせて OU DN / 除外ユーザー / ログ出力先を調整する
-3. DirectoryReadOnly / DirectoryLimitedWrite 利用時は `AllowedTargetOuDns` を検証用OUのみに限定する
+3. DirectoryReadOnly 利用時は `AllowedTargetOuDns` を検証用OUのみに限定する
 
 ## 5. InMemory での初回起動確認
 1. `ServiceMode` を `InMemory` に設定して起動する
 2. 展開先直下の `ManageAdTool.exe` を起動する
 3. テストユーザー検索とユーザー詳細表示ができることを確認する
+4. 更新実行機能が無効化されていることを確認する
 
 ## 6. DirectoryReadOnly 検証への移行
 - 実AD接続の読み取り専用検証は `docs/validation-readonly.md` を参照して実施する
 - DirectoryReadOnly では更新操作は実行できない（更新ボタン無効）
 
-## 7. DirectoryLimitedWrite 検証への移行
-- 検証OU限定・3属性限定の書き込み検証は `docs/validation-limited-write.md` を参照して実施する
-- 本番ユーザーでは実施しない
-
 ## 注意
-- DirectoryLimitedWrite の更新対象は `mail` / `department` / `title` の3属性のみ。
-- グループ操作、GPO操作、無効化、退職処理、OU移動、一括処理はMVP範囲外。
+- 本ツールは実AD更新を行いません。
+- 管理者権限ユーザーやサービスアカウントを使った更新実行は対象外です。
+- グループ操作、GPO編集、無効化、退職処理、OU移動、一括更新はMVP範囲外です。
