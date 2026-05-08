@@ -1,6 +1,7 @@
 using System.IO;
 using System.Text;
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Threading;
 using ManageAdTool.Models;
 using ManageAdTool.Services;
@@ -12,10 +13,12 @@ public partial class MainWindow : Window
 {
     private readonly AppPolicy _policy = AppPolicyProvider.Load();
     private readonly IAdService _ad;
+    private readonly IAdUserAttributeWriteService? _writeService;
     private readonly UserEditPolicyService _policyService = new();
     private readonly UserAttributeCompareUseCase _useCase;
     private readonly ReferenceAuditLogger _auditLogger;
     private readonly AuthAuditLogger _authAuditLogger;
+    private readonly WriteAuditLogger _writeAuditLogger;
     private readonly EditorAuthService _authService = new();
     private readonly MainWindowViewModel _vm;
     private readonly DispatcherTimer _sessionTimer;
@@ -23,14 +26,18 @@ public partial class MainWindow : Window
     private AdUser? _selected;
     private ChangeSet? _pending;
 
+    private static readonly string Executor =
+        $"{Environment.UserDomainName}\\{Environment.UserName}";
+
     public MainWindow()
     {
-        _ad = string.Equals(_policy.ServiceMode, "DirectoryReadOnly", StringComparison.OrdinalIgnoreCase)
-            ? new DirectoryServicesAdReadService(_policy)
-            : new InMemoryAdService();
+        var isReadOnly = string.Equals(_policy.ServiceMode, "DirectoryReadOnly", StringComparison.OrdinalIgnoreCase);
+        _ad = isReadOnly ? new DirectoryServicesAdReadService(_policy) : new InMemoryAdService();
+        _writeService = isReadOnly ? new DirectoryServicesAdUserAttributeWriteService() : null;
         _useCase = new UserAttributeCompareUseCase(_ad);
         _auditLogger = new ReferenceAuditLogger(_policy.LogPath);
         _authAuditLogger = new AuthAuditLogger(_policy.LogPath);
+        _writeAuditLogger = new WriteAuditLogger(_policy.LogPath);
         _vm = new MainWindowViewModel(_policy);
         _sessionTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(30) };
         _sessionTimer.Tick += SessionTimer_Tick;
@@ -85,6 +92,7 @@ public partial class MainWindow : Window
     {
         var user = _vm.CurrentEditorUser;
         _vm.EndSession();
+        _pending = null;
         if (_selected is not null) EvaluateEditability();
         OutputBox.Text = "ログアウトしました";
         if (!string.IsNullOrEmpty(user))
@@ -106,6 +114,7 @@ public partial class MainWindow : Window
             var results = _ad.SearchUsers(criteria);
             _selected = null;
             _pending = null;
+            _vm.SetPendingReady(false);
             _lastSearchResults = results;
             SearchResultGrid.ItemsSource = results;
             UserDetailBox.Text = string.Empty;
@@ -127,9 +136,10 @@ public partial class MainWindow : Window
     private void SearchResultGrid_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
     {
         _selected = SearchResultGrid.SelectedItem as AdUser;
+        _pending = null;
+        _vm.SetPendingReady(false);
         if (_selected is null) return;
 
-        _pending = null;
         MailBox.Text = _selected.Mail;
         DepartmentBox.Text = _selected.Department;
         TitleBox.Text = _selected.Title;
@@ -152,6 +162,15 @@ public partial class MainWindow : Window
         }
 
         EvaluateEditability();
+    }
+
+    private void EditInput_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+    {
+        if (_pending is not null)
+        {
+            _pending = null;
+            _vm.SetPendingReady(false);
+        }
     }
 
     private void GroupSearch_Click(object sender, RoutedEventArgs e)
@@ -223,12 +242,226 @@ public partial class MainWindow : Window
     {
         if (!_vm.CanEdit || _selected is null) return;
         _pending = _useCase.BuildChangeSet(_selected, MailBox.Text.Trim(), DepartmentBox.Text.Trim(), TitleBox.Text.Trim());
-        OutputBox.Text = FormatChangePreview(_pending, "属性比較");
+        _vm.SetPendingReady(_pending.Changes.Count > 0);
+        OutputBox.Text = FormatChangePreview(_pending, "差分確認");
     }
 
     private void Execute_Click(object sender, RoutedEventArgs e)
     {
-        OutputBox.Text = "参照専用ツールのため、AD更新は実行できません";
+        if (_writeService is null)
+        {
+            OutputBox.Text = "AD更新はこのモードでは使用できません（DirectoryReadOnly が必要です）";
+            return;
+        }
+
+        if (!_vm.IsEditSessionActive)
+        {
+            OutputBox.Text = "編集セッションが期限切れです。再ログインしてください。";
+            return;
+        }
+
+        if (_policy.AllowedTargetOuDns.Count == 0)
+        {
+            OutputBox.Text = "AllowedTargetOuDns が未設定のため更新できません。appsettings.json を確認してください。";
+            return;
+        }
+
+        if (_selected is null) return;
+
+        // Build current ChangeSet from inputs
+        var changeSet = _useCase.BuildChangeSet(_selected, MailBox.Text.Trim(), DepartmentBox.Text.Trim(), TitleBox.Text.Trim());
+
+        var emptyUpdates = changeSet.Changes.Where(c => string.IsNullOrWhiteSpace(c.After)).ToList();
+        if (emptyUpdates.Count > 0)
+        {
+            OutputBox.Text = $"空文字への更新は禁止されています: {string.Join(", ", emptyUpdates.Select(c => c.Field))}（属性クリアは将来機能です）";
+            return;
+        }
+
+        if (changeSet.Changes.Count == 0)
+        {
+            OutputBox.Text = "差分なし（更新不要）";
+            _vm.SetPendingReady(false);
+            return;
+        }
+
+        // Re-auth dialog
+        var reAuthDlg = new ReAuthDialog(_vm.CurrentEditorUser) { Owner = this };
+        if (reAuthDlg.ShowDialog() != true) return;
+
+        var reAuthUser = reAuthDlg.DomainUser!;
+        var reAuthPassword = reAuthDlg.Password!;
+
+        try
+        {
+            // Re-authenticate and verify Domain Admins membership
+            Mouse.OverrideCursor = Cursors.Wait;
+            var authResult = _authService.TryAuthenticate(reAuthUser, reAuthPassword, _policy);
+
+            if (!authResult.AuthSucceeded)
+            {
+                OutputBox.Text = $"再認証失敗: {authResult.ErrorMessage}";
+                _authAuditLogger.Log("ReAuthFailed", reAuthUser, success: false, authResult.ErrorMessage ?? string.Empty);
+                return;
+            }
+
+            if (!authResult.IsDomainAdmin)
+            {
+                OutputBox.Text = $"再認証失敗: {authResult.ResolvedUser} は Domain Admins のメンバーではありません";
+                _authAuditLogger.Log("ReAuthDenied", authResult.ResolvedUser, success: false, "Domain Admins 非メンバー");
+                return;
+            }
+
+            Mouse.OverrideCursor = null;
+
+            // Confirm dialog
+            var confirmDlg = new ConfirmUpdateDialog(changeSet, _selected.DistinguishedName, authResult.ResolvedUser, Executor) { Owner = this };
+            if (confirmDlg.ShowDialog() != true) return;
+
+            Mouse.OverrideCursor = Cursors.Wait;
+
+            // Pre-write: re-fetch user from AD
+            AdUser? currentUser;
+            try
+            {
+                currentUser = _ad.GetUser(_selected.SamAccountName);
+            }
+            catch (Exception ex)
+            {
+                OutputBox.Text = $"更新前の再取得に失敗しました: {ex.Message}";
+                LogWriteFailure(changeSet, _selected.DistinguishedName, authResult.ResolvedUser, FormatErrorForLog(ex), false, false);
+                return;
+            }
+
+            if (currentUser is null)
+            {
+                OutputBox.Text = "更新対象ユーザーがADに見つかりません。更新を中止しました。";
+                LogWriteFailure(changeSet, _selected.DistinguishedName, authResult.ResolvedUser, "対象ユーザーがADに存在しない", false, false);
+                return;
+            }
+
+            var ouMatched = _policy.AllowedTargetOuDns.Any(ou => IsUnderOu(currentUser.DistinguishedName, ou));
+            if (!ouMatched)
+            {
+                OutputBox.Text = "許可OU外のユーザーのため更新できません（再取得後の確認）";
+                LogWriteFailure(changeSet, currentUser.DistinguishedName, authResult.ResolvedUser, "許可OU外（再取得確認）", false, false);
+                return;
+            }
+
+            var excluded = _policy.ExcludedSamAccountNames.Any(x => string.Equals(x, currentUser.SamAccountName, StringComparison.OrdinalIgnoreCase));
+            if (excluded)
+            {
+                OutputBox.Text = "除外アカウントのため更新できません（再取得後の確認）";
+                LogWriteFailure(changeSet, currentUser.DistinguishedName, authResult.ResolvedUser, "除外アカウント（再取得確認）", true, true);
+                return;
+            }
+
+            // Check AD current values match ChangeSet.Before
+            foreach (var change in changeSet.Changes)
+            {
+                var adValue = change.Field switch
+                {
+                    "Mail" => currentUser.Mail,
+                    "Department" => currentUser.Department,
+                    "Title" => currentUser.Title,
+                    _ => null
+                };
+                if (!string.Equals(adValue, change.Before, StringComparison.Ordinal))
+                {
+                    OutputBox.Text = $"AD上の値が変更されているため更新を中止しました（{change.Field}: AD現在値 '{adValue}' / 確認時点値 '{change.Before}'）";
+                    LogWriteFailure(changeSet, currentUser.DistinguishedName, authResult.ResolvedUser,
+                        $"AD値不一致 field={change.Field}", true, false);
+                    return;
+                }
+            }
+
+            // Execute write
+            UpdateResult writeResult;
+            try
+            {
+                writeResult = _writeService.UpdateUserAttributes(currentUser.DistinguishedName, changeSet, reAuthUser, reAuthPassword);
+            }
+            catch (Exception ex)
+            {
+                OutputBox.Text = $"更新に失敗しました。詳細は監査ログを確認してください。（{ex.Message}）";
+                LogWriteFailure(changeSet, currentUser.DistinguishedName, authResult.ResolvedUser,
+                    FormatErrorForLog(ex), true, false);
+                return;
+            }
+
+            if (!writeResult.Success)
+            {
+                OutputBox.Text = $"更新に失敗しました: {writeResult.ErrorMessage}";
+                LogWriteFailure(changeSet, currentUser.DistinguishedName, authResult.ResolvedUser,
+                    writeResult.ErrorMessage ?? "不明なエラー", true, false);
+                return;
+            }
+
+            // Post-write: re-fetch to verify
+            AdUser? verifiedUser = null;
+            try { verifiedUser = _ad.GetUser(currentUser.SamAccountName); } catch { }
+
+            var auditEntry = new WriteAuditEntry
+            {
+                ServiceMode = _policy.ServiceMode,
+                Executor = Executor,
+                MachineName = Environment.MachineName,
+                EditorUser = authResult.ResolvedUser,
+                TargetSamAccountName = currentUser.SamAccountName,
+                TargetDn = currentUser.DistinguishedName,
+                Changes = changeSet.Changes,
+                Success = true,
+                VerifiedAfterUpdate = verifiedUser is null ? null : new Dictionary<string, string>
+                {
+                    ["mail"] = verifiedUser.Mail,
+                    ["department"] = verifiedUser.Department,
+                    ["title"] = verifiedUser.Title
+                },
+                AllowedTargetOuMatched = true,
+                ExcludedAccountMatched = false
+            };
+            _writeAuditLogger.Log(auditEntry);
+            _authAuditLogger.Log("WriteExecuted", authResult.ResolvedUser, success: true,
+                $"target={currentUser.SamAccountName}");
+
+            // Update UI with verified values
+            _selected = verifiedUser ?? currentUser;
+            MailBox.Text = _selected.Mail;
+            DepartmentBox.Text = _selected.Department;
+            TitleBox.Text = _selected.Title;
+            UserDetailBox.Text = FormatUserDetails(_selected);
+            _pending = null;
+            _vm.SetPendingReady(false);
+
+            var diffText = string.Join(", ", changeSet.Changes.Select(c => $"{c.Field}: 「{c.Before}」→「{c.After}」"));
+            var verifiedText = verifiedUser is not null
+                ? $"\nAD再取得: mail={verifiedUser.Mail} / department={verifiedUser.Department} / title={verifiedUser.Title}"
+                : "\n（AD再取得失敗 - 監査ログで確認してください）";
+            OutputBox.Text = $"更新成功: {currentUser.SamAccountName}\n{diffText}{verifiedText}\n監査ログ: write-audit.jsonl";
+        }
+        finally
+        {
+            Mouse.OverrideCursor = null;
+        }
+    }
+
+    private void LogWriteFailure(ChangeSet changeSet, string targetDn, string editorUser, string error,
+        bool ouMatched, bool excludedMatched)
+    {
+        _writeAuditLogger.Log(new WriteAuditEntry
+        {
+            ServiceMode = _policy.ServiceMode,
+            Executor = Executor,
+            MachineName = Environment.MachineName,
+            EditorUser = editorUser,
+            TargetSamAccountName = changeSet.TargetSamAccountName,
+            TargetDn = targetDn,
+            Changes = changeSet.Changes,
+            Success = false,
+            Error = error,
+            AllowedTargetOuMatched = ouMatched,
+            ExcludedAccountMatched = excludedMatched
+        });
     }
 
     private void ExportSearchResults_Click(object sender, RoutedEventArgs e)
@@ -268,12 +501,7 @@ public partial class MainWindow : Window
         {
             Keyword = SearchBox.Text.Trim(),
             Department = DepartmentFilterBox.Text.Trim(),
-            HasMail = MailFilterBox.SelectedIndex switch
-            {
-                1 => true,
-                2 => false,
-                _ => null
-            },
+            HasMail = MailFilterBox.SelectedIndex switch { 1 => true, 2 => false, _ => null },
             IncludeDisabled = IncludeDisabledUsersBox.IsChecked == true
         };
 
@@ -319,33 +547,16 @@ public partial class MainWindow : Window
         {
             string.Join(",", new[]
             {
-                "SamAccountName",
-                "DisplayName",
-                "Name",
-                "Mail",
-                "Department",
-                "Title",
-                "Enabled",
-                "UserAccountControl",
-                "LastLogonTimestamp",
-                "AccountExpires",
-                "DistinguishedName"
+                "SamAccountName", "DisplayName", "Name", "Mail", "Department", "Title",
+                "Enabled", "UserAccountControl", "LastLogonTimestamp", "AccountExpires", "DistinguishedName"
             }.Select(CsvEscape))
         };
 
         lines.AddRange(users.Select(user => string.Join(",", new[]
         {
-            user.SamAccountName,
-            user.DisplayName,
-            user.Name,
-            user.Mail,
-            user.Department,
-            user.Title,
-            FormatBool(user.Enabled),
-            FormatNullable(user.UserAccountControl),
-            FormatDateTime(user.LastLogonAt),
-            FormatDateTime(user.AccountExpiresAt),
-            user.DistinguishedName
+            user.SamAccountName, user.DisplayName, user.Name, user.Mail, user.Department, user.Title,
+            FormatBool(user.Enabled), FormatNullable(user.UserAccountControl),
+            FormatDateTime(user.LastLogonAt), FormatDateTime(user.AccountExpiresAt), user.DistinguishedName
         }.Select(CsvEscape))));
 
         return string.Join(Environment.NewLine, lines) + Environment.NewLine;
@@ -354,34 +565,28 @@ public partial class MainWindow : Window
     private static string FormatChangePreview(ChangeSet cs, string operation)
     {
         if (cs.Changes.Count == 0) return "差分なし（更新不要）";
-        var lines = new List<string> { $"対象: {cs.TargetSamAccountName}", $"実行予定処理: {operation}" };
-        lines.AddRange(cs.Changes.Select(c => $"- {c.Field}: '{c.Before}' => '{c.After}'"));
+        var lines = new List<string> { $"対象: {cs.TargetSamAccountName}", $"操作: {operation}" };
+        lines.AddRange(cs.Changes.Select(c => $"- {c.Field}: 「{c.Before}」→「{c.After}」"));
         return string.Join(Environment.NewLine, lines);
     }
 
     private static string FormatCriteria(AdUserSearchCriteria criteria)
     {
-        var mail = criteria.HasMail switch
-        {
-            true => "あり",
-            false => "なし",
-            _ => "指定なし"
-        };
+        var mail = criteria.HasMail switch { true => "あり", false => "なし", _ => "指定なし" };
         return $"keyword={criteria.Keyword}; department={criteria.Department}; mail={mail}; includeDisabled={criteria.IncludeDisabled}";
     }
 
     private static string FormatDateTime(DateTimeOffset? value)
         => value.HasValue ? value.Value.LocalDateTime.ToString("yyyy-MM-dd HH:mm:ss") : "(未設定)";
 
-    private static string FormatNullable(int? value)
-        => value.HasValue ? value.Value.ToString() : "(未取得)";
-
-    private static string FormatBool(bool value)
-        => value ? "True" : "False";
-
-    private static string CsvEscape(string value)
-        => $"\"{value.Replace("\"", "\"\"")}\"";
-
+    private static string FormatNullable(int? value) => value.HasValue ? value.Value.ToString() : "(未取得)";
+    private static string FormatBool(bool value) => value ? "True" : "False";
+    private static string CsvEscape(string value) => $"\"{value.Replace("\"", "\"\"")}\"";
     private static string FormatErrorForLog(Exception ex)
         => ex.InnerException is null ? ex.Message : $"{ex.Message} / {ex.InnerException.Message}";
+
+    private static bool IsUnderOu(string distinguishedName, string ouDn)
+        => !string.IsNullOrWhiteSpace(distinguishedName)
+            && !string.IsNullOrWhiteSpace(ouDn)
+            && distinguishedName.EndsWith($",{ouDn}", StringComparison.OrdinalIgnoreCase);
 }

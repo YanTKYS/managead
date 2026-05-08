@@ -37,9 +37,27 @@
 - MainWindowViewModel にセッション状態プロパティ・メソッドを追加。
 - docs/roadmap.md を追加。
 
+## v0.4.0 完了
+- ユーザー属性限定編集機能の追加（mail / department / title のみ・検証版）。
+- 更新前: 差分確認 → 再認証ダイアログ（パスワード再入力） → 実行前確認ダイアログ → AD再取得・整合性チェック。
+- 更新後: AD再取得して処理結果欄に表示。
+- 書き込み監査ログ（write-audit.jsonl）の追加（パスワード非記録）。
+- DirectoryServicesAdUserAttributeWriteService / IAdUserAttributeWriteService を追加。
+- WriteAuditLogger / WriteAuditEntry / UpdateResult を追加。
+- UserEditPolicyService に EvaluateWrite を追加。
+- ReAuthDialog / ConfirmUpdateDialog を追加。
+- AllowedTargetOuDns 未設定時は更新不可とする制限を実装。
+- 空文字への更新禁止を実装。
+- EditInput_TextChanged で差分確認状態をクリア（入力変更時に再確認を促す）。
+- MainWindowViewModel に IsWriteButtonEnabled / SetPendingReady を追加。
+- ServiceMode は追加せず DirectoryReadOnly + セッション有効 + OU設定で更新可能とした。
+- パスワードは appsettings.json / ログへの保存なし。更新実行時に再認証ダイアログで入力・即時使用・破棄。
+- docs/validation-user-edit.md / appsettings.UserAttributeEdit.sample.json を追加。
+- README / backlog / release-note / roadmap を v0.4.0 向けに更新。
+
 ## Next
+- v0.4.0 の実AD環境での限定編集動作検証（docs/validation-user-edit.md）。
 - DirectoryServicesAdReadService の検索パフォーマンス検証（実AD環境での PageSize・SizeLimit の効果測定）。
-- v0.3.0 の実AD環境での認証・セッション動作検証。
 
 ## AD実運用検討（キャッシュ）
 - 目的: ユーザー選択切替ごとの `memberOf` 再取得を減らし、DC負荷を抑制する。
