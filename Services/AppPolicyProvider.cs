@@ -31,7 +31,11 @@ public static class AppPolicyProvider
             LogPath = node.TryGetProperty("LogPath", out var log) ? (log.GetString() ?? @"C:\ProgramData\ManageAdTool\logs\audit.jsonl") : @"C:\ProgramData\ManageAdTool\logs\audit.jsonl",
             RetiredUsersOuDn = node.TryGetProperty("RetiredUsersOuDn", out var retiredOu) ? (retiredOu.GetString() ?? "OU=RetiredUsers,DC=example,DC=local") : "OU=RetiredUsers,DC=example,DC=local",
             ServiceMode = node.TryGetProperty("ServiceMode", out var sm) ? (sm.GetString() ?? "InMemory") : "InMemory",
-            MaxSearchResults = node.TryGetProperty("MaxSearchResults", out var maxResults) && maxResults.TryGetInt32(out var maxResultsValue) ? maxResultsValue : 200
+            MaxSearchResults = node.TryGetProperty("MaxSearchResults", out var maxResults) && maxResults.TryGetInt32(out var maxResultsValue) ? maxResultsValue : 200,
+            EditorAuthMode = node.TryGetProperty("EditorAuthMode", out var editorAuthMode) ? (editorAuthMode.GetString() ?? "None") : "None",
+            AdminGroupDn = node.TryGetProperty("AdminGroupDn", out var adminGroupDn) ? (adminGroupDn.GetString() ?? string.Empty) : string.Empty,
+            AllowNestedAdminGroupMembership = node.TryGetProperty("AllowNestedAdminGroupMembership", out var nested) && nested.GetBoolean(),
+            EditSessionMinutes = node.TryGetProperty("EditSessionMinutes", out var sessionMin) && sessionMin.TryGetInt32(out var sessionMinValue) ? sessionMinValue : 15
         };
     }
 }

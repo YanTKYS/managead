@@ -26,8 +26,20 @@
 - IAdFutureOperations インターフェースと GPO・コンピューター管理モデル（GpoPolicy / GroupGpoStatus / TargetGpoStatus / AdComputer）を削除。InMemoryAdService を IAdService のみの実装に整理（285行 → 100行）。
 - README.md を v0.2.0 向けに更新（DirectoryLimitedWrite 記述削除・v0.2.0 機能一覧・設定例を刷新）。
 
+## v0.3.0 完了
+- 別ユーザーログイン・Domain Admins 判定基盤の追加（EditorAuthService / AuthAuditLogger / EditorSession / AuthResult）。
+- 編集者ログイン UI（domain\user / PasswordBox / ログイン・ログアウトボタン / セッション状態表示）。
+- LDAP バインド認証（パスワード非保持・非ログ）と Domain Admins グループメンバー判定（直接 / ネスト対応）。
+- 編集セッション管理（AppPolicy: EditorAuthMode / AdminGroupDn / AllowNestedAdminGroupMembership / EditSessionMinutes）。
+- DispatcherTimer による 30 秒周期のセッション期限自動チェック。
+- 認証ログ（auth.jsonl）への JSON Lines 記録。
+- UserEditPolicyService.Evaluate に isSessionActive パラメーターを追加。
+- MainWindowViewModel にセッション状態プロパティ・メソッドを追加。
+- docs/roadmap.md を追加。
+
 ## Next
 - DirectoryServicesAdReadService の検索パフォーマンス検証（実AD環境での PageSize・SizeLimit の効果測定）。
+- v0.3.0 の実AD環境での認証・セッション動作検証。
 
 ## AD実運用検討（キャッシュ）
 - 目的: ユーザー選択切替ごとの `memberOf` 再取得を減らし、DC負荷を抑制する。

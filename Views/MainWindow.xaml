@@ -1,17 +1,19 @@
 <Window x:Class="ManageAdTool.Views.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="ManageAdTool MVP" Height="860" Width="1200">
+        Title="ManageAdTool MVP" Height="960" Width="1200">
     <Grid Margin="12">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="180"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
+        <!-- Row 0: Search bar -->
         <WrapPanel Margin="0,0,0,8" VerticalAlignment="Center">
             <TextBlock Text="検索語" VerticalAlignment="Center" Margin="0,0,4,0"/>
             <TextBox x:Name="SearchBox" Width="220" Margin="0,0,8,0"/>
@@ -28,6 +30,7 @@
             <Button Content="検索結果CSV出力" Width="140" Click="ExportSearchResults_Click"/>
         </WrapPanel>
 
+        <!-- Row 1: Search result DataGrid -->
         <DataGrid x:Name="SearchResultGrid" Grid.Row="1" AutoGenerateColumns="False" SelectionMode="Single" SelectionChanged="SearchResultGrid_SelectionChanged">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="SamAccountName" Binding="{Binding SamAccountName}" Width="2*"/>
@@ -39,9 +42,25 @@
             </DataGrid.Columns>
         </DataGrid>
 
-        <TextBlock x:Name="EditBlockedReasonText" Grid.Row="2" Foreground="DarkRed" FontWeight="Bold" Margin="0,8,0,8" Text="{Binding EditBlockedReason}"/>
+        <!-- Row 2: Edit blocked reason -->
+        <TextBlock x:Name="EditBlockedReasonText" Grid.Row="2" Foreground="DarkRed" FontWeight="Bold" Margin="0,8,0,4" Text="{Binding EditBlockedReason}"/>
 
-        <GroupBox Grid.Row="3" Header="属性表示・変更予定確認 (mail / department / title)" Margin="0,0,0,8">
+        <!-- Row 3: Editor login (Domain Admins) -->
+        <GroupBox Grid.Row="3" Header="編集者ログイン（Domain Admins 判定）" Margin="0,0,0,8">
+            <WrapPanel Margin="4">
+                <TextBlock Text="ユーザー (domain\user)" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                <TextBox x:Name="EditorUserBox" Width="200" Margin="0,0,8,0" IsEnabled="{Binding CanLoginInput}"/>
+                <TextBlock Text="パスワード" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                <PasswordBox x:Name="EditorPasswordBox" Width="160" Margin="0,0,8,0" IsEnabled="{Binding CanLoginInput}"/>
+                <Button Content="ログイン" Width="80" Margin="0,0,8,0" Click="Login_Click" IsEnabled="{Binding CanLoginInput}"/>
+                <Button Content="ログアウト" Width="90" Margin="0,0,8,0" Click="Logout_Click" IsEnabled="{Binding IsEditSessionActive}"/>
+                <TextBlock Text="{Binding SessionStatusText}" VerticalAlignment="Center" Margin="8,0,0,0"
+                           Foreground="{Binding SessionStatusBrush}"/>
+            </WrapPanel>
+        </GroupBox>
+
+        <!-- Row 4: Attribute compare GroupBox -->
+        <GroupBox Grid.Row="4" Header="属性表示・変更予定確認 (mail / department / title)" Margin="0,0,0,8">
             <Grid Margin="8">
                 <Grid.ColumnDefinitions><ColumnDefinition Width="120"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                 <Grid.RowDefinitions><RowDefinition/><RowDefinition/><RowDefinition/></Grid.RowDefinitions>
@@ -51,7 +70,8 @@
             </Grid>
         </GroupBox>
 
-        <TabControl Grid.Row="4" Margin="0,0,0,8">
+        <!-- Row 5: Tab control -->
+        <TabControl Grid.Row="5" Margin="0,0,0,8">
             <TabItem Header="ユーザー詳細">
                 <StackPanel Margin="8">
                     <TextBlock Text="ユーザー詳細（表示のみ）" FontWeight="Bold"/>
@@ -100,7 +120,8 @@
             </TabItem>
         </TabControl>
 
-        <GroupBox Grid.Row="5" Header="処理結果欄">
+        <!-- Row 6: Output GroupBox -->
+        <GroupBox Grid.Row="6" Header="処理結果欄">
             <StackPanel>
                 <Button Content="結果をコピー" Width="100" HorizontalAlignment="Left" Margin="0,0,0,4" Click="CopyOutput_Click"/>
                 <TextBox x:Name="OutputBox" Height="130" AcceptsReturn="True" IsReadOnly="True" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap"/>
