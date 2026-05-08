@@ -4,7 +4,7 @@ namespace ManageAdTool.Services;
 
 public class UserEditPolicyService
 {
-    public (bool canEdit, string reason) Evaluate(AdUser? user, AppPolicy policy)
+    public (bool canEdit, string reason) Evaluate(AdUser? user, AppPolicy policy, bool isSessionActive = false)
     {
         if (user is null) return (false, "ユーザー未選択");
 
@@ -20,8 +20,8 @@ public class UserEditPolicyService
         if (missing.Count > 0)
             return (false, $"編集不可: EditableAttributes不足 ({string.Join(",", missing)})");
 
-        if (string.Equals(policy.ServiceMode, "DirectoryReadOnly", StringComparison.OrdinalIgnoreCase))
-            return (false, "DirectoryReadOnly モードのため参照のみ");
+        if (string.Equals(policy.ServiceMode, "DirectoryReadOnly", StringComparison.OrdinalIgnoreCase) && !isSessionActive)
+            return (false, "DirectoryReadOnly モードのため参照のみ（編集にはログインが必要）");
 
         return (true, "編集可能");
     }

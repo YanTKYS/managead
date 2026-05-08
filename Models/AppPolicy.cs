@@ -10,4 +10,8 @@ public class AppPolicy
     public string RetiredUsersOuDn { get; set; } = "OU=RetiredUsers,DC=example,DC=local";
     public string ServiceMode { get; set; } = "InMemory";
     public int MaxSearchResults { get; set; } = 200;
+    public string EditorAuthMode { get; set; } = "None";
+    public string AdminGroupDn { get; set; } = string.Empty;
+    public bool AllowNestedAdminGroupMembership { get; set; } = false;
+    public int EditSessionMinutes { get; set; } = 15;
 }

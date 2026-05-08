@@ -27,3 +27,21 @@ ManageAdTool 参照専用AD確認支援ツール 強化版
 - 属性表示 GroupBox のヘッダーを「属性表示・変更予定確認」に変更し参照専用用途を明確化。
 - UserEditUseCase を UserAttributeCompareUseCase に改名し、更新処理を持たないことを名称で明示。
 - グループ追加・削除、GPO編集、ユーザー無効化、退職処理、OU移動、一括更新は未実装のまま維持。
+
+## v0.3.0
+### Title
+ManageAdTool 別ユーザーログイン・Domain Admins 判定基盤
+
+### Note
+- 実AD更新機能は v0.3.0 でも実装しない方針を維持。
+- 編集者ログイン UI を追加（domain\user 形式・PasswordBox・ログイン/ログアウトボタン・セッション状態表示）。
+- `EditorAuthService` を追加：LDAP バインド認証（パスワードは保持・ログ記録しない）。
+- Domain Admins グループメンバー判定（直接メンバーシップ / `LDAP_MATCHING_RULE_IN_CHAIN` によるネスト検索を設定で切り替え）。
+- 編集セッション管理（`EditorSession`・`IsEditSessionActive`・`CurrentEditorUser`）：セッション有効時のみ編集コントロールを有効化。
+- `DispatcherTimer`（30秒間隔）でセッション期限を自動チェック。
+- 認証ログ（`auth.jsonl`）への記録：ログイン成功・失敗・拒否・ログアウトを JSON Lines で追記（パスワード非記録）。
+- `AppPolicy` に `EditorAuthMode` / `AdminGroupDn` / `AllowNestedAdminGroupMembership` / `EditSessionMinutes` を追加。
+- `UserEditPolicyService.Evaluate` に `isSessionActive` パラメーターを追加し、セッション有効時は DirectoryReadOnly でも編集可能と判定。
+- `MainWindowViewModel` に `IsAuthSupported` / `IsEditSessionActive` / `CurrentEditorUser` / `SessionStatusText` / `SessionStatusBrush` / `CanLoginInput` / `StartSession` / `EndSession` / `RefreshSessionStatus` を追加。
+- InMemory モードでは認証非対応メッセージを表示（ログイン入力無効）。
+- `docs/roadmap.md` を追加。

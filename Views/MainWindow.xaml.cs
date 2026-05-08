@@ -1,6 +1,7 @@
 using System.IO;
 using System.Text;
 using System.Windows;
+using System.Windows.Threading;
 using ManageAdTool.Models;
 using ManageAdTool.Services;
 using Microsoft.Win32;
@@ -14,7 +15,10 @@ public partial class MainWindow : Window
     private readonly UserEditPolicyService _policyService = new();
     private readonly UserAttributeCompareUseCase _useCase;
     private readonly ReferenceAuditLogger _auditLogger;
+    private readonly AuthAuditLogger _authAuditLogger;
+    private readonly EditorAuthService _authService = new();
     private readonly MainWindowViewModel _vm;
+    private readonly DispatcherTimer _sessionTimer;
     private IReadOnlyList<AdUser> _lastSearchResults = Array.Empty<AdUser>();
     private AdUser? _selected;
     private ChangeSet? _pending;
@@ -26,10 +30,65 @@ public partial class MainWindow : Window
             : new InMemoryAdService();
         _useCase = new UserAttributeCompareUseCase(_ad);
         _auditLogger = new ReferenceAuditLogger(_policy.LogPath);
+        _authAuditLogger = new AuthAuditLogger(_policy.LogPath);
         _vm = new MainWindowViewModel(_policy);
+        _sessionTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(30) };
+        _sessionTimer.Tick += SessionTimer_Tick;
+        _sessionTimer.Start();
         InitializeComponent();
         DataContext = _vm;
         ApplyEditability(false, _vm.IsReadOnlyMode ? _vm.ReadOnlyModeLabel : "ユーザー未選択");
+    }
+
+    private void SessionTimer_Tick(object? sender, EventArgs e)
+    {
+        _vm.RefreshSessionStatus();
+        if (_selected is not null) EvaluateEditability();
+    }
+
+    private void Login_Click(object sender, RoutedEventArgs e)
+    {
+        var domainUser = EditorUserBox.Text.Trim();
+        var password = EditorPasswordBox.Password;
+        EditorPasswordBox.Clear();
+
+        if (!_vm.IsAuthSupported)
+        {
+            OutputBox.Text = "InMemory モードでは認証は使用できません";
+            return;
+        }
+
+        var result = _authService.TryAuthenticate(domainUser, password, _policy);
+
+        if (!result.AuthSucceeded)
+        {
+            OutputBox.Text = $"ログイン失敗: {result.ErrorMessage}";
+            _authAuditLogger.Log("LoginFailed", domainUser, success: false, result.ErrorMessage ?? string.Empty);
+            return;
+        }
+
+        if (!result.IsDomainAdmin)
+        {
+            OutputBox.Text = $"ログイン失敗: {result.ResolvedUser} は {_policy.AdminGroupDn} のメンバーではありません";
+            _authAuditLogger.Log("LoginDenied", result.ResolvedUser, success: false, "Domain Admins メンバー外");
+            return;
+        }
+
+        _vm.StartSession(result.ResolvedUser);
+        if (_selected is not null) EvaluateEditability();
+        OutputBox.Text = $"ログイン成功: {result.ResolvedUser}（編集セッション {_policy.EditSessionMinutes} 分）";
+        _authAuditLogger.Log("LoginSuccess", result.ResolvedUser, success: true);
+        EditorUserBox.Text = string.Empty;
+    }
+
+    private void Logout_Click(object sender, RoutedEventArgs e)
+    {
+        var user = _vm.CurrentEditorUser;
+        _vm.EndSession();
+        if (_selected is not null) EvaluateEditability();
+        OutputBox.Text = "ログアウトしました";
+        if (!string.IsNullOrEmpty(user))
+            _authAuditLogger.Log("Logout", user, success: true);
     }
 
     private void Search_Click(object sender, RoutedEventArgs e)
@@ -150,7 +209,7 @@ public partial class MainWindow : Window
 
     private void EvaluateEditability()
     {
-        var result = _policyService.Evaluate(_selected, _policy);
+        var result = _policyService.Evaluate(_selected, _policy, _vm.IsEditSessionActive);
         ApplyEditability(result.canEdit, result.reason);
     }
 
