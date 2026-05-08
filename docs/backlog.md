@@ -23,6 +23,8 @@
 - バグ修正：InMemoryAdService.GetGroupMembers が DistinguishedName 渡しで空を返す問題を修正（DN→グループ名への解決を追加）。
 - フィールド命名規約修正：DirectoryServicesAdReadService.Policy → _policy。
 - ドキュメント整備：test-record-v0.2.0.md を追加、validation-readonly.md の設定例に MaxSearchResults を追記。
+- IAdFutureOperations インターフェースと GPO・コンピューター管理モデル（GpoPolicy / GroupGpoStatus / TargetGpoStatus / AdComputer）を削除。InMemoryAdService を IAdService のみの実装に整理（285行 → 100行）。
+- README.md を v0.2.0 向けに更新（DirectoryLimitedWrite 記述削除・v0.2.0 機能一覧・設定例を刷新）。
 
 ## Next
 - DirectoryServicesAdReadService の検索パフォーマンス検証（実AD環境での PageSize・SizeLimit の効果測定）。
