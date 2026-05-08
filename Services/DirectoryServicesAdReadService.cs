@@ -5,11 +5,11 @@ namespace ManageAdTool.Services;
 
 public class DirectoryServicesAdReadService : IAdService
 {
-    private readonly AppPolicy _policy;
+    private readonly AppPolicy Policy;
 
     public DirectoryServicesAdReadService(AppPolicy policy)
     {
-        _policy = policy;
+        Policy = policy;
     }
 
     public IReadOnlyList<AdUser> SearchUsers(string keyword)
@@ -85,9 +85,9 @@ public class DirectoryServicesAdReadService : IAdService
         return cs;
     }
 
-    private IEnumerable<string> GetSearchBases() => _policy.AllowedTargetOuDns.Count > 0 ? _policy.AllowedTargetOuDns : new[] { GetDefaultNamingContext() };
+    private IEnumerable<string> GetSearchBases() => Policy.AllowedTargetOuDns.Count > 0 ? Policy.AllowedTargetOuDns : new[] { GetDefaultNamingContext() };
 
-    private bool IsExcluded(string sam) => _policy.ExcludedSamAccountNames.Any(x => string.Equals(x, sam, StringComparison.OrdinalIgnoreCase));
+    private bool IsExcluded(string sam) => Policy.ExcludedSamAccountNames.Any(x => string.Equals(x, sam, StringComparison.OrdinalIgnoreCase));
 
     private static string GetDefaultNamingContext()
     {
