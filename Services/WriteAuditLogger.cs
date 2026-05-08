@@ -20,7 +20,7 @@ public class WriteAuditLogger
         _path = Path.Combine(dir, "write-audit.jsonl");
     }
 
-    public void Log(WriteAuditEntry entry)
+    public bool Log(WriteAuditEntry entry)
     {
         try
         {
@@ -47,10 +47,11 @@ public class WriteAuditLogger
                 excludedAccountMatched = entry.ExcludedAccountMatched
             };
             File.AppendAllText(_path, JsonSerializer.Serialize(serializable, _jsonOptions) + Environment.NewLine);
+            return true;
         }
         catch
         {
-            // 書き込み監査ログの失敗で更新処理を妨げない。
+            return false;
         }
     }
 }
