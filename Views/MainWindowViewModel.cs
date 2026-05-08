@@ -9,6 +9,7 @@ public class MainWindowViewModel : INotifyPropertyChanged
 {
     private readonly AppPolicy _policy;
     private EditorSession? _session;
+    private bool _isPendingReady;
 
     public MainWindowViewModel(AppPolicy policy)
     {
@@ -32,10 +33,11 @@ public class MainWindowViewModel : INotifyPropertyChanged
         {
             if (!IsReadOnlyMode) return string.Empty;
             if (!IsAuthSupported) return "編集セッション機能は未設定です（EditorAuthMode / AdminGroupDn を設定してください）";
-            if (_session is null) return "ログインしていません（編集にはログインが必要）";
+            if (_session is null) return "ログインしていません（編集・更新にはログインが必要）";
             if (!_session.IsActive) return "セッション期限切れ - 再ログインしてください";
             var remaining = Math.Max(1, (int)Math.Ceiling((_session.ExpiresAt - DateTimeOffset.UtcNow).TotalMinutes));
-            return $"編集セッション: {_session.EditorUser}（残 {remaining} 分）【v0.3.0: 属性比較確認のみ有効・AD更新は未実装】";
+            var ouNote = _policy.AllowedTargetOuDns.Count == 0 ? "【AllowedTargetOuDns未設定のため更新不可】" : string.Empty;
+            return $"編集セッション: {_session.EditorUser}（残 {remaining} 分）【対象属性: mail / department / title のみ・対象OU制限あり】{ouNote}";
         }
     }
 
@@ -43,7 +45,7 @@ public class MainWindowViewModel : INotifyPropertyChanged
     {
         get
         {
-            if (IsEditSessionActive) return Brushes.DarkGreen;
+            if (IsEditSessionActive) return _policy.AllowedTargetOuDns.Count == 0 ? Brushes.DarkOrange : Brushes.DarkGreen;
             if (_session is { IsActive: false }) return Brushes.DarkRed;
             return Brushes.DarkOrange;
         }
@@ -67,14 +69,24 @@ public class MainWindowViewModel : INotifyPropertyChanged
             _canEdit = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(EditControlsEnabled));
+            OnPropertyChanged(nameof(IsWriteButtonEnabled));
         }
     }
 
     public bool EditControlsEnabled
         => IsReadOnlyMode ? _canEdit && IsEditSessionActive : _canEdit;
 
+    public bool IsWriteButtonEnabled
+        => IsReadOnlyMode && IsEditSessionActive && _isPendingReady;
+
     public string ReadOnlyModeLabel
-        => IsReadOnlyMode ? "DirectoryReadOnly モードのため参照のみ（編集にはログインが必要）" : string.Empty;
+        => IsReadOnlyMode ? "DirectoryReadOnly モード（編集にはログインが必要）" : string.Empty;
+
+    public void SetPendingReady(bool value)
+    {
+        _isPendingReady = value;
+        OnPropertyChanged(nameof(IsWriteButtonEnabled));
+    }
 
     public void StartSession(string editorUser)
     {
@@ -90,6 +102,7 @@ public class MainWindowViewModel : INotifyPropertyChanged
     public void EndSession()
     {
         _session = null;
+        _isPendingReady = false;
         RefreshSessionStatus();
     }
 
@@ -101,6 +114,7 @@ public class MainWindowViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(SessionStatusBrush));
         OnPropertyChanged(nameof(CanLoginInput));
         OnPropertyChanged(nameof(EditControlsEnabled));
+        OnPropertyChanged(nameof(IsWriteButtonEnabled));
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

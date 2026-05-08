@@ -45,3 +45,26 @@ ManageAdTool 別ユーザーログイン・Domain Admins 判定基盤
 - `MainWindowViewModel` に `IsAuthSupported` / `IsEditSessionActive` / `CurrentEditorUser` / `SessionStatusText` / `SessionStatusBrush` / `CanLoginInput` / `StartSession` / `EndSession` / `RefreshSessionStatus` を追加。
 - InMemory モードでは認証非対応メッセージを表示（ログイン入力無効）。
 - `docs/roadmap.md` を追加。
+
+## v0.4.0
+### Title
+ManageAdTool ユーザー属性限定編集 検証版
+
+### Note
+- **mail / department / title の3属性のみ** AD更新が可能になった（検証版）。
+- グループ操作・GPO編集・OU移動・無効化・退職処理・パスワードリセット・一括更新は対象外。
+- **更新要件**: Domain Admins 認証済みセッション + AllowedTargetOuDns 設定 + 差分確認済み + 差分1件以上。
+- **更新フロー**: 差分確認 → 再認証ダイアログ（パスワード再入力） → 実行前確認ダイアログ → AD再取得・整合性チェック → 更新 → AD再取得して結果表示。
+- **パスワード管理**: appsettings.json / ログへの保存なし。再認証パスワードは認証 + 書き込みに即時使用・破棄。
+- **空文字更新禁止**: 属性クリアは対象外（将来機能）。
+- **AllowedTargetOuDns 必須**: 未設定の場合は更新不可（セーフガード）。
+- **AD整合性チェック**: 更新前にADから再取得し、ChangeSet.Before と現在値の一致を確認。不一致なら中止。
+- 書き込み監査ログ（`write-audit.jsonl`）を追加：operationId / executor / editorUser / before / after / verifiedAfterUpdate を記録（パスワード非記録）。
+- `IAdUserAttributeWriteService` / `DirectoryServicesAdUserAttributeWriteService` を追加。
+- `WriteAuditLogger` / `WriteAuditEntry` / `UpdateResult` を追加。
+- `UserEditPolicyService.EvaluateWrite` を追加。
+- `ReAuthDialog` / `ConfirmUpdateDialog`（WPF ダイアログ）を追加。
+- `MainWindowViewModel` に `IsWriteButtonEnabled` / `SetPendingReady` を追加。
+- `EditInput_TextChanged` で差分確認状態をクリア（入力変更後は再確認が必要）。
+- ServiceMode は追加せず。DirectoryReadOnly + セッション + OU設定で限定編集が有効になる構成を採用。
+- `appsettings.UserAttributeEdit.sample.json` / `docs/validation-user-edit.md` を追加。

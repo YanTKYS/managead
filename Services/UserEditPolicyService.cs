@@ -30,4 +30,24 @@ public class UserEditPolicyService
         => !string.IsNullOrWhiteSpace(distinguishedName)
             && !string.IsNullOrWhiteSpace(ouDn)
             && distinguishedName.EndsWith($",{ouDn}", StringComparison.OrdinalIgnoreCase);
+
+    public (bool canWrite, string reason) EvaluateWrite(AdUser? user, AppPolicy policy, bool isSessionActive)
+    {
+        if (!isSessionActive)
+            return (false, "編集セッションが期限切れです");
+
+        if (policy.AllowedTargetOuDns.Count == 0)
+            return (false, "AllowedTargetOuDns が未設定のため更新できません");
+
+        if (user is null)
+            return (false, "ユーザー未選択");
+
+        if (policy.ExcludedSamAccountNames.Any(x => string.Equals(x, user.SamAccountName, StringComparison.OrdinalIgnoreCase)))
+            return (false, "除外アカウントのため更新できません");
+
+        if (!policy.AllowedTargetOuDns.Any(ou => IsUnderOu(user.DistinguishedName, ou)))
+            return (false, "許可OU外のユーザーのため更新できません");
+
+        return (true, "更新可能");
+    }
 }
