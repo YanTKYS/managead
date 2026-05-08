@@ -6,9 +6,9 @@
 - 管理者権限ユーザーやサービスアカウントを使った更新実行は対象外。
 - グループ追加・削除、GPO編集、ユーザー無効化、退職処理、OU移動、一括更新は対象外。
 
-## v0.2.0 候補
-- ユーザー詳細表示項目の拡充（例: lastLogonTimestamp、accountExpires、userAccountControl の読み取り表示）。
-- 所属グループ表示の一覧化・並び替え・コピー性向上。
+## v0.2.0 完了
+- ユーザー詳細表示項目の拡充（lastLogonTimestamp、accountExpires、userAccountControl の読み取り表示）。
+- 所属グループ表示の一覧化・名前順並び替え・コピー性向上。
 - グループ検索。
 - グループメンバー一覧表示。
 - 検索結果CSV出力。

@@ -10,7 +10,7 @@ public partial class InMemoryAdService : IAdService, IAdFutureOperations
         {
             SamAccountName = "sato.taro", DisplayName = "佐藤 太郎", Name = "Taro Sato",
             Mail = "taro.sato@example.local", Department = "情報政策課", Title = "主任",
-            Enabled = true, AccountExpiresAt = DateTimeOffset.UtcNow.AddDays(-1), DistinguishedName = "CN=Taro Sato,OU=Users,DC=example,DC=local",
+            Enabled = true, UserAccountControl = 512, AccountExpiresAt = DateTimeOffset.UtcNow.AddDays(-1), DistinguishedName = "CN=Taro Sato,OU=Users,DC=example,DC=local",
             LastLogonAt = DateTimeOffset.UtcNow.AddHours(-5),
             LastLogonComputer = "PC-001",
             Groups = new[] { "GG_OfficeUsers", "GG_InfoPolicy" }
@@ -19,7 +19,7 @@ public partial class InMemoryAdService : IAdService, IAdFutureOperations
         {
             SamAccountName = "tanaka.hana", DisplayName = "田中 花", Name = "Hana Tanaka",
             Mail = "hana.tanaka@example.local", Department = "総務課", Title = "担当",
-            Enabled = true, AccountExpiresAt = DateTimeOffset.UtcNow.AddDays(-2), DistinguishedName = "CN=Hana Tanaka,OU=Users,DC=example,DC=local",
+            Enabled = true, UserAccountControl = 512, AccountExpiresAt = DateTimeOffset.UtcNow.AddDays(-2), DistinguishedName = "CN=Hana Tanaka,OU=Users,DC=example,DC=local",
             LastLogonAt = DateTimeOffset.UtcNow.AddDays(-3),
             LastLogonComputer = "PC-002",
             Groups = new[] { "GG_OfficeUsers" }
@@ -65,11 +65,23 @@ public partial class InMemoryAdService : IAdService, IAdFutureOperations
         new() { UserSamAccountName = "sato.taro", ComputerName = "PC-001", GpoDisplayName = "Security Baseline", Enforced = false, Scope = "Computer" }
     };
 
-    public IReadOnlyList<AdUser> SearchUsers(string keyword) => _users.Values.Where(u =>
-        u.SamAccountName.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
-        u.DisplayName.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
-        u.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
-        u.Mail.Contains(keyword, StringComparison.OrdinalIgnoreCase)).ToList();
+    public IReadOnlyList<AdUser> SearchUsers(string keyword)
+        => SearchUsers(new AdUserSearchCriteria { Keyword = keyword });
+
+    public IReadOnlyList<AdUser> SearchUsers(AdUserSearchCriteria criteria)
+    {
+        var keyword = criteria.Keyword.Trim();
+        return _users.Values.Where(u =>
+            (keyword.Length == 0 ||
+                u.SamAccountName.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
+                u.DisplayName.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
+                u.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
+                u.Mail.Contains(keyword, StringComparison.OrdinalIgnoreCase)) &&
+            (string.IsNullOrWhiteSpace(criteria.Department) || u.Department.Contains(criteria.Department.Trim(), StringComparison.OrdinalIgnoreCase)) &&
+            (!criteria.HasMail.HasValue || criteria.HasMail.Value == !string.IsNullOrWhiteSpace(u.Mail)) &&
+            (criteria.IncludeDisabled || u.Enabled))
+            .ToList();
+    }
 
     public AdUser? GetUser(string samAccountName) => _users.TryGetValue(samAccountName, out var user) ? user : null;
 
@@ -153,6 +165,19 @@ public partial class InMemoryAdService : IAdService, IAdFutureOperations
 
     public IReadOnlyList<AdGroup> GetGroups() => _groups;
 
+    public IReadOnlyList<AdGroup> SearchGroups(string keyword)
+    {
+        var term = keyword.Trim();
+        if (term.Length <= 1) return Array.Empty<AdGroup>();
+        return _groups.Where(g =>
+            g.Name.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+            g.DistinguishedName.Contains(term, StringComparison.OrdinalIgnoreCase))
+            .OrderBy(g => g.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    public IReadOnlyList<AdUser> GetGroupMembers(string groupName) => GetDirectGroupMembers(groupName);
+
     public IReadOnlyList<AdUser> GetDirectGroupMembers(string groupName)
     {
         if (!_directGroupMembers.TryGetValue(groupName, out var members)) return Array.Empty<AdUser>();
@@ -203,6 +228,7 @@ public partial class InMemoryAdService : IAdService, IAdFutureOperations
             Department = user.Department,
             Title = user.Title,
             Enabled = user.Enabled,
+            UserAccountControl = user.UserAccountControl,
             AccountExpiresAt = user.AccountExpiresAt,
             DistinguishedName = user.DistinguishedName,
             LastLogonAt = user.LastLogonAt,

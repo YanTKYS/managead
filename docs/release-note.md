@@ -19,5 +19,7 @@ ManageAdTool 参照専用AD確認支援ツール 強化版
 - 実AD更新ツールではなく、参照専用のAD確認支援ツールとして育てる方針に変更。
 - 書き込み用ServiceMode / DirectoryServicesAdWriteService は実装しない方針。
 - DirectoryReadOnly による実ADユーザー情報取得・所属グループ取得・検索結果件数表示を継続強化。
-- v0.2.0 はユーザー詳細表示項目拡充、グループ検索、グループメンバー一覧、CSV出力、参照ログなどの参照機能強化を検討。
+- ユーザー詳細表示項目として userAccountControl / lastLogonTimestamp / accountExpires の読み取り表示に対応。
+- グループ検索、グループメンバー一覧、検索結果CSV出力、参照ログ（JSON Lines）を追加。
+- 検索条件（部署、Mail有無、無効ユーザー表示）と appsettings.json による詳細表示項目制御を追加。
 - グループ追加・削除、GPO編集、ユーザー無効化、退職処理、OU移動、一括更新は未実装のまま維持。
