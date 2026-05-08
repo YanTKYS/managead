@@ -14,10 +14,10 @@ public partial class MainWindow : Window
     private readonly UserEditPolicyService _policyService = new();
     private readonly UserEditUseCase _useCase;
     private readonly ReferenceAuditLogger _auditLogger;
+    private readonly MainWindowViewModel _vm;
     private IReadOnlyList<AdUser> _lastSearchResults = Array.Empty<AdUser>();
     private AdUser? _selected;
     private ChangeSet? _pending;
-    private bool _canEdit;
 
     public MainWindow()
     {
@@ -26,17 +26,10 @@ public partial class MainWindow : Window
             : new InMemoryAdService();
         _useCase = new UserEditUseCase(_ad);
         _auditLogger = new ReferenceAuditLogger(_policy.LogPath);
+        _vm = new MainWindowViewModel(_policy);
         InitializeComponent();
-        ApplyEditability(false, "ユーザー未選択");
-        if (string.Equals(_policy.ServiceMode, "DirectoryReadOnly", StringComparison.OrdinalIgnoreCase))
-        {
-            MailBox.IsEnabled = false;
-            DepartmentBox.IsEnabled = false;
-            TitleBox.IsEnabled = false;
-            PreviewButton.IsEnabled = false;
-            ExecuteButton.IsEnabled = false;
-            EditBlockedReasonText.Text = "DirectoryReadOnly モードのため参照のみ";
-        }
+        DataContext = _vm;
+        ApplyEditability(false, _vm.IsReadOnlyMode ? _vm.ReadOnlyModeLabel : "ユーザー未選択");
     }
 
     private void Search_Click(object sender, RoutedEventArgs e)
@@ -58,7 +51,10 @@ public partial class MainWindow : Window
             SearchResultGrid.ItemsSource = results;
             UserDetailBox.Text = string.Empty;
             GroupListBox.Text = string.Empty;
-            OutputBox.Text = $"検索結果: {results.Count}件";
+            var exceeded = results.Count >= _policy.MaxSearchResults;
+            OutputBox.Text = exceeded
+                ? $"検索結果: {results.Count}件（上限 {_policy.MaxSearchResults} 件に達しました。検索条件を絞り込んでください）"
+                : $"検索結果: {results.Count}件";
             _auditLogger.Log("UserSearch", FormatCriteria(criteria), results.Count, success: true);
         }
         catch (Exception ex)
@@ -154,19 +150,13 @@ public partial class MainWindow : Window
 
     private void ApplyEditability(bool canEdit, string reason)
     {
-        _canEdit = canEdit;
-        var readOnlyMode = string.Equals(_policy.ServiceMode, "DirectoryReadOnly", StringComparison.OrdinalIgnoreCase);
-        MailBox.IsEnabled = canEdit && !readOnlyMode;
-        DepartmentBox.IsEnabled = canEdit && !readOnlyMode;
-        TitleBox.IsEnabled = canEdit && !readOnlyMode;
-        PreviewButton.IsEnabled = canEdit && !readOnlyMode;
-        ExecuteButton.IsEnabled = false;
-        EditBlockedReasonText.Text = reason;
+        _vm.CanEdit = canEdit;
+        _vm.EditBlockedReason = reason;
     }
 
     private void Preview_Click(object sender, RoutedEventArgs e)
     {
-        if (!_canEdit || _selected is null) return;
+        if (!_vm.CanEdit || _selected is null) return;
         _pending = _useCase.BuildChangeSet(_selected, MailBox.Text.Trim(), DepartmentBox.Text.Trim(), TitleBox.Text.Trim());
         OutputBox.Text = FormatChangePreview(_pending, "属性比較");
     }
@@ -256,44 +246,6 @@ public partial class MainWindow : Window
 
         return string.Join(Environment.NewLine, _policy.UserDetailDisplayAttributes.Select(attribute =>
             values.TryGetValue(attribute, out var value) ? $"{attribute}: {value}" : $"{attribute}: (未対応)"));
-    }
-
-    private static string BuildSearchResultsCsv(IEnumerable<AdUser> users)
-    {
-        var lines = new List<string>
-        {
-            string.Join(",", new[]
-            {
-                "SamAccountName",
-                "DisplayName",
-                "Name",
-                "Mail",
-                "Department",
-                "Title",
-                "Enabled",
-                "UserAccountControl",
-                "LastLogonTimestamp",
-                "AccountExpires",
-                "DistinguishedName"
-            }.Select(CsvEscape))
-        };
-
-        lines.AddRange(users.Select(user => string.Join(",", new[]
-        {
-            user.SamAccountName,
-            user.DisplayName,
-            user.Name,
-            user.Mail,
-            user.Department,
-            user.Title,
-            FormatBool(user.Enabled),
-            FormatNullable(user.UserAccountControl),
-            FormatDateTime(user.LastLogonAt),
-            FormatDateTime(user.AccountExpiresAt),
-            user.DistinguishedName
-        }.Select(CsvEscape))));
-
-        return string.Join(Environment.NewLine, lines) + Environment.NewLine;
     }
 
     private static string BuildSearchResultsCsv(IEnumerable<AdUser> users)
