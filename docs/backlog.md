@@ -14,13 +14,13 @@
 - 参照ログ（検索・詳細表示・グループ表示の記録）。
 - 検索条件の追加（部署、メール有無、無効ユーザー表示など）。
 - 表示項目を `appsettings.json` で制御。
+- 最大検索件数（`MaxSearchResults`）の設定化と上限超過時の利用者向けメッセージ表示（ユーザー検索・グループ検索・グループメンバー）。
+- ServiceModeごとのUI表示制御を MainWindowViewModel に移動（IsReadOnlyMode / CanEdit / EditControlsEnabled）。
+- mail / department / title の比較 GroupBox を「属性表示・変更予定確認」として用途を明確化。
 
 ## Next
 - DirectoryServicesAdReadService の検索パフォーマンス検証（PageSize、PropertiesToLoad最適化）。
-- 検索結果が多すぎる場合に備えた最大表示件数の設定化（例: `MaxSearchResults`）と、上限超過時の利用者向けメッセージ表示を検討。
-- ServiceModeごとのUI表示制御をViewModel化（現状はcode-behind）。
 - 例外メッセージの利用者向け/管理者向け分離。
-- mail / department / title の比較UIを削除するか、比較表示・変更予定確認用途として整理するか検討。
 
 ## AD実運用検討（キャッシュ）
 - 目的: ユーザー選択切替ごとの `memberOf` 再取得を減らし、DC負荷を抑制する。

@@ -12,7 +12,7 @@ public partial class MainWindow : Window
     private readonly AppPolicy _policy = AppPolicyProvider.Load();
     private readonly IAdService _ad;
     private readonly UserEditPolicyService _policyService = new();
-    private readonly UserEditUseCase _useCase;
+    private readonly UserAttributeCompareUseCase _useCase;
     private readonly ReferenceAuditLogger _auditLogger;
     private readonly MainWindowViewModel _vm;
     private IReadOnlyList<AdUser> _lastSearchResults = Array.Empty<AdUser>();
@@ -24,7 +24,7 @@ public partial class MainWindow : Window
         _ad = string.Equals(_policy.ServiceMode, "DirectoryReadOnly", StringComparison.OrdinalIgnoreCase)
             ? new DirectoryServicesAdReadService(_policy)
             : new InMemoryAdService();
-        _useCase = new UserEditUseCase(_ad);
+        _useCase = new UserAttributeCompareUseCase(_ad);
         _auditLogger = new ReferenceAuditLogger(_policy.LogPath);
         _vm = new MainWindowViewModel(_policy);
         InitializeComponent();
@@ -110,7 +110,10 @@ public partial class MainWindow : Window
             var groups = _ad.SearchGroups(keyword);
             GroupSearchResultGrid.ItemsSource = groups;
             GroupMemberGrid.ItemsSource = Array.Empty<AdUser>();
-            OutputBox.Text = $"グループ検索結果: {groups.Count}件";
+            var groupExceeded = groups.Count >= _policy.MaxSearchResults;
+            OutputBox.Text = groupExceeded
+                ? $"グループ検索結果: {groups.Count}件（上限 {_policy.MaxSearchResults} 件に達しました。検索条件を絞り込んでください）"
+                : $"グループ検索結果: {groups.Count}件";
             _auditLogger.Log("GroupSearch", keyword, groups.Count, success: true);
         }
         catch (Exception ex)
@@ -131,7 +134,10 @@ public partial class MainWindow : Window
                 .OrderBy(x => x.SamAccountName, StringComparer.OrdinalIgnoreCase)
                 .ToList();
             GroupMemberGrid.ItemsSource = members;
-            OutputBox.Text = $"グループメンバー表示: {group.Name} / {members.Count}件";
+            var memberExceeded = members.Count >= _policy.MaxSearchResults;
+            OutputBox.Text = memberExceeded
+                ? $"グループメンバー表示: {group.Name} / {members.Count}件（上限 {_policy.MaxSearchResults} 件に達しました。実際のメンバー数が多い可能性があります）"
+                : $"グループメンバー表示: {group.Name} / {members.Count}件";
             _auditLogger.Log("GroupMembers", group.Name, members.Count, success: true);
         }
         catch (Exception ex)
