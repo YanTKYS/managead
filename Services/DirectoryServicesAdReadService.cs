@@ -27,7 +27,7 @@ public class DirectoryServicesAdReadService : IAdService
                     Filter = $"(&(objectClass=user)(!(objectClass=computer))(|(sAMAccountName=*{EscapeLdap(keyword)}*)(displayName=*{EscapeLdap(keyword)}*)(name=*{EscapeLdap(keyword)}*)(mail=*{EscapeLdap(keyword)}*)))",
                     PageSize = 200
                 };
-                ds.PropertiesToLoad.AddRange(new[] { "samAccountName", "displayName", "name", "mail", "department", "title", "distinguishedName", "memberOf" });
+                ds.PropertiesToLoad.AddRange(new[] { "samAccountName", "displayName", "name", "mail", "department", "title", "distinguishedName", "memberOf", "lastLogonTimestamp", "accountExpires", "userAccountControl" });
                 foreach (SearchResult r in ds.FindAll())
                 {
                     var user = DirectoryServicesUserMapper.MapUser(r);
@@ -55,7 +55,7 @@ public class DirectoryServicesAdReadService : IAdService
                     Filter = $"(&(objectClass=user)(sAMAccountName={EscapeLdap(samAccountName)}))",
                     PageSize = 1
                 };
-                ds.PropertiesToLoad.AddRange(new[] { "samAccountName", "displayName", "name", "mail", "department", "title", "distinguishedName", "memberOf" });
+                ds.PropertiesToLoad.AddRange(new[] { "samAccountName", "displayName", "name", "mail", "department", "title", "distinguishedName", "memberOf", "lastLogonTimestamp", "accountExpires", "userAccountControl" });
                 var r = ds.FindOne();
                 if (r is null) continue;
                 var user = DirectoryServicesUserMapper.MapUser(r);
