@@ -28,6 +28,11 @@
   - 実ADの**読み取り専用**モード
   - ユーザー検索 / 詳細表示 / 所属グループ表示のみ
   - **AD更新は実行しません（更新ボタン無効）**
+- `DirectoryLimitedWrite`
+  - v0.2.0 向けの検証OU限定・属性限定の最小書き込みモード
+  - `AllowedTargetOuDns` 配下のユーザーのみ対象
+  - 更新対象は `mail` / `department` / `title` の3属性のみ
+  - グループ操作、GPO操作、無効化、退職処理、OU移動、一括処理は実装しません
 
 ## 実AD検証時の appsettings.json 設定例
 ```json

@@ -5,11 +5,11 @@ namespace ManageAdTool.Services;
 
 public class DirectoryServicesAdReadService : IAdService
 {
-    private readonly AppPolicy _policy;
+    protected readonly AppPolicy Policy;
 
     public DirectoryServicesAdReadService(AppPolicy policy)
     {
-        _policy = policy;
+        Policy = policy;
     }
 
     public IReadOnlyList<AdUser> SearchUsers(string keyword)
