@@ -35,7 +35,7 @@ public class MainWindowViewModel : INotifyPropertyChanged
             if (_session is null) return "ログインしていません（編集にはログインが必要）";
             if (!_session.IsActive) return "セッション期限切れ - 再ログインしてください";
             var remaining = Math.Max(1, (int)Math.Ceiling((_session.ExpiresAt - DateTimeOffset.UtcNow).TotalMinutes));
-            return $"編集セッション: {_session.EditorUser}（残 {remaining} 分）";
+            return $"編集セッション: {_session.EditorUser}（残 {remaining} 分）【v0.3.0: 属性比較確認のみ有効・AD更新は未実装】";
         }
     }
 
