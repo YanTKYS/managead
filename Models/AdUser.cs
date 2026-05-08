@@ -9,6 +9,7 @@ public class AdUser
     public string Department { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;
     public bool Enabled { get; set; }
+    public int? UserAccountControl { get; init; }
     public DateTimeOffset? AccountExpiresAt { get; set; }
     public string DistinguishedName { get; set; } = string.Empty;
     public DateTimeOffset? LastLogonAt { get; init; }

@@ -1,7 +1,7 @@
 <Window x:Class="ManageAdTool.Views.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="ManageAdTool MVP" Height="700" Width="1000">
+        Title="ManageAdTool MVP" Height="780" Width="1100">
     <Grid Margin="12">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -13,7 +13,8 @@
 
         <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
             <TextBox x:Name="SearchBox" Width="260" Margin="0,0,8,0"/>
-            <Button Content="検索" Width="100" Click="Search_Click"/>
+            <Button Content="検索" Width="100" Margin="0,0,8,0" Click="Search_Click"/>
+            <Button Content="検索結果CSV出力" Width="140" Click="ExportSearchResults_Click"/>
         </StackPanel>
 
         <DataGrid x:Name="SearchResultGrid" Grid.Row="1" AutoGenerateColumns="False" SelectionMode="Single" SelectionChanged="SearchResultGrid_SelectionChanged">
@@ -21,6 +22,9 @@
                 <DataGridTextColumn Header="SamAccountName" Binding="{Binding SamAccountName}" Width="2*"/>
                 <DataGridTextColumn Header="DisplayName" Binding="{Binding DisplayName}" Width="2*"/>
                 <DataGridTextColumn Header="Mail" Binding="{Binding Mail}" Width="3*"/>
+                <DataGridTextColumn Header="Department" Binding="{Binding Department}" Width="2*"/>
+                <DataGridTextColumn Header="Title" Binding="{Binding Title}" Width="2*"/>
+                <DataGridCheckBoxColumn Header="Enabled" Binding="{Binding Enabled}" Width="Auto"/>
             </DataGrid.Columns>
         </DataGrid>
 
@@ -37,8 +41,13 @@
         </GroupBox>
 
         <StackPanel Grid.Row="4">
-            <TextBlock Text="所属グループ（表示のみ）" FontWeight="Bold"/>
-            <TextBox x:Name="GroupListBox" Height="80" IsReadOnly="True" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Margin="0,4,0,8"/>
+            <TextBlock Text="ユーザー詳細（表示のみ）" FontWeight="Bold"/>
+            <TextBox x:Name="UserDetailBox" Height="96" IsReadOnly="True" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Margin="0,4,0,8" TextWrapping="Wrap"/>
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                <TextBlock Text="所属グループ（表示のみ・名前順）" FontWeight="Bold" VerticalAlignment="Center"/>
+                <Button Content="グループをコピー" Width="120" Margin="12,0,0,0" Click="CopyGroups_Click"/>
+            </StackPanel>
+            <TextBox x:Name="GroupListBox" Height="80" IsReadOnly="True" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Margin="0,0,0,8"/>
             <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                 <Button x:Name="PreviewButton" Content="比較確認" Width="100" Margin="0,0,8,0" Click="Preview_Click"/>
                 <Button x:Name="ExecuteButton" Content="更新不可" Width="100" Click="Execute_Click"/>
