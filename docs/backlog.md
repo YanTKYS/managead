@@ -19,6 +19,10 @@
 - mail / department / title の比較 GroupBox を「属性表示・変更予定確認」として用途を明確化。
 - PropertiesToLoad 最適化：SearchUsers・GetGroupMembers は memberOf を取得しない検索用プロパティセットを使用し、GetUser のみ memberOf を含む詳細用プロパティセットを使用。
 - 例外メッセージの利用者向け/管理者向け分離：UI には利用者向けラッパーメッセージ、参照ログには InnerException を含む技術詳細を記録。
+- コードベース整理：DirectoryServicesAdLimitedWriteService / AppSettingsBootstrapper / AuditLogService / InMemoryAdService.Future 等の不要ファイルを削除。csproj の除外エントリも削除。
+- バグ修正：InMemoryAdService.GetGroupMembers が DistinguishedName 渡しで空を返す問題を修正（DN→グループ名への解決を追加）。
+- フィールド命名規約修正：DirectoryServicesAdReadService.Policy → _policy。
+- ドキュメント整備：test-record-v0.2.0.md を追加、validation-readonly.md の設定例に MaxSearchResults を追記。
 
 ## Next
 - DirectoryServicesAdReadService の検索パフォーマンス検証（実AD環境での PageSize・SizeLimit の効果測定）。

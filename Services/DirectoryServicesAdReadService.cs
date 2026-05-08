@@ -5,11 +5,11 @@ namespace ManageAdTool.Services;
 
 public class DirectoryServicesAdReadService : IAdService
 {
-    private readonly AppPolicy Policy;
+    private readonly AppPolicy _policy;
 
     public DirectoryServicesAdReadService(AppPolicy policy)
     {
-        Policy = policy;
+        _policy = policy;
     }
 
     public IReadOnlyList<AdUser> SearchUsers(string keyword)
@@ -30,7 +30,7 @@ public class DirectoryServicesAdReadService : IAdService
                 {
                     Filter = BuildUserSearchFilter(criteria),
                     PageSize = 200,
-                    SizeLimit = Policy.MaxSearchResults
+                    SizeLimit = _policy.MaxSearchResults
                 };
                 AddSearchUserProperties(ds);
                 foreach (SearchResult r in ds.FindAll())
@@ -97,7 +97,7 @@ public class DirectoryServicesAdReadService : IAdService
                 {
                     Filter = $"(&(objectClass=group)(|(cn=*{EscapeLdap(term)}*)(name=*{EscapeLdap(term)}*)(sAMAccountName=*{EscapeLdap(term)}*)))",
                     PageSize = 200,
-                    SizeLimit = Policy.MaxSearchResults
+                    SizeLimit = _policy.MaxSearchResults
                 };
                 ds.PropertiesToLoad.AddRange(new[] { "cn", "name", "distinguishedName" });
                 foreach (SearchResult r in ds.FindAll())
@@ -133,7 +133,7 @@ public class DirectoryServicesAdReadService : IAdService
                 {
                     Filter = $"(&(objectClass=user)(!(objectClass=computer))(memberOf={EscapeLdap(groupDn)}))",
                     PageSize = 200,
-                    SizeLimit = Policy.MaxSearchResults
+                    SizeLimit = _policy.MaxSearchResults
                 };
                 AddSearchUserProperties(ds);
                 foreach (SearchResult r in ds.FindAll())
@@ -201,9 +201,9 @@ public class DirectoryServicesAdReadService : IAdService
     private static string GetProperty(SearchResult r, string name, string fallback)
         => r.Properties.Contains(name) && r.Properties[name].Count > 0 ? r.Properties[name][0]?.ToString() ?? fallback : fallback;
 
-    private IEnumerable<string> GetSearchBases() => Policy.AllowedTargetOuDns.Count > 0 ? Policy.AllowedTargetOuDns : new[] { GetDefaultNamingContext() };
+    private IEnumerable<string> GetSearchBases() => _policy.AllowedTargetOuDns.Count > 0 ? _policy.AllowedTargetOuDns : new[] { GetDefaultNamingContext() };
 
-    private bool IsExcluded(string sam) => Policy.ExcludedSamAccountNames.Any(x => string.Equals(x, sam, StringComparison.OrdinalIgnoreCase));
+    private bool IsExcluded(string sam) => _policy.ExcludedSamAccountNames.Any(x => string.Equals(x, sam, StringComparison.OrdinalIgnoreCase));
 
     private static string GetDefaultNamingContext()
     {

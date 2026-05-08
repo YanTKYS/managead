@@ -176,7 +176,13 @@ public partial class InMemoryAdService : IAdService, IAdFutureOperations
             .ToList();
     }
 
-    public IReadOnlyList<AdUser> GetGroupMembers(string groupName) => GetDirectGroupMembers(groupName);
+    public IReadOnlyList<AdUser> GetGroupMembers(string groupNameOrDn)
+    {
+        var name = groupNameOrDn.Contains(',', StringComparison.Ordinal)
+            ? _groups.FirstOrDefault(g => string.Equals(g.DistinguishedName, groupNameOrDn, StringComparison.OrdinalIgnoreCase))?.Name ?? groupNameOrDn
+            : groupNameOrDn;
+        return GetDirectGroupMembers(name);
+    }
 
     public IReadOnlyList<AdUser> GetDirectGroupMembers(string groupName)
     {
