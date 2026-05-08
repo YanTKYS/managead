@@ -29,7 +29,8 @@ public class DirectoryServicesAdReadService : IAdService
                 using var ds = new DirectorySearcher(root)
                 {
                     Filter = BuildUserSearchFilter(criteria),
-                    PageSize = 200
+                    PageSize = 200,
+                    SizeLimit = Policy.MaxSearchResults
                 };
                 AddUserProperties(ds);
                 foreach (SearchResult r in ds.FindAll())

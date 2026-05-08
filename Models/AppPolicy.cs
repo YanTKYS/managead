@@ -9,4 +9,5 @@ public class AppPolicy
     public string LogPath { get; set; } = @"C:\ProgramData\ManageAdTool\logs\audit.jsonl";
     public string RetiredUsersOuDn { get; set; } = "OU=RetiredUsers,DC=example,DC=local";
     public string ServiceMode { get; set; } = "InMemory";
+    public int MaxSearchResults { get; set; } = 200;
 }
