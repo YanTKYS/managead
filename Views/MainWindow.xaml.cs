@@ -61,7 +61,7 @@ public partial class MainWindow : Window
         {
             ClearSearchResults();
             OutputBox.Text = $"検索失敗: {ex.Message}";
-            _auditLogger.Log("UserSearch", FormatCriteria(criteria), 0, success: false, ex.Message);
+            _auditLogger.Log("UserSearch", FormatCriteria(criteria), 0, success: false, FormatErrorForLog(ex));
         }
     }
 
@@ -89,7 +89,7 @@ public partial class MainWindow : Window
         {
             OutputBox.Text = $"詳細取得失敗: {ex.Message}";
             GroupListBox.Text = string.Empty;
-            _auditLogger.Log("UserDetail", _selected.SamAccountName, 0, success: false, ex.Message);
+            _auditLogger.Log("UserDetail", _selected.SamAccountName, 0, success: false, FormatErrorForLog(ex));
         }
 
         EvaluateEditability();
@@ -120,7 +120,7 @@ public partial class MainWindow : Window
         {
             ClearGroupResults();
             OutputBox.Text = $"グループ検索失敗: {ex.Message}";
-            _auditLogger.Log("GroupSearch", keyword, 0, success: false, ex.Message);
+            _auditLogger.Log("GroupSearch", keyword, 0, success: false, FormatErrorForLog(ex));
         }
     }
 
@@ -144,7 +144,7 @@ public partial class MainWindow : Window
         {
             GroupMemberGrid.ItemsSource = Array.Empty<AdUser>();
             OutputBox.Text = $"グループメンバー取得失敗: {ex.Message}";
-            _auditLogger.Log("GroupMembers", group.Name, 0, success: false, ex.Message);
+            _auditLogger.Log("GroupMembers", group.Name, 0, success: false, FormatErrorForLog(ex));
         }
     }
 
@@ -322,4 +322,7 @@ public partial class MainWindow : Window
 
     private static string CsvEscape(string value)
         => $"\"{value.Replace("\"", "\"\"")}\"";
+
+    private static string FormatErrorForLog(Exception ex)
+        => ex.InnerException is null ? ex.Message : $"{ex.Message} / {ex.InnerException.Message}";
 }

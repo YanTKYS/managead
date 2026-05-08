@@ -17,10 +17,11 @@
 - 最大検索件数（`MaxSearchResults`）の設定化と上限超過時の利用者向けメッセージ表示（ユーザー検索・グループ検索・グループメンバー）。
 - ServiceModeごとのUI表示制御を MainWindowViewModel に移動（IsReadOnlyMode / CanEdit / EditControlsEnabled）。
 - mail / department / title の比較 GroupBox を「属性表示・変更予定確認」として用途を明確化。
+- PropertiesToLoad 最適化：SearchUsers・GetGroupMembers は memberOf を取得しない検索用プロパティセットを使用し、GetUser のみ memberOf を含む詳細用プロパティセットを使用。
+- 例外メッセージの利用者向け/管理者向け分離：UI には利用者向けラッパーメッセージ、参照ログには InnerException を含む技術詳細を記録。
 
 ## Next
-- DirectoryServicesAdReadService の検索パフォーマンス検証（PageSize、PropertiesToLoad最適化）。
-- 例外メッセージの利用者向け/管理者向け分離。
+- DirectoryServicesAdReadService の検索パフォーマンス検証（実AD環境での PageSize・SizeLimit の効果測定）。
 
 ## AD実運用検討（キャッシュ）
 - 目的: ユーザー選択切替ごとの `memberOf` 再取得を減らし、DC負荷を抑制する。

@@ -32,7 +32,7 @@ public class DirectoryServicesAdReadService : IAdService
                     PageSize = 200,
                     SizeLimit = Policy.MaxSearchResults
                 };
-                AddUserProperties(ds);
+                AddSearchUserProperties(ds);
                 foreach (SearchResult r in ds.FindAll())
                 {
                     var user = DirectoryServicesUserMapper.MapUser(r);
@@ -60,7 +60,7 @@ public class DirectoryServicesAdReadService : IAdService
                     Filter = $"(&(objectClass=user)(sAMAccountName={EscapeLdap(samAccountName)}))",
                     PageSize = 1
                 };
-                AddUserProperties(ds);
+                AddDetailUserProperties(ds);
                 var r = ds.FindOne();
                 if (r is null) continue;
                 var user = DirectoryServicesUserMapper.MapUser(r);
@@ -135,7 +135,7 @@ public class DirectoryServicesAdReadService : IAdService
                     PageSize = 200,
                     SizeLimit = Policy.MaxSearchResults
                 };
-                AddUserProperties(ds);
+                AddSearchUserProperties(ds);
                 foreach (SearchResult r in ds.FindAll())
                 {
                     var user = DirectoryServicesUserMapper.MapUser(r);
@@ -192,7 +192,10 @@ public class DirectoryServicesAdReadService : IAdService
         return SearchGroups(groupName).FirstOrDefault()?.DistinguishedName ?? string.Empty;
     }
 
-    private static void AddUserProperties(DirectorySearcher ds)
+    private static void AddSearchUserProperties(DirectorySearcher ds)
+        => ds.PropertiesToLoad.AddRange(new[] { "samAccountName", "displayName", "name", "mail", "department", "title", "distinguishedName", "lastLogonTimestamp", "accountExpires", "userAccountControl" });
+
+    private static void AddDetailUserProperties(DirectorySearcher ds)
         => ds.PropertiesToLoad.AddRange(new[] { "samAccountName", "displayName", "name", "mail", "department", "title", "distinguishedName", "memberOf", "lastLogonTimestamp", "accountExpires", "userAccountControl" });
 
     private static string GetProperty(SearchResult r, string name, string fallback)
