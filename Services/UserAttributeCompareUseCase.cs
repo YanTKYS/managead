@@ -2,11 +2,11 @@ using ManageAdTool.Models;
 
 namespace ManageAdTool.Services;
 
-public class UserEditUseCase
+public class UserAttributeCompareUseCase
 {
     private readonly IAdService _ad;
 
-    public UserEditUseCase(IAdService ad)
+    public UserAttributeCompareUseCase(IAdService ad)
     {
         _ad = ad;
     }

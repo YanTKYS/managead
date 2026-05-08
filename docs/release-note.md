@@ -22,4 +22,8 @@ ManageAdTool 参照専用AD確認支援ツール 強化版
 - ユーザー詳細表示項目として userAccountControl / lastLogonTimestamp / accountExpires の読み取り表示に対応。
 - グループ検索、グループメンバー一覧、検索結果CSV出力、参照ログ（JSON Lines）を追加。
 - 検索条件（部署、Mail有無、無効ユーザー表示）と appsettings.json による詳細表示項目制御を追加。
+- `MaxSearchResults`（デフォルト 200）を appsettings.json で設定可能にし、ユーザー検索・グループ検索・グループメンバー一覧のいずれも上限到達時に利用者向けメッセージを表示。DirectoryReadOnly モードでは LDAP の SizeLimit にも適用。
+- ServiceMode ごとの UI 表示制御を MainWindowViewModel に移動し、code-behind から分離（IsReadOnlyMode / CanEdit / EditControlsEnabled / EditBlockedReason）。
+- 属性表示 GroupBox のヘッダーを「属性表示・変更予定確認」に変更し参照専用用途を明確化。
+- UserEditUseCase を UserAttributeCompareUseCase に改名し、更新処理を持たないことを名称で明示。
 - グループ追加・削除、GPO編集、ユーザー無効化、退職処理、OU移動、一括更新は未実装のまま維持。

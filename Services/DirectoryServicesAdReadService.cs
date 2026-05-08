@@ -96,7 +96,8 @@ public class DirectoryServicesAdReadService : IAdService
                 using var ds = new DirectorySearcher(root)
                 {
                     Filter = $"(&(objectClass=group)(|(cn=*{EscapeLdap(term)}*)(name=*{EscapeLdap(term)}*)(sAMAccountName=*{EscapeLdap(term)}*)))",
-                    PageSize = 200
+                    PageSize = 200,
+                    SizeLimit = Policy.MaxSearchResults
                 };
                 ds.PropertiesToLoad.AddRange(new[] { "cn", "name", "distinguishedName" });
                 foreach (SearchResult r in ds.FindAll())
@@ -131,7 +132,8 @@ public class DirectoryServicesAdReadService : IAdService
                 using var ds = new DirectorySearcher(root)
                 {
                     Filter = $"(&(objectClass=user)(!(objectClass=computer))(memberOf={EscapeLdap(groupDn)}))",
-                    PageSize = 200
+                    PageSize = 200,
+                    SizeLimit = Policy.MaxSearchResults
                 };
                 AddUserProperties(ds);
                 foreach (SearchResult r in ds.FindAll())
