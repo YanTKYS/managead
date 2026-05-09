@@ -55,8 +55,30 @@
 - docs/validation-user-edit.md / appsettings.UserAttributeEdit.sample.json を追加。
 - README / backlog / release-note / roadmap を v0.4.0 向けに更新。
 
-## Next
-- v0.4.0 の実AD環境での限定編集動作検証（docs/validation-user-edit.md）。
+## v0.4.1 完了
+- 更新結果表示の改善: 属性ごとに「変更前・変更後・AD再取得値」を縦並びで表示。
+- 戻し支援の追加: 更新成功後に「戻し候補」を OutputBox 表示 + 「戻し用メモをコピー」ボタン追加。自動ロールバックは対象外。
+- ConfirmUpdateDialog の改善: DisplayName・実行端末・アプリ起動ユーザー・編集セッションユーザーを追加。変更内容の前後を色分け表示。ボタン文言を「この内容でADを更新する」に変更。
+- 差分確認状態の明確化: `WriteButtonDisabledReason` をボタン下に表示（未ログイン・期限切れ・OU外・差分未確認など8種類）。
+- write-audit.jsonl に `targetDisplayName` / `revertCandidate` を追加。
+- エラーメッセージの改善: 利用者向けの分かりやすい文言に整理。例外メッセージ直接表示を廃止。
+- LogPath 書き込み権限チェック: 起動時に検証。不可の場合は起動時警告 + 更新実行前確認ダイアログ。
+- ChangeSet に TargetDisplayName を追加（BuildChangeSet で設定）。
+- docs/validation-user-edit.md を v0.4.1 向けに更新。
+- docs/deploy.md に v0.4.x 利用時の注意事項を追加。
+- docs/test-record-v0.4.1.md を追加。
+
+## Next（v0.4.x 完了条件 - v0.5.0 に進む前に確認）
+- 実AD環境での v0.4.1 限定編集動作検証（docs/validation-user-edit.md に沿って実施）。
+- 検証結果を docs/test-record-v0.4.1.md に記録する。
+- write-audit.jsonl の targetDisplayName / revertCandidate が正しく記録されることを確認する。
+- 戻し候補の表示と「戻し用メモをコピー」ボタンの動作を確認する。
+- 監査ログ保存失敗時の警告表示を確認する。
+
+## v0.5.0 候補（v0.4.x 完了後に着手）
+- コンピューターオブジェクトの参照機能（最初の v0.5.0 候補）。
+- グループの詳細参照（説明・管理者・ネスト状態）。
+- 検索条件の拡張（OU指定・LastLogon日付範囲など）。
 - DirectoryServicesAdReadService の検索パフォーマンス検証（実AD環境での PageSize・SizeLimit の効果測定）。
 
 ## AD実運用検討（キャッシュ）

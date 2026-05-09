@@ -5,13 +5,16 @@ namespace ManageAdTool.Views;
 
 public partial class ConfirmUpdateDialog : Window
 {
-    public ConfirmUpdateDialog(ChangeSet changeSet, string targetDn, string editorUser, string executor)
+    public ConfirmUpdateDialog(ChangeSet changeSet, string targetDn, string targetDisplayName,
+        string editorUser, string executor, string machineName)
     {
         InitializeComponent();
         SamText.Text = changeSet.TargetSamAccountName;
+        DisplayNameText.Text = targetDisplayName;
         DnText.Text = targetDn;
-        EditorText.Text = editorUser;
+        MachineText.Text = machineName;
         ExecutorText.Text = executor;
+        EditorText.Text = editorUser;
         ChangesList.ItemsSource = changeSet.Changes;
     }
 

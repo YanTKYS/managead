@@ -46,6 +46,23 @@ ManageAdTool 別ユーザーログイン・Domain Admins 判定基盤
 - InMemory モードでは認証非対応メッセージを表示（ログイン入力無効）。
 - `docs/roadmap.md` を追加。
 
+## v0.4.1
+### Title
+ManageAdTool ユーザー属性限定編集 安定化版（UI改善・戻し支援・監査強化）
+
+### Note
+- **更新結果表示の改善**: 更新成功時の OutputBox を属性ごとに「変更前・変更後・AD再取得値」を縦並びで表示するよう改善。
+- **戻し支援の追加**: 更新成功後に「戻し候補（変更前の値）」を OutputBox に表示し、「戻し用メモをコピー」ボタンでクリップボードにコピーできるようにした。自動ロールバックは実装しない。
+- **更新前確認ダイアログの改善**: ConfirmUpdateDialog に対象 DisplayName・実行端末・アプリ起動ユーザー・編集セッションユーザーを追加。変更内容のヘッダー行と前後の色付きテキストボックスを整備。ボタン文言を「この内容でADを更新する」に変更。
+- **差分確認状態の明確化**: 「限定更新実行」ボタン無効理由を ViewModel の `WriteButtonDisabledReason` プロパティで管理し、ボタン下に常時表示（未ログイン・期限切れ・OU外・差分未確認など8種類）。
+- **write-audit.jsonl の強化**: `targetDisplayName`（対象ユーザーの DisplayName）と `revertCandidate`（変更前の値 Map）を新規追加。
+- **エラーメッセージの改善**: 再認証失敗・OU外・除外アカウント・AD値不一致・更新失敗・例外時のユーザー向けメッセージを利用者が行動しやすい文言に改善。例外メッセージの直接表示を廃止。
+- **LogPath 書き込み権限チェック（v0.4.2）**: 起動時に LogPath のディレクトリへの書き込み可能性を検証。書き込み不可の場合は起動時に警告表示。更新実行前には確認ダイアログを表示。参照機能は継続使用可能。
+- **ChangeSet に TargetDisplayName 追加**: BuildChangeSet で DisplayName を設定し差分確認表示にも反映。
+- `docs/validation-user-edit.md` を v0.4.1 向けに更新（新機能の検証項目を追加）。
+- `docs/deploy.md` に v0.4.x 利用時の注意事項を追加。
+- `docs/test-record-v0.4.1.md` を追加。
+
 ## v0.4.0
 ### Title
 ManageAdTool ユーザー属性限定編集 検証版

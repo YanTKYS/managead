@@ -35,13 +35,23 @@
 - AllowedTargetOuDns 未設定時は更新不可のセーフガード
 - 空文字更新禁止
 
+### v0.4.1
+- ユーザー属性限定編集 安定化版（v0.4.x 安定化フェーズ）
+- 更新結果表示の改善（属性ごとに変更前・変更後・AD再取得値を縦並び表示）
+- 戻し支援の追加（「戻し用メモをコピー」ボタン・戻し候補表示）
+- 更新前確認ダイアログの改善（DisplayName・実行端末・起動ユーザー・セッションユーザー追加）
+- 差分確認状態の明確化（WriteButtonDisabledReason をボタン下に常時表示）
+- write-audit.jsonl に targetDisplayName / revertCandidate を追加
+- エラーメッセージの利用者向け整理
+- LogPath 書き込み権限チェック（起動時 + 更新前確認ダイアログ）
+
 ---
 
 ## 今後の検討事項
 
-### v0.4.0 検証
-- 実AD環境での限定編集動作検証（`docs/validation-user-edit.md` 参照）
-- 検索パフォーマンス検証（実AD環境での PageSize・SizeLimit の効果測定）
+### v0.4.x 完了条件
+- 実AD環境での v0.4.1 限定編集動作検証（`docs/validation-user-edit.md` 参照）
+- 検証結果を `docs/test-record-v0.4.1.md` に記録する
 
 ### v0.5.0 以降の候補（優先度順・未確定）
 
