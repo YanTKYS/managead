@@ -36,8 +36,9 @@ public class MainWindowViewModel : INotifyPropertyChanged
             if (_session is null) return "ログインしていません（編集・更新にはログインが必要）";
             if (!_session.IsActive) return "セッション期限切れ - 再ログインしてください";
             var remaining = Math.Max(1, (int)Math.Ceiling((_session.ExpiresAt - DateTimeOffset.UtcNow).TotalMinutes));
-            var ouNote = _policy.AllowedTargetOuDns.Count == 0 ? "【AllowedTargetOuDns未設定のため更新不可】" : string.Empty;
-            return $"編集セッション: {_session.EditorUser}（残 {remaining} 分）【対象属性: mail / department / title のみ・対象OU制限あり】{ouNote}";
+            var ouNote = _policy.AllowedTargetOuDns.Count == 0 && _policy.EffectiveComputerOuDns.Count == 0
+                ? "【AllowedTargetOuDns / AllowedComputerOuDns 未設定のため更新不可】" : string.Empty;
+            return $"編集セッション: {_session.EditorUser}（残 {remaining} 分）【ユーザー: mail/displayName/sn/givenName のみ】【コンピュータ: description のみ】{ouNote}";
         }
     }
 
@@ -95,6 +96,57 @@ public class MainWindowViewModel : INotifyPropertyChanged
         }
     }
 
+    private bool _isComputerPendingReady;
+    private bool _computerCanEdit;
+    private string _computerEditBlockedReason = "コンピュータ未選択";
+
+    public string ComputerEditBlockedReason
+    {
+        get => _computerEditBlockedReason;
+        set { _computerEditBlockedReason = value; OnPropertyChanged(); }
+    }
+
+    public bool ComputerCanEdit
+    {
+        get => _computerCanEdit;
+        set
+        {
+            _computerCanEdit = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(ComputerEditControlsEnabled));
+            OnPropertyChanged(nameof(IsComputerWriteButtonEnabled));
+            OnPropertyChanged(nameof(ComputerWriteButtonDisabledReason));
+        }
+    }
+
+    public bool ComputerEditControlsEnabled
+        => IsReadOnlyMode ? _computerCanEdit && IsEditSessionActive : _computerCanEdit;
+
+    public bool IsComputerWriteButtonEnabled
+        => IsReadOnlyMode && IsEditSessionActive && _isComputerPendingReady;
+
+    public string ComputerWriteButtonDisabledReason
+    {
+        get
+        {
+            if (IsComputerWriteButtonEnabled) return string.Empty;
+            if (!IsReadOnlyMode) return "DirectoryReadOnly モードが必要です";
+            if (!IsAuthSupported) return "認証設定未構成（EditorAuthMode / AdminGroupDn を設定してください）";
+            if (_session is null) return "未ログイン（Domain Admins アカウントでログインしてください）";
+            if (!IsEditSessionActive) return "セッション期限切れ（再ログインしてください）";
+            if (_policy.EffectiveComputerOuDns.Count == 0) return "AllowedComputerOuDns / AllowedTargetOuDns 未設定のため更新不可（appsettings.json を確認してください）";
+            if (!_computerCanEdit) return $"更新不可: {_computerEditBlockedReason}";
+            return "「差分確認」ボタンを押して差分を確認してください";
+        }
+    }
+
+    public void SetComputerPendingReady(bool value)
+    {
+        _isComputerPendingReady = value;
+        OnPropertyChanged(nameof(IsComputerWriteButtonEnabled));
+        OnPropertyChanged(nameof(ComputerWriteButtonDisabledReason));
+    }
+
     public string ReadOnlyModeLabel
         => IsReadOnlyMode ? "DirectoryReadOnly モード（編集にはログインが必要）" : string.Empty;
 
@@ -120,6 +172,7 @@ public class MainWindowViewModel : INotifyPropertyChanged
     {
         _session = null;
         _isPendingReady = false;
+        _isComputerPendingReady = false;
         RefreshSessionStatus();
     }
 
@@ -133,6 +186,9 @@ public class MainWindowViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(EditControlsEnabled));
         OnPropertyChanged(nameof(IsWriteButtonEnabled));
         OnPropertyChanged(nameof(WriteButtonDisabledReason));
+        OnPropertyChanged(nameof(ComputerEditControlsEnabled));
+        OnPropertyChanged(nameof(IsComputerWriteButtonEnabled));
+        OnPropertyChanged(nameof(ComputerWriteButtonDisabledReason));
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

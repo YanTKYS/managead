@@ -1,5 +1,23 @@
 # Release Notes
 
+## v0.5.0
+### Title
+ManageAdTool コンピュータオブジェクト参照・description 限定編集
+
+### Note
+- **コンピュータオブジェクト参照機能を追加**: 「コンピュータ参照」タブを新設。Name / DNSHostName / sAMAccountName による検索（2文字以上）、OS フィルタ、description 有無フィルタ、無効端末表示に対応。
+- **コンピュータ詳細表示**: Name / SamAccountName / DNSHostName / OperatingSystem / Description / Enabled / DistinguishedName / LastLogon / WhenCreated / WhenChanged を表示。
+- **コンピュータ所属グループ表示**: コンピュータの memberOf を取得してグループ一覧を表示・クリップボードコピーに対応。
+- **コンピュータ検索結果 CSV 出力**: 検索結果を UTF-8 BOM 付き CSV でエクスポート。
+- **description 限定更新**: コンピュータオブジェクトの description 属性のみ更新可能。無効化・OU移動・削除・グループ変更・GPO編集は実行しない。
+- **更新フロー**: 差分確認 → 再認証ダイアログ → ConfirmComputerUpdateDialog（コンピュータ名・DNSHostName・DN・実行端末・起動ユーザー・セッションユーザー・差分表示） → AD再取得・整合性チェック → 更新 → AD再取得して結果表示。
+- **セーフガード**: AllowedComputerOuDns（空なら AllowedTargetOuDns をフォールバック）未設定なら更新不可。ExcludedComputerNames に登録した端末は更新不可。空文字更新禁止。
+- **AppPolicy 拡張**: `AllowedComputerOuDns` / `ExcludedComputerNames` / `EditableComputerAttributes` / `EffectiveComputerOuDns` を追加。
+- **write-audit.jsonl の拡張**: `targetType`（"User" / "Computer"）/ `targetName` / `operationName`（"UpdateUserAttributes" / "UpdateComputerDescription"）フィールドを追加。既存ユーザー更新ログとの後方互換あり。
+- **新規モデル・サービス**: `AdComputer` / `AdComputerSearchCriteria` / `IAdComputerAttributeWriteService` / `DirectoryServicesAdComputerAttributeWriteService` / `DirectoryServicesComputerMapper` を追加。
+- **InMemory デモデータ**: PC-001（Windows 11）/ PC-002（Windows 10、description なし）/ SRV-001（Windows Server 2022）を追加。
+- `docs/validation-computer-edit.md` / `appsettings.ComputerDescriptionEdit.sample.json` を追加。
+
 ## v0.1.0
 ### Title
 ManageAdTool MVP 初版（InMemory / DirectoryReadOnly 対応）

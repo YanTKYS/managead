@@ -88,15 +88,30 @@
 - `appsettings.UserAttributeEdit.sample.json` の EditableAttributes を更新。
 - docs/validation-user-edit.md・README・roadmap・release-note を v0.4.2 向けに更新。
 
-## Next（v0.4.x 完了条件 - v0.5.0 に進む前に確認）
-- 実AD環境での v0.4.2 限定編集動作検証（docs/validation-user-edit.md に沿って実施）。
-- 検証結果を docs/test-record-v0.4.1.md に記録する（v0.4.2 追加項目含む）。
-- write-audit.jsonl の ldapAttribute / targetDisplayName / revertCandidate が正しく記録されることを確認する。
-- メールアドレス / 表示名 / 姓 / 名 の各属性の更新・戻し動作を確認する。
-- ユーザー名（SamAccountNameReadBox）が常に読み取り専用で更新不可であることを確認する。
+## v0.5.0 完了
+- コンピュータオブジェクト参照・description 限定編集機能の追加。
+- コンピュータ検索（Name / DNSHostName / sAMAccountName）・OS フィルタ・description 有無・無効端末表示。
+- コンピュータ詳細表示（Name / DNSHostName / OS / Enabled / Description / DN / LastLogon / WhenCreated / WhenChanged）。
+- コンピュータ所属グループ表示・クリップボードコピー。
+- コンピュータ検索結果 CSV 出力。
+- description 限定更新（AllowedComputerOuDns 配下 + Domain Admins セッション必須・空文字禁止）。
+- 更新フロー: 差分確認 → 再認証 → ConfirmComputerUpdateDialog → AD再取得・整合性チェック → 更新 → AD再取得。
+- write-audit.jsonl に targetType / targetName / operationName フィールドを追加（既存ユーザー更新レコードへの後方互換あり）。
+- AppPolicy に AllowedComputerOuDns / ExcludedComputerNames / EditableComputerAttributes / EffectiveComputerOuDns を追加。
+- AdComputer モデル / IAdComputerAttributeWriteService / DirectoryServicesAdComputerAttributeWriteService / DirectoryServicesComputerMapper を追加。
+- InMemoryAdService にデモコンピュータ（PC-001 / PC-002 / SRV-001）と computer メソッドを追加。
+- DirectoryServicesAdReadService に SearchComputers / GetComputer / GetComputerGroups / BuildComputerChangeSet を追加。
+- MainWindowViewModel にコンピュータ向け状態プロパティ（ComputerCanEdit / ComputerEditControlsEnabled / IsComputerWriteButtonEnabled / ComputerWriteButtonDisabledReason / SetComputerPendingReady）を追加。
+- MainWindow に「コンピュータ参照」タブを追加。
+- docs/validation-computer-edit.md / appsettings.ComputerDescriptionEdit.sample.json を追加。
+- README / backlog / release-note / roadmap を v0.5.0 向けに更新。
 
-## v0.5.0 候補（v0.4.x 完了後に着手）
-- コンピューターオブジェクトの参照機能（最初の v0.5.0 候補）。
+## Next（v0.5.x 完了条件 - v0.6.0 に進む前に確認）
+- 実AD環境での v0.5.0 コンピュータ description 編集動作検証（docs/validation-computer-edit.md に沿って実施）。
+- 検証結果を docs/test-record-v0.5.0.md に記録する。
+- write-audit.jsonl の targetType / targetName / operationName が正しく記録されることを確認する。
+
+## v0.6.0 候補（v0.5.x 完了後に検討）
 - グループの詳細参照（説明・管理者・ネスト状態）。
 - 検索条件の拡張（OU指定・LastLogon日付範囲など）。
 - DirectoryServicesAdReadService の検索パフォーマンス検証（実AD環境での PageSize・SizeLimit の効果測定）。

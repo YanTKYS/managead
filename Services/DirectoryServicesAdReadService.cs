@@ -166,6 +166,79 @@ public class DirectoryServicesAdReadService : IAdService
         return cs;
     }
 
+    public IReadOnlyList<AdComputer> SearchComputers(AdComputerSearchCriteria criteria)
+    {
+        var keyword = criteria.Keyword.Trim();
+        if (string.IsNullOrWhiteSpace(keyword) || keyword.Length <= 1) return Array.Empty<AdComputer>();
+
+        try
+        {
+            var list = new List<AdComputer>();
+            foreach (var baseDn in GetComputerSearchBases())
+            {
+                using var root = new DirectoryEntry($"LDAP://{baseDn}");
+                using var ds = new DirectorySearcher(root)
+                {
+                    Filter = BuildComputerSearchFilter(criteria),
+                    PageSize = 200,
+                    SizeLimit = _policy.MaxSearchResults
+                };
+                AddSearchComputerProperties(ds);
+                foreach (SearchResult r in ds.FindAll())
+                {
+                    var computer = DirectoryServicesComputerMapper.MapComputer(r);
+                    if (IsComputerExcluded(computer.Name)) continue;
+                    list.Add(computer);
+                }
+            }
+            return list;
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException("ADコンピュータ検索の実行中にエラーが発生しました。", ex);
+        }
+    }
+
+    public AdComputer? GetComputer(string name)
+    {
+        try
+        {
+            foreach (var baseDn in GetComputerSearchBases())
+            {
+                using var root = new DirectoryEntry($"LDAP://{baseDn}");
+                using var ds = new DirectorySearcher(root)
+                {
+                    Filter = $"(&(objectClass=computer)(name={EscapeLdap(name)}))",
+                    PageSize = 1
+                };
+                AddDetailComputerProperties(ds);
+                var r = ds.FindOne();
+                if (r is null) continue;
+                var computer = DirectoryServicesComputerMapper.MapComputer(r);
+                if (IsComputerExcluded(computer.Name)) return null;
+                return computer;
+            }
+            return null;
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException("ADコンピュータ取得の実行中にエラーが発生しました。", ex);
+        }
+    }
+
+    public IReadOnlyList<string> GetComputerGroups(string name)
+    {
+        var computer = GetComputer(name);
+        return computer?.Groups ?? Array.Empty<string>();
+    }
+
+    public ChangeSet BuildComputerChangeSet(AdComputer current, string newDescription)
+    {
+        var cs = new ChangeSet { TargetSamAccountName = current.Name, TargetDisplayName = current.DnsHostName };
+        if (!string.Equals(current.Description, newDescription, StringComparison.Ordinal))
+            cs.Changes.Add(new("説明 (description)", current.Description, newDescription) { LdapAttribute = "description" });
+        return cs;
+    }
 
     private string BuildUserSearchFilter(AdUserSearchCriteria criteria)
     {
@@ -205,6 +278,34 @@ public class DirectoryServicesAdReadService : IAdService
 
     private static string GetProperty(SearchResult r, string name, string fallback)
         => r.Properties.Contains(name) && r.Properties[name].Count > 0 ? r.Properties[name][0]?.ToString() ?? fallback : fallback;
+
+    private string BuildComputerSearchFilter(AdComputerSearchCriteria criteria)
+    {
+        var keyword = EscapeLdap(criteria.Keyword.Trim());
+        var filters = new List<string>
+        {
+            "(objectClass=computer)",
+            $"(|(name=*{keyword}*)(dNSHostName=*{keyword}*)(sAMAccountName=*{keyword}*))"
+        };
+        if (!string.IsNullOrWhiteSpace(criteria.OperatingSystem))
+            filters.Add($"(operatingSystem=*{EscapeLdap(criteria.OperatingSystem.Trim())}*)");
+        if (criteria.HasDescription == true) filters.Add("(description=*)");
+        if (criteria.HasDescription == false) filters.Add("(!(description=*))");
+        if (!criteria.IncludeDisabled) filters.Add("(!(userAccountControl:1.2.840.113556.1.4.803:=2))");
+        return $"(&{string.Concat(filters)})";
+    }
+
+    private static void AddSearchComputerProperties(DirectorySearcher ds)
+        => ds.PropertiesToLoad.AddRange(new[] { "name", "sAMAccountName", "dNSHostName", "operatingSystem", "description", "distinguishedName", "userAccountControl", "lastLogonTimestamp", "whenCreated", "whenChanged" });
+
+    private static void AddDetailComputerProperties(DirectorySearcher ds)
+        => ds.PropertiesToLoad.AddRange(new[] { "name", "sAMAccountName", "dNSHostName", "operatingSystem", "description", "distinguishedName", "userAccountControl", "lastLogonTimestamp", "whenCreated", "whenChanged", "memberOf" });
+
+    private IEnumerable<string> GetComputerSearchBases()
+        => _policy.EffectiveComputerOuDns.Count > 0 ? _policy.EffectiveComputerOuDns : new[] { GetDefaultNamingContext() };
+
+    private bool IsComputerExcluded(string name)
+        => _policy.ExcludedComputerNames.Any(x => string.Equals(x, name, StringComparison.OrdinalIgnoreCase));
 
     private IEnumerable<string> GetSearchBases() => _policy.AllowedTargetOuDns.Count > 0 ? _policy.AllowedTargetOuDns : new[] { GetDefaultNamingContext() };
 

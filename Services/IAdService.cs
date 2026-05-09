@@ -11,4 +11,8 @@ public interface IAdService
     IReadOnlyList<AdGroup> SearchGroups(string keyword);
     IReadOnlyList<AdUser> GetGroupMembers(string groupName);
     ChangeSet BuildChangeSet(AdUser current, string newMail, string newDisplayName, string newSurname, string newGivenName);
+    IReadOnlyList<AdComputer> SearchComputers(AdComputerSearchCriteria criteria);
+    AdComputer? GetComputer(string name);
+    IReadOnlyList<string> GetComputerGroups(string name);
+    ChangeSet BuildComputerChangeSet(AdComputer current, string newDescription);
 }
