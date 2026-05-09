@@ -94,7 +94,8 @@
 - コンピュータ詳細表示（Name / DNSHostName / OS / Enabled / Description / DN / LastLogon / WhenCreated / WhenChanged）。
 - コンピュータ所属グループ表示・クリップボードコピー。
 - コンピュータ検索結果 CSV 出力。
-- description 限定更新（AllowedComputerOuDns 配下 + Domain Admins セッション必須・空文字禁止）。
+- description 限定更新（AllowedComputerOuDns 配下 + Domain Admins セッション必須・空文字禁止・ExcludedComputerNames は更新不可）。
+- 禁止操作（意図的に未実装）: 無効化・OU移動・削除・グループ変更・GPO編集・パスワードリセット・一括更新。
 - 更新フロー: 差分確認 → 再認証 → ConfirmComputerUpdateDialog → AD再取得・整合性チェック → 更新 → AD再取得。
 - write-audit.jsonl に targetType / targetName / operationName フィールドを追加（既存ユーザー更新レコードへの後方互換あり）。
 - AppPolicy に AllowedComputerOuDns / ExcludedComputerNames / EditableComputerAttributes / EffectiveComputerOuDns を追加。
