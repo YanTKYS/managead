@@ -4,15 +4,6 @@
 
 ---
 
-## v0.6.x 完了条件（v0.7.0 着手前に確認）
-
-- 実AD環境での v0.6.0 グループメンバー編集動作検証（`docs/operation/validation-group-edit.md` 参照）
-- 検証結果を `docs/operation/test-record-v0.6.0.md` に記録する
-- `write-audit.jsonl` の `targetType: "Group"` / `operationName: "UpdateGroupMembers"` が正しく記録されることを確認する
-- 保護グループ（`ProtectedGroupNames` / `ProtectedGroupDns`）が実AD環境で正しくブロックされることを確認する
-
----
-
 ## v0.7.x 完了条件（v0.8.0 着手前に確認）
 
 - オペレーション支援タブの実AD環境での動作検証
@@ -27,8 +18,9 @@
 - 検索条件の拡張（OU指定・LastLogon日付範囲など）
 
 ### オペレーション支援の拡張（v0.7.0 実績確認後）
+- チェックリスト項目の設定化（`OperationChecklistItems` の UI 反映）
+- 変更予定のファイル出力（テキスト or CSV）
 - 複数ユーザーの一括変更予定作成（設計検討）
-- チェックリスト項目の設定化（OperationChecklistItems の UI 反映）
 
 ### キャッシュ（DirectoryReadOnly 実運用後に評価）
 - ユーザー選択切替ごとの `memberOf` 再取得削減

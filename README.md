@@ -1,13 +1,13 @@
 # ManageAdTool
 
-閉域ネットワーク向けの Active Directory 参照・限定編集支援ツール（v0.6.0）です。
+閉域ネットワーク向けの Active Directory 参照・限定編集支援ツール（v0.7.0）です。
 
 > **重要**: 本ツールは「すべての AD 管理操作ができるツール」ではありません。  
 > ユーザー属性（mail / displayName / sn / givenName）・コンピュータ description・グループメンバー追加削除（ユーザーのみ）のみ更新可能です。
 
 ---
 
-## できること（v0.6.0）
+## できること（v0.7.0）
 
 ### 参照
 - AD ユーザー検索・詳細表示・所属グループ確認
@@ -19,6 +19,12 @@
 - **ユーザー属性**: mail / displayName / sn / givenName のみ（`AllowedTargetOuDns` 配下）
 - **コンピュータ**: description のみ（`AllowedComputerOuDns` 配下）
 - **グループメンバー**: ユーザーの追加・削除のみ（`EditableGroupOuDns` 配下・保護グループ除く）
+
+### オペレーション支援
+- 対象ユーザーを検索・選択し、属性変更予定とグループ追加・削除予定を一画面で整理できる
+- 変更予定をテキスト形式でサマリー生成し、クリップボードへコピーできる（決裁書・作業メモへの貼り付けを想定）
+- 確認チェックリストを画面上で管理できる（永続保存なし）
+- **AD更新は行わない**: このタブはあくまで変更予定の確認用。実際の更新はユーザー編集・グループ編集タブから実行する
 
 ### 主な制限
 - ユーザー名（sAMAccountName）は参照専用（更新不可）
@@ -95,6 +101,7 @@
 | `docs/operation/validation-user-edit.md` | ユーザー属性編集の検証手順 |
 | `docs/operation/validation-computer-edit.md` | コンピュータ description 編集の検証手順 |
 | `docs/operation/validation-group-edit.md` | グループメンバー編集の検証手順 |
+| `docs/operation/validation-operation-support.md` | オペレーション支援機能の検証手順 |
 | `docs/design/design-account-expiration.md` | アカウント有効期限の設計メモ |
 | `docs/planning/roadmap.md` | 今後の方向性 |
 | `docs/planning/backlog.md` | 今後やること・検討事項 |
