@@ -120,11 +120,11 @@
 - AdGroupDetail / IAdGroupMemberWriteService / DirectoryServicesAdGroupMemberWriteService を追加。
 - IAdService に GetGroupDetail / FindUserForGroupAdd を追加。
 - AppPolicy に EditableGroupOuDns / ProtectedGroupNames / ProtectedGroupDns を追加。
-- docs/validation-group-member-edit.md / appsettings.GroupMemberEdit.sample.json を追加。
+- docs/validation-group-edit.md / appsettings.GroupMembershipEdit.sample.json を追加。
 - README / release-note / roadmap / backlog を v0.6.0 向けに更新。
 
 ## Next（v0.6.x 完了条件 - v0.7.0 に進む前に確認）
-- 実AD環境での v0.6.0 グループメンバー編集動作検証（docs/validation-group-member-edit.md に沿って実施）。
+- 実AD環境での v0.6.0 グループメンバー編集動作検証（docs/validation-group-edit.md に沿って実施）。
 - 検証結果を docs/test-record-v0.6.0.md に記録する。
 - write-audit.jsonl の targetType: "Group" / operationName: "UpdateGroupMembers" が正しく記録されることを確認する。
 - 保護グループ（ProtectedGroupNames / ProtectedGroupDns）が正しくブロックされることを確認する。

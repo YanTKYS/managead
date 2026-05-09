@@ -43,7 +43,7 @@
 - `ProtectedGroupNames` / `ProtectedGroupDns` に登録されたグループは編集不可
 - 追加予定・削除予定のステージング UI（差分確認後のみ更新可能）
 - 整合性チェック（更新前にAD再取得し既存メンバー状態を確認）
-- 更新フロー: 差分確認 → 再認証 → 確認ダイアログ → AD再取得・整合性チェック → 更新 → AD再取得
+- 更新フロー（8段階）: 変更予定作成（ステージング） → 差分確認 → 再認証 → 実行前確認ダイアログ → 更新前AD再取得・整合性チェック → 更新 → 更新後AD再取得 → 監査ログ出力
 - 書き込み監査ログ（`write-audit.jsonl`、`targetType: "Group"` / `operationName: "UpdateGroupMembers"` 記録）
 
 > **グループ操作の対象外**: グループ作成・削除・リネーム / グループをグループに追加 / コンピュータをグループに追加 / GPO編集 / OU移動 / 一括更新は実装していません。
@@ -142,7 +142,7 @@
 
 ## ステータス
 - v0.6.0 開発完了。実AD環境での動作検証が必要です。
-- グループメンバー編集の検証手順は `docs/validation-group-member-edit.md` を参照してください。
+- グループメンバー編集の検証手順は `docs/validation-group-edit.md` を参照してください。
 - コンピュータ description 編集の検証手順は `docs/validation-computer-edit.md` を参照してください。
 - ユーザー属性編集の検証手順は `docs/validation-user-edit.md` を参照してください。
 - 詳細手順は `docs/validation-readonly.md`、`docs/validation-auth.md`、`docs/deploy.md` を参照してください。
