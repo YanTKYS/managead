@@ -78,7 +78,7 @@
 - 更新フロー: 差分確認 → 再認証 → 確認ダイアログ → AD再取得・整合性チェック → 更新 → AD再取得
 - write-audit.jsonl に `targetType: "Group"` / `operationName: "UpdateGroupMembers"` として記録
 - AppPolicy に EditableGroupOuDns / ProtectedGroupNames / ProtectedGroupDns を追加
-- `docs/validation-group-member-edit.md` / `appsettings.GroupMemberEdit.sample.json` を追加
+- `docs/validation-group-edit.md` / `appsettings.GroupMembershipEdit.sample.json` を追加
 - 禁止操作（実装しない）: グループ作成・削除・リネーム / グループをグループに追加 / コンピュータをグループに追加 / GPO編集 / OU移動 / 一括更新
 
 ---
@@ -86,7 +86,7 @@
 ## 今後の検討事項
 
 ### v0.6.x 完了条件
-- 実AD環境での v0.6.0 グループメンバー編集動作検証（`docs/validation-group-member-edit.md` 参照）
+- 実AD環境での v0.6.0 グループメンバー編集動作検証（`docs/validation-group-edit.md` 参照）
 - 検証結果を `docs/test-record-v0.6.0.md` に記録する（別途作成）
 
 ### v0.7.0 以降の候補（優先度順・未確定）
