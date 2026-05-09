@@ -195,6 +195,60 @@ public class InMemoryAdService : IAdService
     public AdUser? FindUserForGroupAdd(string samAccountName)
         => _users.TryGetValue(samAccountName, out var user) ? user : null;
 
+    public IReadOnlyList<GpoSimulationResult> SimulateGpo(string? userSam, string? computerName)
+    {
+        if (!string.IsNullOrWhiteSpace(userSam) && !_users.ContainsKey(userSam))
+            throw new InvalidOperationException($"ユーザー「{userSam}」が見つかりません。sAMAccountName を確認してください。");
+        if (!string.IsNullOrWhiteSpace(computerName) && !_computers.ContainsKey(computerName))
+            throw new InvalidOperationException($"コンピュータ「{computerName}」が見つかりません。コンピュータ名を確認してください。");
+
+        var results = new List<GpoSimulationResult>
+        {
+            new() {
+                GpoName = "Default Domain Policy",
+                GpoId = "{31B2F340-016D-11D2-945F-00C04FB984F9}",
+                AppliesTo = "両方",
+                LinkedOuDn = "DC=example,DC=local",
+                LinkEnabled = true,
+                Enforced = false,
+                Remarks = string.Empty
+            }
+        };
+
+        if (!string.IsNullOrWhiteSpace(userSam))
+        {
+            results.Add(new()
+            {
+                GpoName = "User Desktop Policy",
+                GpoId = "{AAAABBBB-0000-1111-2222-333344445555}",
+                AppliesTo = "ユーザー",
+                LinkedOuDn = "OU=Users,DC=example,DC=local",
+                LinkEnabled = true,
+                Enforced = false,
+                Remarks = string.Empty
+            });
+        }
+
+        if (!string.IsNullOrWhiteSpace(computerName))
+        {
+            var ouDn = computerName.StartsWith("SRV", StringComparison.OrdinalIgnoreCase)
+                ? "OU=Servers,DC=example,DC=local"
+                : "OU=Computers,DC=example,DC=local";
+            results.Add(new()
+            {
+                GpoName = "Computer Security Policy",
+                GpoId = "{CCCCDDDD-0000-1111-2222-333344445555}",
+                AppliesTo = "コンピュータ",
+                LinkedOuDn = ouDn,
+                LinkEnabled = true,
+                Enforced = true,
+                Remarks = "強制適用（Enforced）"
+            });
+        }
+
+        return results;
+    }
+
     public ChangeSet BuildChangeSet(AdUser current, string newMail, string newDisplayName, string newSurname, string newGivenName)
     {
         var cs = new ChangeSet { TargetSamAccountName = current.SamAccountName, TargetDisplayName = current.DisplayName };

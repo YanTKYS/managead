@@ -485,6 +485,66 @@
                     </Grid>
                 </Grid>
             </TabItem>
+            <!-- GPOシミュレーションタブ -->
+            <TabItem Header="GPOシミュレーション">
+                <Grid Margin="8">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Input area -->
+                    <GroupBox Header="シミュレーション設定" Margin="0,0,0,8">
+                        <StackPanel Margin="4">
+                            <WrapPanel Margin="0,0,0,6" VerticalAlignment="Center">
+                                <TextBlock Text="種別" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <ComboBox x:Name="GpoKindComboBox" Width="220" SelectedIndex="0"
+                                          SelectionChanged="GpoKindComboBox_SelectionChanged">
+                                    <ComboBoxItem Content="ユーザー"/>
+                                    <ComboBoxItem Content="コンピュータ"/>
+                                    <ComboBoxItem Content="ユーザー + コンピュータ"/>
+                                </ComboBox>
+                                <TextBlock Text="※ GPO 参照・シミュレーションのみ。GPO 編集・リンク変更は実行しません。"
+                                           VerticalAlignment="Center" Foreground="DarkOrange" FontSize="11" Margin="12,0,0,0"/>
+                            </WrapPanel>
+
+                            <WrapPanel x:Name="GpoUserInputPanel" Margin="0,0,0,4" Visibility="Visible">
+                                <TextBlock Text="sAMAccountName" VerticalAlignment="Center" Width="130"/>
+                                <TextBox x:Name="GpoUserSamBox" Width="260"/>
+                            </WrapPanel>
+
+                            <WrapPanel x:Name="GpoComputerInputPanel" Margin="0,0,0,4" Visibility="Collapsed">
+                                <TextBlock Text="コンピュータ名" VerticalAlignment="Center" Width="130"/>
+                                <TextBox x:Name="GpoComputerNameBox" Width="260"/>
+                            </WrapPanel>
+
+                            <Button Content="シミュレーション実行" Width="160" HorizontalAlignment="Left"
+                                    Margin="0,4,0,0" Click="GpoSimulate_Click"/>
+                        </StackPanel>
+                    </GroupBox>
+
+                    <!-- Result DataGrid -->
+                    <DataGrid x:Name="GpoResultGrid" Grid.Row="1" AutoGenerateColumns="False"
+                              SelectionMode="Single" Margin="0,0,0,8" IsReadOnly="True">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="GPO名" Binding="{Binding GpoName}" Width="3*"/>
+                            <DataGridTextColumn Header="GPO ID" Binding="{Binding GpoId}" Width="3*"/>
+                            <DataGridTextColumn Header="適用対象" Binding="{Binding AppliesTo}" Width="*"/>
+                            <DataGridTextColumn Header="リンク先OU" Binding="{Binding LinkedOuDn}" Width="4*"/>
+                            <DataGridCheckBoxColumn Header="有効" Binding="{Binding LinkEnabled}" Width="Auto"/>
+                            <DataGridCheckBoxColumn Header="強制適用" Binding="{Binding Enforced}" Width="Auto"/>
+                            <DataGridTextColumn Header="備考" Binding="{Binding Remarks}" Width="2*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <!-- Action buttons -->
+                    <WrapPanel Grid.Row="2">
+                        <Button Content="結果をコピー" Width="120" Margin="0,0,8,0" Click="GpoCopyResults_Click"/>
+                        <Button Content="CSV出力" Width="100" Click="GpoExportCsv_Click"/>
+                    </WrapPanel>
+                </Grid>
+            </TabItem>
         </TabControl>
 
         <!-- Row 6: Output GroupBox -->

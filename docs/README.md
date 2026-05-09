@@ -15,6 +15,7 @@ ManageAdTool のドキュメント一覧です。
 | `validation-computer-edit.md` | コンピュータ description 編集の検証手順 |
 | `validation-group-edit.md` | グループメンバー編集の検証手順 |
 | `validation-operation-support.md` | オペレーション支援機能の検証手順 |
+| `validation-gpo-simulation.md` | GPOシミュレーション機能の検証手順 |
 | `test-record-v0.2.0.md` | v0.2.0 検証結果記録 |
 | `test-record-v0.4.1.md` | v0.4.1 検証結果記録 |
 | `test-record-v0.7.0.md` | v0.7.0 検証結果記録 |
@@ -34,9 +35,9 @@ ManageAdTool のドキュメント一覧です。
 
 | ファイル | 内容 |
 |---|---|
-| `roadmap.md` | 今後の方向性・v0.8.0 候補・対象外事項 |
-| `backlog.md` | 今後やること・検討事項（v0.7.x 完了条件・v0.8.0 候補） |
-| `completed-work.md` | 完了済み作業の詳細履歴（v0.1.0〜v0.7.0） |
+| `roadmap.md` | 今後の方向性・v0.9.0 候補・対象外事項 |
+| `backlog.md` | 今後やること・検討事項（v0.8.x 完了条件・v0.9.0 候補） |
+| `completed-work.md` | 完了済み作業の詳細履歴（v0.1.0〜v0.8.0） |
 
 ---
 
