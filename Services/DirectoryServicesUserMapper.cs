@@ -22,6 +22,8 @@ public static class DirectoryServicesUserMapper
             SamAccountName = GetString(r, "samAccountName"),
             DisplayName = GetString(r, "displayName"),
             Name = GetString(r, "name"),
+            Surname = GetString(r, "sn"),
+            GivenName = GetString(r, "givenName"),
             Mail = GetString(r, "mail"),
             Department = GetString(r, "department"),
             Title = GetString(r, "title"),

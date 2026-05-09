@@ -68,12 +68,32 @@
 - docs/deploy.md に v0.4.x 利用時の注意事項を追加。
 - docs/test-record-v0.4.1.md を追加。
 
+## v0.4.2 完了
+- 編集対象属性の見直し: mail / department / title → mail / displayName / sn / givenName（メールアドレス / 表示名 / 姓 / 名）。
+- `EditableAttributeDefs` 静的クラスを追加し、属性定義（表示名・LDAPattr）を一元管理。
+- `FieldChange` に `LdapAttribute` プロパティ（init）を追加し、write-audit.jsonl の `changes` に `ldapAttribute` フィールドを追記。
+- 書き込みサービス（`DirectoryServicesAdUserAttributeWriteService`）を LdapAttribute ベースのバリデーションに切り替え（"mail"/"displayName"/"sn"/"givenName" のみ許可）。
+- `AdUser` に `Surname`（sn）/ `GivenName`（givenName）プロパティを追加。
+- `DirectoryServicesUserMapper` に sn / givenName マッピングを追加。
+- `DirectoryServicesAdReadService` の PropertiesToLoad に sn / givenName を追加。
+- UI: 編集 GroupBox を5行に拡張（メールアドレス / 表示名 / 姓 / 名 / ユーザー名（参照のみ））。SamAccountNameReadBox を常時読み取り専用で追加。
+- `UserEditPolicyService` の required 属性リストを mail/displayName/sn/givenName に更新。
+- `InMemoryAdService` のデモデータに Surname / GivenName を追加。
+- 整合性チェック・VerifiedAfterUpdate・BuildSuccessOutput を LdapAttribute ベースに切り替え。
+- 差分確認プレビューに `({ldapAttribute})` を表示。
+- `FormatUserDetails` に Surname / GivenName を追加。
+- department / title は AdUser モデル・詳細表示（FormatUserDetails）では引き続き保持するが、編集UIから除外。
+- `docs/retrospective-v0.4.1.md` を追加。
+- `docs/design-account-expiration.md` を追加（アカウント有効期限の設計方針）。
+- `appsettings.UserAttributeEdit.sample.json` の EditableAttributes を更新。
+- docs/validation-user-edit.md・README・roadmap・release-note を v0.4.2 向けに更新。
+
 ## Next（v0.4.x 完了条件 - v0.5.0 に進む前に確認）
-- 実AD環境での v0.4.1 限定編集動作検証（docs/validation-user-edit.md に沿って実施）。
-- 検証結果を docs/test-record-v0.4.1.md に記録する。
-- write-audit.jsonl の targetDisplayName / revertCandidate が正しく記録されることを確認する。
-- 戻し候補の表示と「戻し用メモをコピー」ボタンの動作を確認する。
-- 監査ログ保存失敗時の警告表示を確認する。
+- 実AD環境での v0.4.2 限定編集動作検証（docs/validation-user-edit.md に沿って実施）。
+- 検証結果を docs/test-record-v0.4.1.md に記録する（v0.4.2 追加項目含む）。
+- write-audit.jsonl の ldapAttribute / targetDisplayName / revertCandidate が正しく記録されることを確認する。
+- メールアドレス / 表示名 / 姓 / 名 の各属性の更新・戻し動作を確認する。
+- ユーザー名（SamAccountNameReadBox）が常に読み取り専用で更新不可であることを確認する。
 
 ## v0.5.0 候補（v0.4.x 完了後に着手）
 - コンピューターオブジェクトの参照機能（最初の v0.5.0 候補）。

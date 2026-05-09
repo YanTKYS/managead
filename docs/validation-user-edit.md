@@ -1,9 +1,11 @@
-# ユーザー属性限定編集 検証手順（v0.4.0）
+# ユーザー属性限定編集 検証手順（v0.4.2）
 
-本手順は **v0.4.0 の限定編集機能**（mail / department / title のAD更新）を  
+本手順は **v0.4.2 の限定編集機能**（mail / displayName / sn / givenName のAD更新）を  
 実 AD 環境で検証するためのものです。
 
-> **重要**: 本機能は mail / department / title のみを対象とします。  
+> **重要**: 本機能は メールアドレス（mail）/ 表示名（displayName）/ 姓（sn）/ 名（givenName）のみを対象とします。  
+> ユーザー名（sAMAccountName）は参照専用であり、更新できません。  
+> department / title は編集UIに表示されません（詳細表示には引き続き表示されます）。  
 > グループ操作・OU移動・ユーザー無効化・パスワードリセットは実装していません。  
 > 更新前に必ず検証用OUと検証用ユーザーを準備してください。
 
@@ -11,7 +13,7 @@
 
 ## 1. 事前条件
 
-- 閉域端末に ManageAdTool v0.4.0 の成果物が配置済みであること
+- 閉域端末に ManageAdTool v0.4.2 の成果物が配置済みであること
 - 実 AD へ接続可能なネットワーク疎通があること
 - 検証用OU（例: `OU=TestUsers,OU=Validation,DC=example,DC=local`）が用意されていること
 - 検証用ユーザー（上記OUに所属）が1件以上用意されていること
@@ -37,7 +39,7 @@
       "administrator",
       "krbtgt"
     ],
-    "EditableAttributes": ["mail", "department", "title"],
+    "EditableAttributes": ["mail", "displayName", "sn", "givenName"],
     "LogPath": "C:\\ProgramData\\ManageAdTool\\logs\\audit.jsonl",
     "MaxSearchResults": 200
   }
@@ -55,7 +57,7 @@
 | 1 | アプリ起動 | 正常起動 | | |
 | 2 | Domain Admins アカウントでログイン | ログイン成功 | | |
 | 3 | 検証用ユーザーを検索・選択 | 詳細が表示される | | |
-| 4 | mail を変更して「差分確認」ボタン押下 | 差分が処理結果欄に表示される | | |
+| 4 | メールアドレス（mail）を変更して「差分確認」ボタン押下 | 差分が処理結果欄に「メールアドレス（mail）: ...」形式で表示される | | |
 | 5 | 「限定更新実行」ボタンが有効になる | 有効 | | 差分確認後のみ有効 |
 | 6 | 「限定更新実行」ボタン押下 → 再認証ダイアログが表示される | 表示あり | | |
 | 7 | Domain Admins アカウントで再認証 | 再認証成功 | | |
@@ -73,13 +75,21 @@
 
 ---
 
-### 3-2. department / title の更新
+### 3-2. 表示名 / 姓 / 名 の更新
 
 | # | 確認項目 | 期待値 | 結果 | 備考 |
 |---|---|---|---|---|
-| 19 | department を変更して更新 | 更新成功 | | |
-| 20 | title を変更して更新 | 更新成功 | | |
-| 21 | mail / department / title の3属性を同時に変更して更新 | 更新成功 | | |
+| 19 | 表示名（displayName）を変更して更新 | 更新成功 | | |
+| 20 | 姓（sn）を変更して更新 | 更新成功 | | |
+| 21 | 名（givenName）を変更して更新 | 更新成功 | | |
+| 21a | メールアドレス / 表示名 / 姓 / 名 の4属性を同時に変更して更新 | 更新成功 | | |
+
+### 3-2b. ユーザー名の参照専用確認
+
+| # | 確認項目 | 期待値 | 結果 | 備考 |
+|---|---|---|---|---|
+| 21b | ユーザー名欄（SamAccountNameReadBox）が入力不可（グレーアウト）である | 入力不可 | | v0.4.2 新規 |
+| 21c | 「差分確認」押下時に sAMAccountName の変更が含まれない | 含まれない | | v0.4.2 新規 |
 
 ### 3-3. 差分確認状態の確認
 
@@ -120,7 +130,7 @@
 
 | # | 確認項目 | 期待値 | 結果 | 備考 |
 |---|---|---|---|---|
-| 33 | mail を空文字にして「限定更新実行」を押下 | 「空文字への更新は禁止されています」と表示 | | |
+| 33 | メールアドレスを空文字にして「限定更新実行」を押下 | 「空文字への更新は禁止されています」と表示 | | |
 | 34 | ADの属性は変更されていない | 変更なし | | |
 
 ### 4-4. AllowedTargetOuDns が空の場合
@@ -181,7 +191,8 @@
 | 52 | `editorUser` に認証した Domain Admins ユーザーが記録される | 正しい | | |
 | 53 | `executor` にアプリ起動ユーザー（`DOMAIN\user`）が記録される | 正しい | | |
 | 54 | `changes` に変更前後の値が記録される | 正しい | | |
-| 55 | `verifiedAfterUpdate` に更新後AD再取得値が記録される | 正しい | | |
+| 54a | `changes` の各エントリに `ldapAttribute` フィールドが記録される（"mail" / "displayName" / "sn" / "givenName"） | 正しい | | v0.4.2 新規 |
+| 55 | `verifiedAfterUpdate` に更新後AD再取得値が記録される（mail / displayName / sn / givenName） | 正しい | | |
 | 56 | `revertCandidate` に変更前の値が記録される | 正しい | | v0.4.1 新規 |
 | 57 | `password` フィールドが存在しない | 存在しない | | 重要 |
 | 58 | 更新失敗時は `success: false` と `error` が記録される | 正しい | | |
@@ -201,14 +212,15 @@
 
 ## 7. 判定基準
 
-- 検証OU内ユーザーの mail / department / title 更新が成功すること
+- 検証OU内ユーザーの mail / displayName / sn / givenName 更新が成功すること
+- ユーザー名（sAMAccountName）欄が常に読み取り専用で更新に含まれないこと
 - 許可OU外・除外アカウント・空文字で更新が拒否されること
 - セッション期限切れ・未ログインで更新ボタンが無効になり、無効理由が表示されること
 - 再認証ダイアログが表示され、失敗時は更新が実行されないこと
 - 再認証ユーザーとセッションユーザーが不一致の場合に更新が中止されること
 - 更新成功後に変更前・変更後・AD再取得値が表示されること
 - 「戻し候補」が表示され、「戻し用メモをコピー」ボタンで取得できること
-- `write-audit.jsonl` に `targetDisplayName` と `revertCandidate` が記録されること
+- `write-audit.jsonl` に `targetDisplayName` / `revertCandidate` / `ldapAttribute` が記録されること
 - `write-audit.jsonl` にパスワードが記録されないこと
 - 監査ログに成功・失敗が正しく記録されること
 

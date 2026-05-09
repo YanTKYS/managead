@@ -152,12 +152,17 @@ public class DirectoryServicesAdReadService : IAdService
         }
     }
 
-    public ChangeSet BuildChangeSet(AdUser current, string newMail, string newDepartment, string newTitle)
+    public ChangeSet BuildChangeSet(AdUser current, string newMail, string newDisplayName, string newSurname, string newGivenName)
     {
         var cs = new ChangeSet { TargetSamAccountName = current.SamAccountName, TargetDisplayName = current.DisplayName };
-        if (!string.Equals(current.Mail, newMail, StringComparison.Ordinal)) cs.Changes.Add(new("Mail", current.Mail, newMail));
-        if (!string.Equals(current.Department, newDepartment, StringComparison.Ordinal)) cs.Changes.Add(new("Department", current.Department, newDepartment));
-        if (!string.Equals(current.Title, newTitle, StringComparison.Ordinal)) cs.Changes.Add(new("Title", current.Title, newTitle));
+        if (!string.Equals(current.Mail, newMail, StringComparison.Ordinal))
+            cs.Changes.Add(new(EditableAttributeDefs.Mail.DisplayName, current.Mail, newMail) { LdapAttribute = EditableAttributeDefs.Mail.LdapAttribute });
+        if (!string.Equals(current.DisplayName, newDisplayName, StringComparison.Ordinal))
+            cs.Changes.Add(new(EditableAttributeDefs.DisplayName.DisplayName, current.DisplayName, newDisplayName) { LdapAttribute = EditableAttributeDefs.DisplayName.LdapAttribute });
+        if (!string.Equals(current.Surname, newSurname, StringComparison.Ordinal))
+            cs.Changes.Add(new(EditableAttributeDefs.Surname.DisplayName, current.Surname, newSurname) { LdapAttribute = EditableAttributeDefs.Surname.LdapAttribute });
+        if (!string.Equals(current.GivenName, newGivenName, StringComparison.Ordinal))
+            cs.Changes.Add(new(EditableAttributeDefs.GivenName.DisplayName, current.GivenName, newGivenName) { LdapAttribute = EditableAttributeDefs.GivenName.LdapAttribute });
         return cs;
     }
 
@@ -193,10 +198,10 @@ public class DirectoryServicesAdReadService : IAdService
     }
 
     private static void AddSearchUserProperties(DirectorySearcher ds)
-        => ds.PropertiesToLoad.AddRange(new[] { "samAccountName", "displayName", "name", "mail", "department", "title", "distinguishedName", "lastLogonTimestamp", "accountExpires", "userAccountControl" });
+        => ds.PropertiesToLoad.AddRange(new[] { "samAccountName", "displayName", "name", "sn", "givenName", "mail", "department", "title", "distinguishedName", "lastLogonTimestamp", "accountExpires", "userAccountControl" });
 
     private static void AddDetailUserProperties(DirectorySearcher ds)
-        => ds.PropertiesToLoad.AddRange(new[] { "samAccountName", "displayName", "name", "mail", "department", "title", "distinguishedName", "memberOf", "lastLogonTimestamp", "accountExpires", "userAccountControl" });
+        => ds.PropertiesToLoad.AddRange(new[] { "samAccountName", "displayName", "name", "sn", "givenName", "mail", "department", "title", "distinguishedName", "memberOf", "lastLogonTimestamp", "accountExpires", "userAccountControl" });
 
     private static string GetProperty(SearchResult r, string name, string fallback)
         => r.Properties.Contains(name) && r.Properties[name].Count > 0 ? r.Properties[name][0]?.ToString() ?? fallback : fallback;

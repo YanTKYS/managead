@@ -1,9 +1,10 @@
 # ManageAdTool
 
-閉域ネットワーク向けの Active Directory 参照・限定編集支援ツール（v0.4.1）です。
+閉域ネットワーク向けの Active Directory 参照・限定編集支援ツール（v0.4.2）です。
 
 > **重要**: 本ツールは「すべての AD 管理操作ができるツール」ではありません。  
-> v0.4.x では mail / department / title の3属性のみ更新可能です。  
+> v0.4.x では **メールアドレス（mail）/ 表示名（displayName）/ 姓（sn）/ 名（givenName）** の4属性のみ更新可能です。  
+> ユーザー名（sAMAccountName）は参照専用です（v0.4.2 では更新対象外）。  
 > グループ操作・GPO編集・OU移動・ユーザー無効化・パスワードリセット・一括更新は実装していません。
 
 > **v0.4.x の利用方針**: v0.4.x は「ユーザー属性限定編集の安定化フェーズ」です。  
@@ -12,7 +13,7 @@
 
 ## 方針（v0.4.x 時点）
 - 参照機能を主目的とし、AD情報確認・所属グループ確認・問い合わせ対応・事前調査で安全に利用できることを重視します。
-- 書き込みは **mail / department / title のみ** に限定します。
+- 書き込みは **mail / displayName / sn / givenName のみ** に限定します（メールアドレス / 表示名 / 姓 / 名）。
 - 書き込みには **Domain Admins 認証済みセッション** が必須です。
 - 書き込みには **AllowedTargetOuDns の設定** が必須です（未設定なら書き込み不可）。
 - **パスワードは保存しません**（appsettings.json / ログ / メモリへの永続化なし）。更新実行時に再認証ダイアログで入力し、即時使用・破棄します。
@@ -35,14 +36,15 @@
 - 編集セッション管理（タイムアウト・自動期限チェック）
 - 認証ログ（`auth.jsonl`）
 
-### 限定編集（v0.4.0 新機能）
-- mail / department / title の AD 更新（Domain Admins セッション必須）
+### 限定編集（v0.4.0 新機能、v0.4.2 属性見直し）
+- **メールアドレス（mail）/ 表示名（displayName）/ 姓（sn）/ 名（givenName）** の AD 更新（Domain Admins セッション必須）
+- ユーザー名（sAMAccountName）は参照専用（更新不可）
 - AllowedTargetOuDns 配下のユーザーのみ更新可能
 - ExcludedSamAccountNames のユーザーは更新不可
 - 空文字への更新は禁止
 - 更新前: 差分確認 → 再認証 → 実行前確認ダイアログ → AD再取得・整合性チェック
-- 更新後: AD再取得して結果表示
-- 書き込み監査ログ（`write-audit.jsonl`、パスワード非記録）
+- 更新後: AD再取得して結果表示・戻し候補表示
+- 書き込み監査ログ（`write-audit.jsonl`、ldapAttribute フィールド含む、パスワード非記録）
 
 ## ServiceMode
 `appsettings.json` の `AppPolicy.ServiceMode` で動作モードを切り替えます。
@@ -65,7 +67,7 @@
       "administrator",
       "krbtgt"
     ],
-    "EditableAttributes": ["mail", "department", "title"],
+    "EditableAttributes": ["mail", "displayName", "sn", "givenName"],
     "LogPath": "C:\\ProgramData\\ManageAdTool\\logs\\audit.jsonl",
     "MaxSearchResults": 200,
     "UserDetailDisplayAttributes": [
@@ -106,9 +108,9 @@
 - 「限定更新実行」押下時の再認証パスワードは、認証 + AD書き込みに即時使用し破棄されます
 
 ## ステータス
-- v0.4.1 開発完了。実AD環境での動作検証が必要です。
+- v0.4.2 開発完了。実AD環境での動作検証が必要です。
 - v0.3.0 の参照・認証機能は確認済みです。
-- v0.4.1 の限定編集機能は実AD環境での動作検証が必要です。詳細は `docs/validation-user-edit.md` および `docs/test-record-v0.4.1.md` を参照してください。
+- v0.4.2 の限定編集機能は実AD環境での動作検証が必要です。詳細は `docs/validation-user-edit.md` および `docs/test-record-v0.4.1.md` を参照してください。
 - 詳細手順は `docs/validation-readonly.md`、`docs/validation-auth.md`、`docs/deploy.md` を参照してください。
 - リリース ZIP は self-contained 形式のため、利用端末への .NET Desktop Runtime の別途インストールは不要です。
 

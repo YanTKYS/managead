@@ -165,9 +165,11 @@ public partial class MainWindow : Window
         CopyRevertMemoButton.IsEnabled = false;
         if (_selected is null) return;
 
-        MailBox.Text = _selected.Mail;
-        DepartmentBox.Text = _selected.Department;
-        TitleBox.Text = _selected.Title;
+        EditMailBox.Text = _selected.Mail;
+        EditDisplayNameBox.Text = _selected.DisplayName;
+        EditSurnameBox.Text = _selected.Surname;
+        EditGivenNameBox.Text = _selected.GivenName;
+        SamAccountNameReadBox.Text = _selected.SamAccountName;
         UserDetailBox.Text = FormatUserDetails(_selected);
         try
         {
@@ -266,7 +268,9 @@ public partial class MainWindow : Window
     private void Preview_Click(object sender, RoutedEventArgs e)
     {
         if (!_vm.CanEdit || _selected is null) return;
-        _pending = _useCase.BuildChangeSet(_selected, MailBox.Text.Trim(), DepartmentBox.Text.Trim(), TitleBox.Text.Trim());
+        _pending = _useCase.BuildChangeSet(_selected,
+            EditMailBox.Text.Trim(), EditDisplayNameBox.Text.Trim(),
+            EditSurnameBox.Text.Trim(), EditGivenNameBox.Text.Trim());
         _vm.SetPendingReady(_pending.Changes.Count > 0);
         OutputBox.Text = FormatChangePreview(_pending, "差分確認");
     }
@@ -308,7 +312,9 @@ public partial class MainWindow : Window
             if (proceed != MessageBoxResult.Yes) return;
         }
 
-        var changeSet = _useCase.BuildChangeSet(_selected, MailBox.Text.Trim(), DepartmentBox.Text.Trim(), TitleBox.Text.Trim());
+        var changeSet = _useCase.BuildChangeSet(_selected,
+            EditMailBox.Text.Trim(), EditDisplayNameBox.Text.Trim(),
+            EditSurnameBox.Text.Trim(), EditGivenNameBox.Text.Trim());
 
         var emptyUpdates = changeSet.Changes.Where(c => string.IsNullOrWhiteSpace(c.After)).ToList();
         if (emptyUpdates.Count > 0)
@@ -404,18 +410,19 @@ public partial class MainWindow : Window
 
             foreach (var change in changeSet.Changes)
             {
-                var adValue = change.Field switch
+                var adValue = change.LdapAttribute switch
                 {
-                    "Mail" => currentUser.Mail,
-                    "Department" => currentUser.Department,
-                    "Title" => currentUser.Title,
+                    "mail" => currentUser.Mail,
+                    "displayName" => currentUser.DisplayName,
+                    "sn" => currentUser.Surname,
+                    "givenName" => currentUser.GivenName,
                     _ => null
                 };
                 if (!string.Equals(adValue, change.Before, StringComparison.Ordinal))
                 {
                     OutputBox.Text = $"AD上の値が変更されているため更新を中止しました。\n再度「差分確認」から実行してください。\n（{change.Field}: AD現在値「{adValue}」/ 確認時点「{change.Before}」）";
                     LogWriteFailure(changeSet, currentUser.DistinguishedName, authResult.ResolvedUser,
-                        $"AD値不一致 field={change.Field}", true, false);
+                        $"AD値不一致 ldap={change.LdapAttribute}", true, false);
                     return;
                 }
             }
@@ -460,8 +467,9 @@ public partial class MainWindow : Window
                 VerifiedAfterUpdate = verifiedUser is null ? null : new Dictionary<string, string>
                 {
                     ["mail"] = verifiedUser.Mail,
-                    ["department"] = verifiedUser.Department,
-                    ["title"] = verifiedUser.Title
+                    ["displayName"] = verifiedUser.DisplayName,
+                    ["sn"] = verifiedUser.Surname,
+                    ["givenName"] = verifiedUser.GivenName
                 },
                 RevertCandidate = revertCandidate,
                 AllowedTargetOuMatched = true,
@@ -476,9 +484,11 @@ public partial class MainWindow : Window
                     $"target={currentUser.SamAccountName} write-audit.jsonl への保存失敗");
 
             _selected = verifiedUser ?? currentUser;
-            MailBox.Text = _selected.Mail;
-            DepartmentBox.Text = _selected.Department;
-            TitleBox.Text = _selected.Title;
+            EditMailBox.Text = _selected.Mail;
+            EditDisplayNameBox.Text = _selected.DisplayName;
+            EditSurnameBox.Text = _selected.Surname;
+            EditGivenNameBox.Text = _selected.GivenName;
+            SamAccountNameReadBox.Text = _selected.SamAccountName;
             UserDetailBox.Text = FormatUserDetails(_selected);
             _pending = null;
             _vm.SetPendingReady(false);
@@ -513,11 +523,12 @@ public partial class MainWindow : Window
             if (verifiedUser is null)
                 verifiedVal = "（AD再取得失敗）";
             else
-                verifiedVal = change.Field switch
+                verifiedVal = change.LdapAttribute switch
                 {
-                    "Mail" => verifiedUser.Mail,
-                    "Department" => verifiedUser.Department,
-                    "Title" => verifiedUser.Title,
+                    "mail" => verifiedUser.Mail,
+                    "displayName" => verifiedUser.DisplayName,
+                    "sn" => verifiedUser.Surname,
+                    "givenName" => verifiedUser.GivenName,
                     _ => "（不明）"
                 };
 
@@ -642,6 +653,8 @@ public partial class MainWindow : Window
         {
             ["SamAccountName"] = user.SamAccountName,
             ["DisplayName"] = user.DisplayName,
+            ["Surname"] = user.Surname,
+            ["GivenName"] = user.GivenName,
             ["Name"] = user.Name,
             ["Mail"] = user.Mail,
             ["Department"] = user.Department,
@@ -683,7 +696,7 @@ public partial class MainWindow : Window
     {
         if (cs.Changes.Count == 0) return "差分なし（更新不要）";
         var lines = new List<string> { $"対象: {cs.TargetSamAccountName}（{cs.TargetDisplayName}）", $"操作: {operation}" };
-        lines.AddRange(cs.Changes.Select(c => $"- {c.Field}: 「{c.Before}」→「{c.After}」"));
+        lines.AddRange(cs.Changes.Select(c => $"- {c.Field}（{c.LdapAttribute}）: 「{c.Before}」→「{c.After}」"));
         return string.Join(Environment.NewLine, lines);
     }
 

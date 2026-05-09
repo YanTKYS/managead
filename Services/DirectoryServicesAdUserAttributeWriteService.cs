@@ -6,33 +6,33 @@ namespace ManageAdTool.Services;
 
 public class DirectoryServicesAdUserAttributeWriteService : IAdUserAttributeWriteService
 {
-    private static readonly HashSet<string> AllowedFields =
-        new(StringComparer.OrdinalIgnoreCase) { "Mail", "Department", "Title" };
-
-    private static readonly Dictionary<string, string> FieldToLdapAttr =
+    // v0.4.2 更新可能な LDAP 属性のホワイトリスト。EditableAttributeDefs.All と対応する。
+    // FieldChange.LdapAttribute で検証する。Field（表示名）では検証しない。
+    private static readonly HashSet<string> AllowedLdapAttributes =
         new(StringComparer.OrdinalIgnoreCase)
         {
-            ["Mail"] = "mail",
-            ["Department"] = "department",
-            ["Title"] = "title"
+            "mail",        // メールアドレス
+            "displayName", // 表示名
+            "sn",          // 姓
+            "givenName",   // 名
         };
 
     public UpdateResult UpdateUserAttributes(string targetDn, ChangeSet changeSet, string domainUser, string password)
     {
-        var disallowed = changeSet.Changes.Select(c => c.Field).Where(f => !AllowedFields.Contains(f)).ToList();
+        var disallowed = changeSet.Changes
+            .Where(c => !AllowedLdapAttributes.Contains(c.LdapAttribute))
+            .Select(c => string.IsNullOrEmpty(c.LdapAttribute) ? c.Field : c.LdapAttribute)
+            .ToList();
         if (disallowed.Count > 0)
             return new UpdateResult(false, $"許可されていない属性への更新要求: {string.Join(", ", disallowed)}");
 
         try
         {
             using var entry = new DirectoryEntry($"LDAP://{targetDn}", domainUser, password, AuthenticationTypes.Secure);
-
             foreach (var change in changeSet.Changes)
             {
-                var attr = FieldToLdapAttr[change.Field];
-                entry.Properties[attr].Value = change.After;
+                entry.Properties[change.LdapAttribute].Value = change.After;
             }
-
             entry.CommitChanges();
             return new UpdateResult(true);
         }
