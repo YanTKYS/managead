@@ -218,6 +218,8 @@
 - `AppPolicy` に `MaxLogDisplayRows`（デフォルト 1000）を追加。
 - `ReferenceAuditLogger` コンストラクターに `executor` / `machineName` 省略可能引数を追加し、全ログエントリに記録。
 - `MainWindow.xaml.cs` で `ReferenceAuditLogger` コンストラクターに `Executor` / `Environment.MachineName` を渡すよう更新。
-- 禁止操作（意図的に未実装）: ログ編集・削除・ログエクスポートからのAD操作。
-- docs を v0.9.0 向けに更新（backlog / roadmap / release-note / completed-work / README）。
-- `docs/operation/validation-log-viewer.md` を追加。
+- 禁止操作（意図的に未実装）: ログ編集・削除・ログ改ざん検知・ログローテーション・外部DB保存・ログからのAD操作。
+- v0.9.0 では新しい AD 更新操作は追加していない。
+- docs を v0.9.0 向けに更新（backlog / roadmap / release-note / completed-work / README / docs/README）。
+- `docs/operation/validation-log-viewer.md` を追加（取り扱い注意の注記・全14検証項目）。
+- `docs/operation/test-record-v0.9.0.md` を追加（検証結果記録様式）。
