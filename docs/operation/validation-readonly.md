@@ -1,10 +1,10 @@
 # DirectoryReadOnly 実AD検証手順
 
 本手順は **DirectoryReadOnly（読み取り専用）** で、実ADへの接続と参照機能のみを検証するためのものです。  
-本手順では AD 更新機能の検証は行いません（MVP範囲外）。
+本手順では AD 更新機能の検証は行いません。
 
 ## 1. 事前条件
-- 閉域端末に ManageAdTool v0.2.0 の成果物が配置済みであること
+- 閉域端末に ManageAdTool の成果物が配置済みであること
 - 実ADへ参照可能なネットワーク疎通があること
 - 検証用ユーザー/OUが事前に用意されていること
 
@@ -24,9 +24,10 @@
       "administrator",
       "krbtgt"
     ],
-    "EditableAttributes": ["mail", "department", "title"],
+    "EditableAttributes": ["mail", "displayName", "sn", "givenName"],
     "LogPath": "C:\\ProgramData\\ManageAdTool\\logs\\audit.jsonl",
     "MaxSearchResults": 200,
+    "MaxLogDisplayRows": 1000,
     "UserDetailDisplayAttributes": [
       "SamAccountName",
       "DisplayName",

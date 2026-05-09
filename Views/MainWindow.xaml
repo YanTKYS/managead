@@ -486,7 +486,7 @@
                 </Grid>
             </TabItem>
             <!-- GPOシミュレーションタブ -->
-            <TabItem Header="GPOシミュレーション">
+            <TabItem Header="GPOシミュレーション（簡易）">
                 <Grid Margin="8">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -505,8 +505,8 @@
                                     <ComboBoxItem Content="コンピュータ"/>
                                     <ComboBoxItem Content="ユーザー + コンピュータ"/>
                                 </ComboBox>
-                                <TextBlock Text="※ GPO 参照・シミュレーションのみ。GPO 編集・リンク変更は実行しません。"
-                                           VerticalAlignment="Center" Foreground="DarkOrange" FontSize="11" Margin="12,0,0,0"/>
+                                <TextBlock Text="※ OUリンクから推定する簡易シミュレーションです。GPO編集・リンク変更は実行しません。セキュリティフィルタ・WMIフィルタ・継承ブロックは考慮しません。"
+                                           VerticalAlignment="Center" Foreground="DarkOrange" FontSize="11" Margin="12,0,0,0" TextWrapping="Wrap"/>
                             </WrapPanel>
 
                             <WrapPanel x:Name="GpoUserInputPanel" Margin="0,0,0,4" Visibility="Visible">
@@ -561,18 +561,22 @@
 
                     <!-- Log kind + Load -->
                     <GroupBox Header="ログ選択" Margin="0,0,0,6">
-                        <WrapPanel Margin="4">
-                            <TextBlock Text="ログ種別" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                            <ComboBox x:Name="LogKindComboBox" Width="160" SelectedIndex="0" Margin="0,0,12,0">
-                                <ComboBoxItem Content="参照ログ (audit.jsonl)"/>
-                                <ComboBoxItem Content="認証ログ (auth.jsonl)"/>
-                                <ComboBoxItem Content="書き込みログ (write-audit.jsonl)"/>
-                            </ComboBox>
-                            <Button Content="読み込み" Width="90" Margin="0,0,8,0" Click="LogLoad_Click"/>
-                            <Button Content="フォルダを開く" Width="110" Click="LogOpenFolder_Click"/>
-                            <TextBlock x:Name="LogWarningText" Foreground="DarkOrange" FontSize="11"
-                                       VerticalAlignment="Center" Margin="12,0,0,0" TextWrapping="Wrap"/>
-                        </WrapPanel>
+                        <StackPanel Margin="4">
+                            <TextBlock Text="⚠ ログにはAD属性・DN・操作履歴など内部情報が含まれます。CSV出力した内容の管理に注意してください。ログの編集・削除は行いません（閲覧専用）。"
+                                       Foreground="DarkOrange" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,6"/>
+                            <WrapPanel>
+                                <TextBlock Text="ログ種別" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <ComboBox x:Name="LogKindComboBox" Width="160" SelectedIndex="0" Margin="0,0,12,0">
+                                    <ComboBoxItem Content="参照ログ (audit.jsonl)"/>
+                                    <ComboBoxItem Content="認証ログ (auth.jsonl)"/>
+                                    <ComboBoxItem Content="書き込みログ (write-audit.jsonl)"/>
+                                </ComboBox>
+                                <Button Content="読み込み" Width="90" Margin="0,0,8,0" Click="LogLoad_Click"/>
+                                <Button Content="フォルダを開く" Width="110" Click="LogOpenFolder_Click"/>
+                                <TextBlock x:Name="LogWarningText" Foreground="DarkOrange" FontSize="11"
+                                           VerticalAlignment="Center" Margin="12,0,0,0" TextWrapping="Wrap"/>
+                            </WrapPanel>
+                        </StackPanel>
                     </GroupBox>
 
                     <!-- Filters -->
