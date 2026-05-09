@@ -17,4 +17,5 @@ public interface IAdService
     ChangeSet BuildComputerChangeSet(AdComputer current, string newDescription);
     AdGroupDetail? GetGroupDetail(string groupNameOrDn);
     AdUser? FindUserForGroupAdd(string samAccountName);
+    IReadOnlyList<GpoSimulationResult> SimulateGpo(string? userSam, string? computerName);
 }

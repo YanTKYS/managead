@@ -41,6 +41,30 @@ public class ReferenceAuditLogger
         }
     }
 
+    public void LogGpoSimulation(string executor, string targetUser, string targetComputer, string simulationType, int resultCount)
+    {
+        try
+        {
+            var directory = Path.GetDirectoryName(_path);
+            if (!string.IsNullOrWhiteSpace(directory)) Directory.CreateDirectory(directory);
+            var entry = new
+            {
+                timestamp = DateTimeOffset.Now,
+                action = "GpoSimulation",
+                executor,
+                simulationType,
+                targetUser,
+                targetComputer,
+                resultCount,
+            };
+            File.AppendAllText(_path, JsonSerializer.Serialize(entry, _jsonOptions) + Environment.NewLine);
+        }
+        catch
+        {
+            // 参照ログの書き込み失敗で参照操作を妨げない。
+        }
+    }
+
     public void LogOperationPlan(string executor, string targetSam, int attrChangeCount, int groupAddCount, int groupRemoveCount)
     {
         try

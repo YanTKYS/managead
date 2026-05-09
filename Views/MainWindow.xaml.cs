@@ -45,6 +45,9 @@ public partial class MainWindow : Window
     private readonly List<string> _opGroupAddPlanned = new();
     private readonly List<string> _opGroupRemovePlanned = new();
 
+    // GPOシミュレーション
+    private IReadOnlyList<GpoSimulationResult> _lastGpoResults = Array.Empty<GpoSimulationResult>();
+
     private static readonly string Executor =
         $"{Environment.UserDomainName}\\{Environment.UserName}";
 
@@ -1896,6 +1899,130 @@ public partial class MainWindow : Window
         if (!string.IsNullOrEmpty(newGn) && newGn != _opSelectedUser.GivenName) count++;
         if (!string.IsNullOrEmpty(newMail) && newMail != _opSelectedUser.Mail) count++;
         return count;
+    }
+
+    // ─── GPOシミュレーション ─────────────────────────────────────────────────
+
+    private void GpoKindComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (GpoUserInputPanel is null || GpoComputerInputPanel is null) return;
+        var idx = GpoKindComboBox.SelectedIndex;
+        GpoUserInputPanel.Visibility = idx == 1 ? Visibility.Collapsed : Visibility.Visible;
+        GpoComputerInputPanel.Visibility = idx == 0 ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    private void GpoSimulate_Click(object sender, RoutedEventArgs e)
+    {
+        var kind = GpoKindComboBox.SelectedIndex;
+        var userSam = kind != 1 ? GpoUserSamBox.Text.Trim() : string.Empty;
+        var computerName = kind != 0 ? GpoComputerNameBox.Text.Trim() : string.Empty;
+
+        if (kind != 1 && string.IsNullOrWhiteSpace(userSam))
+        {
+            OutputBox.Text = "sAMAccountName を入力してください";
+            return;
+        }
+        if (kind != 0 && string.IsNullOrWhiteSpace(computerName))
+        {
+            OutputBox.Text = "コンピュータ名を入力してください";
+            return;
+        }
+
+        var simType = kind switch { 0 => "ユーザー", 1 => "コンピュータ", _ => "ユーザー+コンピュータ" };
+        var targetDesc = kind switch { 0 => userSam, 1 => computerName, _ => $"{userSam} + {computerName}" };
+
+        try
+        {
+            Mouse.OverrideCursor = Cursors.Wait;
+            var results = _ad.SimulateGpo(
+                kind != 1 ? userSam : null,
+                kind != 0 ? computerName : null);
+            _lastGpoResults = results;
+            GpoResultGrid.ItemsSource = results;
+            var exceeded = results.Count >= _policy.MaxSearchResults;
+            OutputBox.Text = exceeded
+                ? $"GPOシミュレーション完了: {targetDesc} / 適用GPO {results.Count}件（上限 {_policy.MaxSearchResults} 件に達しました）"
+                : $"GPOシミュレーション完了: {targetDesc} / 適用GPO {results.Count}件";
+            _auditLogger.LogGpoSimulation(Executor, kind != 1 ? userSam : string.Empty, kind != 0 ? computerName : string.Empty, simType, results.Count);
+        }
+        catch (Exception ex)
+        {
+            _lastGpoResults = Array.Empty<GpoSimulationResult>();
+            GpoResultGrid.ItemsSource = null;
+            OutputBox.Text = $"GPOシミュレーションに失敗しました。ネットワーク接続またはAD設定を確認してください。\n{ex.Message}";
+            _auditLogger.LogGpoSimulation(Executor, kind != 1 ? userSam : string.Empty, kind != 0 ? computerName : string.Empty, simType, 0);
+        }
+        finally
+        {
+            Mouse.OverrideCursor = null;
+        }
+    }
+
+    private void GpoCopyResults_Click(object sender, RoutedEventArgs e)
+    {
+        if (_lastGpoResults.Count == 0)
+        {
+            OutputBox.Text = "コピーできる結果がありません。先にシミュレーションを実行してください。";
+            return;
+        }
+        Clipboard.SetText(BuildGpoResultText(_lastGpoResults));
+        OutputBox.Text = "GPOシミュレーション結果をクリップボードにコピーしました";
+    }
+
+    private void GpoExportCsv_Click(object sender, RoutedEventArgs e)
+    {
+        if (_lastGpoResults.Count == 0)
+        {
+            OutputBox.Text = "CSV出力できる結果がありません。先にシミュレーションを実行してください。";
+            return;
+        }
+
+        var dialog = new SaveFileDialog
+        {
+            Title = "GPOシミュレーション結果CSV出力",
+            Filter = "CSV files (*.csv)|*.csv|All files (*.*)|*.*",
+            FileName = $"ManageAdTool-GPO-{DateTime.Now:yyyyMMdd-HHmmss}.csv"
+        };
+        if (dialog.ShowDialog(this) != true) return;
+
+        File.WriteAllText(dialog.FileName, BuildGpoResultsCsv(_lastGpoResults), new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
+        OutputBox.Text = $"GPOシミュレーション結果CSVを出力しました: {dialog.FileName}";
+        _auditLogger.Log("GpoSimulationCsvExport", dialog.FileName, _lastGpoResults.Count, success: true);
+    }
+
+    private static string BuildGpoResultText(IReadOnlyList<GpoSimulationResult> results)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine($"GPOシミュレーション結果 ({results.Count}件)");
+        foreach (var r in results)
+        {
+            sb.AppendLine();
+            sb.AppendLine($"GPO名     : {r.GpoName}");
+            sb.AppendLine($"GPO ID    : {r.GpoId}");
+            sb.AppendLine($"適用対象  : {r.AppliesTo}");
+            sb.AppendLine($"リンク先  : {r.LinkedOuDn}");
+            sb.AppendLine($"有効      : {(r.LinkEnabled ? "はい" : "いいえ")}");
+            sb.AppendLine($"強制適用  : {(r.Enforced ? "はい" : "いいえ")}");
+            if (!string.IsNullOrWhiteSpace(r.Remarks))
+                sb.AppendLine($"備考      : {r.Remarks}");
+        }
+        return sb.ToString().TrimEnd();
+    }
+
+    private static string BuildGpoResultsCsv(IEnumerable<GpoSimulationResult> results)
+    {
+        var lines = new List<string>
+        {
+            string.Join(",", new[] { "GPO名", "GPO ID", "適用対象", "リンク先OU", "有効", "強制適用", "備考" }.Select(CsvEscape))
+        };
+        lines.AddRange(results.Select(r => string.Join(",", new[]
+        {
+            r.GpoName, r.GpoId, r.AppliesTo, r.LinkedOuDn,
+            r.LinkEnabled ? "はい" : "いいえ",
+            r.Enforced ? "はい" : "いいえ",
+            r.Remarks
+        }.Select(CsvEscape))));
+        return string.Join(Environment.NewLine, lines) + Environment.NewLine;
     }
 
     private string BuildOperationSummary()

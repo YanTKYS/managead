@@ -344,6 +344,165 @@ public class DirectoryServicesAdReadService : IAdService
         return cs;
     }
 
+    public IReadOnlyList<GpoSimulationResult> SimulateGpo(string? userSam, string? computerName)
+    {
+        try
+        {
+            var defaultBase = GetDefaultNamingContext();
+            var containerChain = new List<string>();
+
+            if (!string.IsNullOrWhiteSpace(userSam))
+            {
+                var user = FindUserForGroupAdd(userSam);
+                if (user is null || string.IsNullOrWhiteSpace(user.DistinguishedName))
+                    throw new InvalidOperationException($"ユーザー「{userSam}」がADに見つかりません。sAMAccountName を確認してください。");
+                foreach (var ou in ExtractOuChain(user.DistinguishedName, defaultBase))
+                    if (!containerChain.Any(c => string.Equals(c, ou, StringComparison.OrdinalIgnoreCase)))
+                        containerChain.Add(ou);
+            }
+
+            if (!string.IsNullOrWhiteSpace(computerName))
+            {
+                var computerDn = FindObjectDnForSimulation(computerName, isComputer: true, defaultBase);
+                if (string.IsNullOrWhiteSpace(computerDn))
+                    throw new InvalidOperationException($"コンピュータ「{computerName}」がADに見つかりません。コンピュータ名を確認してください。");
+                foreach (var ou in ExtractOuChain(computerDn, defaultBase))
+                    if (!containerChain.Any(c => string.Equals(c, ou, StringComparison.OrdinalIgnoreCase)))
+                        containerChain.Add(ou);
+            }
+
+            if (containerChain.Count == 0) return Array.Empty<GpoSimulationResult>();
+
+            var results = new List<GpoSimulationResult>();
+            foreach (var container in containerChain)
+            {
+                foreach (var (gpoDn, linkFlags) in ReadGpoLinks(container))
+                {
+                    var info = ReadGpoInfo(gpoDn);
+                    if (info is null) continue;
+
+                    var linkEnabled = (linkFlags & 1) == 0;
+                    var enforced = (linkFlags & 2) == 2;
+                    var appliesTo = info.GpoFlags switch
+                    {
+                        1 => "コンピュータ",
+                        2 => "ユーザー",
+                        3 => "(全設定無効)",
+                        _ => "両方"
+                    };
+                    var remarksItems = new List<string>();
+                    if (!linkEnabled) remarksItems.Add("リンク無効");
+                    if (info.GpoFlags == 3) remarksItems.Add("GPO全体無効");
+
+                    results.Add(new GpoSimulationResult
+                    {
+                        GpoName = info.DisplayName,
+                        GpoId = info.Guid,
+                        AppliesTo = appliesTo,
+                        LinkedOuDn = container,
+                        LinkEnabled = linkEnabled,
+                        Enforced = enforced,
+                        Remarks = string.Join("; ", remarksItems)
+                    });
+                }
+            }
+            return results;
+        }
+        catch (InvalidOperationException) { throw; }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException("GPOシミュレーションの実行中にエラーが発生しました。", ex);
+        }
+    }
+
+    private string FindObjectDnForSimulation(string name, bool isComputer, string defaultBase)
+    {
+        try
+        {
+            var filter = isComputer
+                ? $"(&(objectClass=computer)(name={EscapeLdap(name)}))"
+                : $"(&(objectClass=user)(!(objectClass=computer))(sAMAccountName={EscapeLdap(name)}))";
+            using var root = new DirectoryEntry($"LDAP://{defaultBase}");
+            using var ds = new DirectorySearcher(root) { Filter = filter, PageSize = 1 };
+            ds.PropertiesToLoad.Add("distinguishedName");
+            var r = ds.FindOne();
+            return r is null ? string.Empty : GetProperty(r, "distinguishedName", string.Empty);
+        }
+        catch { return string.Empty; }
+    }
+
+    private static List<string> ExtractOuChain(string objectDn, string domainBase)
+    {
+        var parts = objectDn.Split(',');
+        var dcIdx = Array.FindIndex(parts, p => p.StartsWith("DC=", StringComparison.OrdinalIgnoreCase));
+        if (dcIdx < 0) return new List<string>();
+
+        var ous = parts[..dcIdx]
+            .Where(p => p.StartsWith("OU=", StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+
+        var chain = new List<string> { domainBase };
+        for (int i = ous.Length - 1; i >= 0; i--)
+        {
+            var suffix = i < ous.Length - 1
+                ? string.Join(",", ous[(i + 1)..]) + "," + domainBase
+                : domainBase;
+            chain.Add(ous[i] + "," + suffix);
+        }
+        return chain;
+    }
+
+    private static List<(string GpoDn, int Flags)> ReadGpoLinks(string containerDn)
+    {
+        try
+        {
+            using var root = new DirectoryEntry($"LDAP://{containerDn}");
+            using var ds = new DirectorySearcher(root) { Filter = "(objectClass=*)", SearchScope = SearchScope.Base };
+            ds.PropertiesToLoad.Add("gpLink");
+            var r = ds.FindOne();
+            if (r is null || !r.Properties.Contains("gpLink") || r.Properties["gpLink"].Count == 0)
+                return new List<(string, int)>();
+            var gpLink = r.Properties["gpLink"][0]?.ToString() ?? string.Empty;
+            return ParseGpLink(gpLink);
+        }
+        catch { return new List<(string, int)>(); }
+    }
+
+    private static List<(string GpoDn, int Flags)> ParseGpLink(string gpLink)
+    {
+        var results = new List<(string, int)>();
+        foreach (var entry in gpLink.Split(new[] { '[', ']' }, StringSplitOptions.RemoveEmptyEntries))
+        {
+            var sep = entry.LastIndexOf(';');
+            if (sep < 0) continue;
+            var ldapPath = entry[..sep];
+            if (!int.TryParse(entry[(sep + 1)..], out var flags)) continue;
+            var dn = ldapPath.StartsWith("LDAP://", StringComparison.OrdinalIgnoreCase) ? ldapPath[7..] : ldapPath;
+            if (!string.IsNullOrWhiteSpace(dn)) results.Add((dn, flags));
+        }
+        return results;
+    }
+
+    private record GpoInfo(string DisplayName, string Guid, int GpoFlags);
+
+    private static GpoInfo? ReadGpoInfo(string gpoDn)
+    {
+        try
+        {
+            using var root = new DirectoryEntry($"LDAP://{gpoDn}");
+            using var ds = new DirectorySearcher(root) { Filter = "(objectClass=groupPolicyContainer)", SearchScope = SearchScope.Base };
+            ds.PropertiesToLoad.AddRange(new[] { "cn", "displayName", "flags" });
+            var r = ds.FindOne();
+            if (r is null) return null;
+            var cn = GetProperty(r, "cn", string.Empty);
+            var displayName = GetProperty(r, "displayName", cn);
+            var flagsRaw = r.Properties.Contains("flags") && r.Properties["flags"].Count > 0 ? r.Properties["flags"][0] : null;
+            var gpoFlags = flagsRaw is int f ? f : (flagsRaw is not null ? Convert.ToInt32(flagsRaw) : 0);
+            return new GpoInfo(displayName, cn, gpoFlags);
+        }
+        catch { return null; }
+    }
+
     private string BuildUserSearchFilter(AdUserSearchCriteria criteria)
     {
         var keyword = EscapeLdap(criteria.Keyword.Trim());

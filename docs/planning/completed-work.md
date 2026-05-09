@@ -175,3 +175,24 @@
 - `ReferenceAuditLogger` に `LogOperationPlan` メソッドを追加。
 - 禁止操作（意図的に未実装）: 複数操作の一括実行・ユーザー新規作成・無効化・退職処理・OU移動・パスワードリセット・承認ワークフロー・チェックリストの永続保存。
 - docs を v0.7.0 向けに更新（backlog / roadmap / release-note / completed-work）。
+
+---
+
+## v0.8.0 完了
+
+- 「GPOシミュレーション」タブを追加（参照・シミュレーションのみ）。
+- 種別選択（ユーザー / コンピュータ / ユーザー + コンピュータ）に応じた入力欄を表示。
+- 種別変更でユーザー入力欄・コンピュータ入力欄の表示/非表示を切り替え。
+- 対象ユーザーの DN を解決し、OU チェーン（ドメインルート → 上位OU → 所属OU）を構築。
+- 対象コンピュータの DN を解決し、同様に OU チェーンを構築（ユーザー+コンピュータ時は重複除去してマージ）。
+- 各 OU の `gpLink` 属性を読み取り、リンク先 GPO ごとにリンク有効/強制適用フラグを解析。
+- GPO オブジェクト（`groupPolicyContainer`）の `displayName` / `cn` / `flags` を取得し、適用対象（ユーザー/コンピュータ/両方）を判定。
+- 結果をDataGrid（GPO名 / GPO ID / 適用対象 / リンク先OU / 有効 / 強制適用 / 備考）に表示。
+- 結果のクリップボードコピーと CSV 出力（BOM付きUTF-8）を実装。
+- 参照ログ（`audit.jsonl`）に `GpoSimulation` として記録（simulationType / targetUser / targetComputer / resultCount）。
+- `IAdService` に `SimulateGpo(string? userSam, string? computerName)` を追加。
+- `InMemoryAdService` にデモGPO データを追加（Default Domain Policy / User Desktop Policy / Computer Security Policy）。
+- `DirectoryServicesAdReadService` に `SimulateGpo` 実装を追加（ExtractOuChain / ReadGpoLinks / ParseGpLink / ReadGpoInfo / FindObjectDnForSimulation）。
+- `GpoSimulationResult` モデルを追加（GpoName / GpoId / AppliesTo / LinkedOuDn / LinkEnabled / Enforced / Remarks）。
+- `ReferenceAuditLogger` に `LogGpoSimulation` メソッドを追加。
+- 禁止操作（意図的に未実装）: GPO 編集 / GPO リンク変更 / セキュリティフィルタ変更 / WMI フィルタ変更。
