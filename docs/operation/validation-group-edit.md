@@ -15,7 +15,7 @@
 
 ### appsettings.json の設定
 
-`appsettings.GroupMembershipEdit.sample.json` を参考に設定する。
+`config-samples/appsettings.GroupMembershipEdit.sample.json` を参考に設定する。
 
 ```json
 {
@@ -264,4 +264,4 @@ AD 上に以下を用意する:
 
 - 検証に使用したグループのメンバーを元の状態に戻す
 - write-audit.jsonl の `operationName: "UpdateGroupMembers"` エントリを参照して変更内容を確認する
-- 検証結果を `docs/test-record-v0.6.0.md` に記録する（別途作成）
+- 検証結果を `docs/operation/test-record-v0.6.0.md` に記録する（別途作成）
