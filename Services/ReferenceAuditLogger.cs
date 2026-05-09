@@ -40,4 +40,29 @@ public class ReferenceAuditLogger
             // 参照ログの書き込み失敗で参照操作を妨げない。
         }
     }
+
+    public void LogOperationPlan(string executor, string targetSam, int attrChangeCount, int groupAddCount, int groupRemoveCount)
+    {
+        try
+        {
+            var directory = Path.GetDirectoryName(_path);
+            if (!string.IsNullOrWhiteSpace(directory)) Directory.CreateDirectory(directory);
+
+            var entry = new
+            {
+                timestamp = DateTimeOffset.Now,
+                action = "OperationPlanCreated",
+                executor,
+                targetUser = targetSam,
+                plannedAttributeChanges = attrChangeCount,
+                plannedGroupAdds = groupAddCount,
+                plannedGroupRemoves = groupRemoveCount,
+            };
+            File.AppendAllText(_path, JsonSerializer.Serialize(entry, _jsonOptions) + Environment.NewLine);
+        }
+        catch
+        {
+            // 参照ログの書き込み失敗で参照操作を妨げない。
+        }
+    }
 }

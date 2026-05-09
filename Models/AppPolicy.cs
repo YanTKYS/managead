@@ -22,4 +22,6 @@ public class AppPolicy
     public List<string> EditableGroupOuDns { get; set; } = new();
     public List<string> ProtectedGroupNames { get; set; } = new();
     public List<string> ProtectedGroupDns { get; set; } = new();
+    public bool EnableOperationSupport { get; set; } = true;
+    public List<string> OperationChecklistItems { get; set; } = new();
 }
