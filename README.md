@@ -1,12 +1,16 @@
 # ManageAdTool
 
-閉域ネットワーク向けの Active Directory 参照・限定編集支援ツール（v0.4.0）です。
+閉域ネットワーク向けの Active Directory 参照・限定編集支援ツール（v0.4.1）です。
 
 > **重要**: 本ツールは「すべての AD 管理操作ができるツール」ではありません。  
-> v0.4.0 では mail / department / title の3属性のみ更新可能です。  
+> v0.4.x では mail / department / title の3属性のみ更新可能です。  
 > グループ操作・GPO編集・OU移動・ユーザー無効化・パスワードリセット・一括更新は実装していません。
 
-## 方針（v0.4.0 時点）
+> **v0.4.x の利用方針**: v0.4.x は「ユーザー属性限定編集の安定化フェーズ」です。  
+> 必ず **検証用 OU 限定** で動作確認を完了してから、本番 OU を `AllowedTargetOuDns` に追加してください。  
+> `AllowedTargetOuDns` が空の場合は更新機能全体が無効化されます（セーフガード）。
+
+## 方針（v0.4.x 時点）
 - 参照機能を主目的とし、AD情報確認・所属グループ確認・問い合わせ対応・事前調査で安全に利用できることを重視します。
 - 書き込みは **mail / department / title のみ** に限定します。
 - 書き込みには **Domain Admins 認証済みセッション** が必須です。
@@ -102,9 +106,9 @@
 - 「限定更新実行」押下時の再認証パスワードは、認証 + AD書き込みに即時使用し破棄されます
 
 ## ステータス
-- v0.4.0 開発中。
+- v0.4.1 開発完了。実AD環境での動作検証が必要です。
 - v0.3.0 の参照・認証機能は確認済みです。
-- v0.4.0 の限定編集機能は実AD環境での動作検証が必要です。詳細は `docs/validation-user-edit.md` を参照してください。
+- v0.4.1 の限定編集機能は実AD環境での動作検証が必要です。詳細は `docs/validation-user-edit.md` および `docs/test-record-v0.4.1.md` を参照してください。
 - 詳細手順は `docs/validation-readonly.md`、`docs/validation-auth.md`、`docs/deploy.md` を参照してください。
 - リリース ZIP は self-contained 形式のため、利用端末への .NET Desktop Runtime の別途インストールは不要です。
 

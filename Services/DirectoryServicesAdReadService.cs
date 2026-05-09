@@ -154,7 +154,7 @@ public class DirectoryServicesAdReadService : IAdService
 
     public ChangeSet BuildChangeSet(AdUser current, string newMail, string newDepartment, string newTitle)
     {
-        var cs = new ChangeSet { TargetSamAccountName = current.SamAccountName };
+        var cs = new ChangeSet { TargetSamAccountName = current.SamAccountName, TargetDisplayName = current.DisplayName };
         if (!string.Equals(current.Mail, newMail, StringComparison.Ordinal)) cs.Changes.Add(new("Mail", current.Mail, newMail));
         if (!string.Equals(current.Department, newDepartment, StringComparison.Ordinal)) cs.Changes.Add(new("Department", current.Department, newDepartment));
         if (!string.Equals(current.Title, newTitle, StringComparison.Ordinal)) cs.Changes.Add(new("Title", current.Title, newTitle));

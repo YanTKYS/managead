@@ -88,13 +88,20 @@
                         <Button Content="グループをコピー" Width="120" Margin="12,0,0,0" Click="CopyGroups_Click"/>
                     </StackPanel>
                     <TextBox x:Name="GroupListBox" Height="90" IsReadOnly="True" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Margin="0,0,0,8"/>
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                        <Button x:Name="PreviewButton" Content="差分確認" Width="100" Margin="0,0,8,0" Click="Preview_Click" IsEnabled="{Binding EditControlsEnabled}"/>
-                        <Button x:Name="ExecuteButton" Content="限定更新実行" Width="120" Click="Execute_Click"
-                                IsEnabled="{Binding IsWriteButtonEnabled}"
-                                Background="#CC3333" Foreground="White" FontWeight="Bold" Margin="0,0,8,0"/>
-                        <TextBlock Text="※ 更新対象: mail / department / title のみ。空文字更新は禁止。実行前に再認証と確認が必要です。"
-                                   VerticalAlignment="Center" Foreground="Gray" FontSize="11" TextWrapping="Wrap"/>
+                    <StackPanel Margin="0,0,0,8">
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                            <Button x:Name="PreviewButton" Content="差分確認" Width="100" Margin="0,0,8,0" Click="Preview_Click" IsEnabled="{Binding EditControlsEnabled}"/>
+                            <Button x:Name="ExecuteButton" Content="限定更新実行" Width="130" Click="Execute_Click"
+                                    IsEnabled="{Binding IsWriteButtonEnabled}"
+                                    Background="#CC3333" Foreground="White" FontWeight="Bold" Margin="0,0,8,0"/>
+                            <Button x:Name="CopyRevertMemoButton" Content="戻し用メモをコピー" Width="150"
+                                    Click="CopyRevertMemo_Click" IsEnabled="False" Margin="0,0,0,0"
+                                    ToolTip="更新成功後に変更前の値をクリップボードにコピーします"/>
+                        </StackPanel>
+                        <TextBlock Text="{Binding WriteButtonDisabledReason}"
+                                   Foreground="DarkRed" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,2"/>
+                        <TextBlock Text="※ 更新対象: mail / department / title のみ（LDAPattr: mail/department/title）。空文字更新は禁止。実行前に再認証と確認が必要です。"
+                                   Foreground="Gray" FontSize="11" TextWrapping="Wrap"/>
                     </StackPanel>
                 </StackPanel>
             </TabItem>

@@ -37,12 +37,14 @@ public class WriteAuditLogger
                 machineName = entry.MachineName,
                 editorUser = entry.EditorUser,
                 targetSamAccountName = entry.TargetSamAccountName,
+                targetDisplayName = entry.TargetDisplayName,
                 targetDn = entry.TargetDn,
                 operationName = "UpdateUserAttributes",
                 changes = entry.Changes.Select(c => new { field = c.Field, before = c.Before, after = c.After }).ToList(),
                 success = entry.Success,
                 error = entry.Error,
                 verifiedAfterUpdate = entry.VerifiedAfterUpdate,
+                revertCandidate = entry.RevertCandidate,
                 allowedTargetOuMatched = entry.AllowedTargetOuMatched,
                 excludedAccountMatched = entry.ExcludedAccountMatched
             };
