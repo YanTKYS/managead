@@ -5,7 +5,8 @@
 本ツールは閉域ネットワーク向けの **Active Directory 参照・限定編集支援ツール** として開発しています。
 
 - 参照機能を主目的とし、安全性・シンプルさを優先します
-- 書き込みは mail / displayName / sn / givenName のみに限定します（v0.4.2 時点）
+- ユーザー書き込みは mail / displayName / sn / givenName のみに限定します
+- コンピュータ書き込みは description のみに限定します（v0.5.0 以降）
 - パスワードは appsettings.json / ログへの保存を行いません
 - グループ操作・GPO編集・OU移動・ユーザー無効化・一括更新は対象外とします
 
@@ -55,18 +56,27 @@
 - `AdUser` に Surname / GivenName を追加
 - アカウント有効期限（accountExpires）設計方針を docs/design-account-expiration.md に記録
 
+### v0.5.0
+- コンピュータオブジェクト参照・description 限定編集
+- コンピュータ検索（Name / DNSHostName / sAMAccountName、OS フィルタ、description 有無、無効端末表示）
+- コンピュータ詳細表示・所属グループ表示・CSV出力
+- description のみ更新可（AllowedComputerOuDns 配下 + Domain Admins セッション必須）
+- 更新フロー: 差分確認 → 再認証 → 確認ダイアログ → AD再取得・整合性チェック → 更新 → AD再取得
+- write-audit.jsonl に targetType / targetName / operationName フィールドを追加
+- AppPolicy に AllowedComputerOuDns / ExcludedComputerNames / EditableComputerAttributes を追加
+- `docs/validation-computer-edit.md` / `appsettings.ComputerDescriptionEdit.sample.json` を追加
+
 ---
 
 ## 今後の検討事項
 
-### v0.4.x 完了条件
-- 実AD環境での v0.4.2 限定編集動作検証（`docs/validation-user-edit.md` 参照）
-- 検証結果を `docs/test-record-v0.4.1.md` に記録する（v0.4.2 追加項目含む）
+### v0.5.x 完了条件
+- 実AD環境での v0.5.0 コンピュータ description 編集動作検証（`docs/validation-computer-edit.md` 参照）
+- 検証結果を `docs/test-record-v0.5.0.md` に記録する（別途作成）
 
-### v0.5.0 以降の候補（優先度順・未確定）
+### v0.6.0 以降の候補（優先度順・未確定）
 
-1. **参照強化**（優先度 高）
-   - コンピューターオブジェクトの参照
+1. **参照強化**
    - グループの詳細参照（説明・管理者・ネスト状態）
    - 検索条件の拡張（OU指定・LastLogon日付範囲など）
 
@@ -74,9 +84,8 @@
    - ユーザー選択切替ごとの `memberOf` 再取得削減
    - セッション内メモリキャッシュ（TTL: 30〜120秒）
 
-3. **編集機能の拡張**（v0.4.0 の実運用評価後に検討）
-   - 更新対象属性の追加（要件定義次第）
-   - 複数ユーザーへの一括属性更新（安全性設計が前提）
+3. **編集機能の拡張**（実運用評価後に検討）
+   - ユーザー更新対象属性の追加（要件定義次第）
 
 ### 対象外（今後も実装しない）
 - グループ追加・削除

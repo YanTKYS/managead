@@ -14,6 +14,7 @@ public partial class MainWindow : Window
     private readonly AppPolicy _policy = AppPolicyProvider.Load();
     private readonly IAdService _ad;
     private readonly IAdUserAttributeWriteService? _writeService;
+    private readonly IAdComputerAttributeWriteService? _computerWriteService;
     private readonly UserEditPolicyService _policyService = new();
     private readonly UserAttributeCompareUseCase _useCase;
     private readonly ReferenceAuditLogger _auditLogger;
@@ -27,6 +28,10 @@ public partial class MainWindow : Window
     private AdUser? _selected;
     private ChangeSet? _pending;
     private string _revertMemoText = string.Empty;
+    private IReadOnlyList<AdComputer> _lastComputerSearchResults = Array.Empty<AdComputer>();
+    private AdComputer? _selectedComputer;
+    private ChangeSet? _pendingComputer;
+    private string _computerRevertMemoText = string.Empty;
 
     private static readonly string Executor =
         $"{Environment.UserDomainName}\\{Environment.UserName}";
@@ -36,6 +41,7 @@ public partial class MainWindow : Window
         var isReadOnly = string.Equals(_policy.ServiceMode, "DirectoryReadOnly", StringComparison.OrdinalIgnoreCase);
         _ad = isReadOnly ? new DirectoryServicesAdReadService(_policy) : new InMemoryAdService();
         _writeService = isReadOnly ? new DirectoryServicesAdUserAttributeWriteService() : null;
+        _computerWriteService = isReadOnly ? new DirectoryServicesAdComputerAttributeWriteService() : null;
         _useCase = new UserAttributeCompareUseCase(_ad);
         _auditLogger = new ReferenceAuditLogger(_policy.LogPath);
         _authAuditLogger = new AuthAuditLogger(_policy.LogPath);
@@ -74,6 +80,7 @@ public partial class MainWindow : Window
     {
         _vm.RefreshSessionStatus();
         if (_selected is not null) EvaluateEditability();
+        if (_selectedComputer is not null) EvaluateComputerEditability();
     }
 
     private void Login_Click(object sender, RoutedEventArgs e)
@@ -719,4 +726,496 @@ public partial class MainWindow : Window
         => !string.IsNullOrWhiteSpace(distinguishedName)
             && !string.IsNullOrWhiteSpace(ouDn)
             && distinguishedName.EndsWith($",{ouDn}", StringComparison.OrdinalIgnoreCase);
+
+    // ── Computer tab ───────────────────────────────────────────────────────────
+
+    private void ComputerSearch_Click(object sender, RoutedEventArgs e)
+    {
+        var criteria = BuildComputerSearchCriteria();
+        if (string.IsNullOrWhiteSpace(criteria.Keyword) || criteria.Keyword.Length <= 1)
+        {
+            OutputBox.Text = "検索語は2文字以上入力してください";
+            ClearComputerSearchResults();
+            return;
+        }
+
+        try
+        {
+            var results = _ad.SearchComputers(criteria);
+            _selectedComputer = null;
+            _pendingComputer = null;
+            _vm.SetComputerPendingReady(false);
+            _lastComputerSearchResults = results;
+            ComputerSearchResultGrid.ItemsSource = results;
+            ComputerDetailBox.Text = string.Empty;
+            ComputerGroupListBox.Text = string.Empty;
+            var exceeded = results.Count >= _policy.MaxSearchResults;
+            OutputBox.Text = exceeded
+                ? $"コンピュータ検索結果: {results.Count}件（上限 {_policy.MaxSearchResults} 件に達しました。検索条件を絞り込んでください）"
+                : $"コンピュータ検索結果: {results.Count}件";
+            _auditLogger.Log("ComputerSearch", FormatComputerCriteria(criteria), results.Count, success: true);
+        }
+        catch (Exception ex)
+        {
+            ClearComputerSearchResults();
+            OutputBox.Text = "コンピュータ検索に失敗しました。ネットワーク接続またはAD設定を確認してください。";
+            _auditLogger.Log("ComputerSearch", FormatComputerCriteria(criteria), 0, success: false, FormatErrorForLog(ex));
+        }
+    }
+
+    private void ComputerSearchResultGrid_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        _selectedComputer = ComputerSearchResultGrid.SelectedItem as AdComputer;
+        _pendingComputer = null;
+        _vm.SetComputerPendingReady(false);
+        _computerRevertMemoText = string.Empty;
+        CopyComputerRevertMemoButton.IsEnabled = false;
+        if (_selectedComputer is null) return;
+
+        EditComputerDescriptionBox.Text = _selectedComputer.Description;
+        ComputerDetailBox.Text = FormatComputerDetails(_selectedComputer);
+        try
+        {
+            var groups = _ad.GetComputerGroups(_selectedComputer.Name)
+                .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+            ComputerGroupListBox.Text = string.Join(Environment.NewLine, groups);
+            OutputBox.Text = $"コンピュータ詳細表示: {_selectedComputer.Name} / 所属グループ {groups.Count}件";
+            _auditLogger.Log("ComputerDetail", _selectedComputer.Name, 1, success: true);
+            _auditLogger.Log("ComputerGroups", _selectedComputer.Name, groups.Count, success: true);
+        }
+        catch (Exception ex)
+        {
+            OutputBox.Text = "コンピュータ詳細取得に失敗しました。ネットワーク接続を確認してください。";
+            ComputerGroupListBox.Text = string.Empty;
+            _auditLogger.Log("ComputerDetail", _selectedComputer.Name, 0, success: false, FormatErrorForLog(ex));
+        }
+
+        EvaluateComputerEditability();
+    }
+
+    private void ComputerDescriptionInput_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+    {
+        if (_pendingComputer is not null)
+        {
+            _pendingComputer = null;
+            _vm.SetComputerPendingReady(false);
+        }
+    }
+
+    private void ComputerPreview_Click(object sender, RoutedEventArgs e)
+    {
+        if (!_vm.ComputerCanEdit || _selectedComputer is null) return;
+        _pendingComputer = _ad.BuildComputerChangeSet(_selectedComputer, EditComputerDescriptionBox.Text.Trim());
+        _vm.SetComputerPendingReady(_pendingComputer.Changes.Count > 0);
+        OutputBox.Text = FormatComputerChangePreview(_pendingComputer, "差分確認");
+    }
+
+    private void CopyComputerRevertMemo_Click(object sender, RoutedEventArgs e)
+    {
+        if (!string.IsNullOrWhiteSpace(_computerRevertMemoText))
+            Clipboard.SetText(_computerRevertMemoText);
+    }
+
+    private void CopyComputerGroups_Click(object sender, RoutedEventArgs e)
+    {
+        if (!string.IsNullOrWhiteSpace(ComputerGroupListBox.Text))
+            Clipboard.SetText(ComputerGroupListBox.Text);
+    }
+
+    private void ExportComputerSearchResults_Click(object sender, RoutedEventArgs e)
+    {
+        if (_lastComputerSearchResults.Count == 0)
+        {
+            OutputBox.Text = "CSV出力できるコンピュータ検索結果がありません";
+            return;
+        }
+
+        var dialog = new SaveFileDialog
+        {
+            Title = "コンピュータ検索結果CSV出力",
+            Filter = "CSV files (*.csv)|*.csv|All files (*.*)|*.*",
+            FileName = $"ManageAdTool-Computers-{DateTime.Now:yyyyMMdd-HHmmss}.csv"
+        };
+
+        if (dialog.ShowDialog(this) != true) return;
+
+        File.WriteAllText(dialog.FileName, BuildComputerSearchResultsCsv(_lastComputerSearchResults), new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
+        OutputBox.Text = $"コンピュータ検索結果CSVを出力しました: {dialog.FileName}";
+        _auditLogger.Log("ComputerSearchCsvExport", dialog.FileName, _lastComputerSearchResults.Count, success: true);
+    }
+
+    private void ComputerExecute_Click(object sender, RoutedEventArgs e)
+    {
+        if (_computerWriteService is null)
+        {
+            OutputBox.Text = "ADコンピュータ更新はこのモードでは使用できません（DirectoryReadOnly が必要です）";
+            return;
+        }
+
+        if (!_vm.IsEditSessionActive)
+        {
+            OutputBox.Text = "編集セッションが期限切れです。再ログインしてください。";
+            return;
+        }
+
+        if (_policy.EffectiveComputerOuDns.Count == 0)
+        {
+            OutputBox.Text = "AllowedComputerOuDns / AllowedTargetOuDns が未設定のため更新できません。appsettings.json を確認してください。";
+            return;
+        }
+
+        if (_selectedComputer is null) return;
+
+        if (!_logPathWritable)
+        {
+            var proceed = MessageBox.Show(
+                $"監査ログディレクトリへの書き込みができません。\n({Path.GetDirectoryName(_policy.LogPath)})\n\n更新を実行すると監査ログ（write-audit.jsonl）が記録されません。\n続行しますか？",
+                "監査ログ警告", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (proceed != MessageBoxResult.Yes) return;
+        }
+
+        var changeSet = _ad.BuildComputerChangeSet(_selectedComputer, EditComputerDescriptionBox.Text.Trim());
+
+        var emptyUpdates = changeSet.Changes.Where(c => string.IsNullOrWhiteSpace(c.After)).ToList();
+        if (emptyUpdates.Count > 0)
+        {
+            OutputBox.Text = $"空文字への更新は禁止されています: {string.Join(", ", emptyUpdates.Select(c => c.Field))}（属性クリアは将来機能です）";
+            return;
+        }
+
+        if (changeSet.Changes.Count == 0)
+        {
+            OutputBox.Text = "差分なし（更新不要）";
+            _vm.SetComputerPendingReady(false);
+            return;
+        }
+
+        var reAuthDlg = new ReAuthDialog(_vm.CurrentEditorUser) { Owner = this };
+        if (reAuthDlg.ShowDialog() != true) return;
+
+        var reAuthUser = reAuthDlg.DomainUser!;
+        var reAuthPassword = reAuthDlg.Password!;
+
+        try
+        {
+            Mouse.OverrideCursor = Cursors.Wait;
+            var authResult = _authService.TryAuthenticate(reAuthUser, reAuthPassword, _policy);
+
+            if (!authResult.AuthSucceeded)
+            {
+                OutputBox.Text = "再認証に失敗しました。ユーザー名またはパスワードを確認してください。";
+                _authAuditLogger.Log("ReAuthFailed", reAuthUser, success: false, authResult.ErrorMessage ?? string.Empty);
+                return;
+            }
+
+            if (!authResult.IsDomainAdmin)
+            {
+                OutputBox.Text = $"再認証したユーザー（{authResult.ResolvedUser}）は Domain Admins のメンバーではありません。";
+                _authAuditLogger.Log("ReAuthDenied", authResult.ResolvedUser, success: false, "Domain Admins 非メンバー");
+                return;
+            }
+
+            if (!string.Equals(authResult.ResolvedUser, _vm.CurrentEditorUser, StringComparison.OrdinalIgnoreCase))
+            {
+                OutputBox.Text = "再認証ユーザーと編集セッションユーザーが一致しません。ログアウトして再度ログインしてください。";
+                _authAuditLogger.Log("ReAuthUserMismatch", authResult.ResolvedUser, success: false,
+                    $"session={_vm.CurrentEditorUser} reauth={authResult.ResolvedUser}");
+                return;
+            }
+
+            Mouse.OverrideCursor = null;
+
+            var confirmDlg = new ConfirmComputerUpdateDialog(
+                changeSet, _selectedComputer.DistinguishedName, _selectedComputer.Name,
+                _selectedComputer.DnsHostName, authResult.ResolvedUser, Executor, Environment.MachineName) { Owner = this };
+            if (confirmDlg.ShowDialog() != true) return;
+
+            Mouse.OverrideCursor = Cursors.Wait;
+
+            AdComputer? currentComputer;
+            try
+            {
+                currentComputer = _ad.GetComputer(_selectedComputer.Name);
+            }
+            catch (Exception ex)
+            {
+                OutputBox.Text = "更新前の情報取得に失敗しました。ネットワーク接続を確認してください。";
+                LogComputerWriteFailure(changeSet, _selectedComputer.DistinguishedName, authResult.ResolvedUser, FormatErrorForLog(ex), false, false);
+                return;
+            }
+
+            if (currentComputer is null)
+            {
+                OutputBox.Text = "更新対象コンピュータがADに見つかりません。更新を中止しました。";
+                LogComputerWriteFailure(changeSet, _selectedComputer.DistinguishedName, authResult.ResolvedUser, "対象コンピュータがADに存在しない", false, false);
+                return;
+            }
+
+            var ouMatched = _policy.EffectiveComputerOuDns.Any(ou => IsUnderOu(currentComputer.DistinguishedName, ou));
+            if (!ouMatched)
+            {
+                OutputBox.Text = "対象コンピュータが許可OU外のため更新できません。（更新前の再確認結果）";
+                LogComputerWriteFailure(changeSet, currentComputer.DistinguishedName, authResult.ResolvedUser, "許可OU外（再取得確認）", false, false);
+                return;
+            }
+
+            var excluded = _policy.ExcludedComputerNames.Any(x => string.Equals(x, currentComputer.Name, StringComparison.OrdinalIgnoreCase));
+            if (excluded)
+            {
+                OutputBox.Text = "対象コンピュータは除外リストのため更新できません。（更新前の再確認結果）";
+                LogComputerWriteFailure(changeSet, currentComputer.DistinguishedName, authResult.ResolvedUser, "除外コンピュータ（再取得確認）", true, true);
+                return;
+            }
+
+            foreach (var change in changeSet.Changes)
+            {
+                var adValue = change.LdapAttribute == "description" ? currentComputer.Description : null;
+                if (!string.Equals(adValue, change.Before, StringComparison.Ordinal))
+                {
+                    OutputBox.Text = $"AD上の値が変更されているため更新を中止しました。\n再度「差分確認」から実行してください。\n（{change.Field}: AD現在値「{adValue}」/ 確認時点「{change.Before}」）";
+                    LogComputerWriteFailure(changeSet, currentComputer.DistinguishedName, authResult.ResolvedUser,
+                        $"AD値不一致 ldap={change.LdapAttribute}", true, false);
+                    return;
+                }
+            }
+
+            UpdateResult writeResult;
+            try
+            {
+                writeResult = _computerWriteService.UpdateComputerDescription(currentComputer.DistinguishedName, changeSet, reAuthUser, reAuthPassword);
+            }
+            catch (Exception ex)
+            {
+                OutputBox.Text = "更新処理中にエラーが発生しました。監査ログを確認してください。";
+                LogComputerWriteFailure(changeSet, currentComputer.DistinguishedName, authResult.ResolvedUser,
+                    FormatErrorForLog(ex), true, false);
+                return;
+            }
+
+            if (!writeResult.Success)
+            {
+                OutputBox.Text = $"更新に失敗しました。\n{writeResult.ErrorMessage}\n詳細は監査ログを確認してください。";
+                LogComputerWriteFailure(changeSet, currentComputer.DistinguishedName, authResult.ResolvedUser,
+                    writeResult.ErrorMessage ?? "不明なエラー", true, false);
+                return;
+            }
+
+            AdComputer? verifiedComputer = null;
+            try { verifiedComputer = _ad.GetComputer(currentComputer.Name); } catch { }
+
+            var revertCandidate = changeSet.Changes.ToDictionary(c => c.Field, c => c.Before);
+
+            var auditEntry = new WriteAuditEntry
+            {
+                ServiceMode = _policy.ServiceMode,
+                Executor = Executor,
+                MachineName = Environment.MachineName,
+                EditorUser = authResult.ResolvedUser,
+                TargetType = "Computer",
+                TargetName = currentComputer.Name,
+                OperationName = "UpdateComputerDescription",
+                TargetSamAccountName = currentComputer.SamAccountName,
+                TargetDisplayName = currentComputer.Name,
+                TargetDn = currentComputer.DistinguishedName,
+                Changes = changeSet.Changes,
+                Success = true,
+                VerifiedAfterUpdate = verifiedComputer is null ? null : new Dictionary<string, string>
+                {
+                    ["description"] = verifiedComputer.Description
+                },
+                RevertCandidate = revertCandidate,
+                AllowedTargetOuMatched = true,
+                ExcludedAccountMatched = false
+            };
+            var auditSaved = _writeAuditLogger.Log(auditEntry);
+            _authAuditLogger.Log("WriteExecuted", authResult.ResolvedUser, success: true,
+                $"target={currentComputer.Name} targetType=Computer");
+
+            if (!auditSaved)
+                _authAuditLogger.Log("WriteAuditSaveFailed", authResult.ResolvedUser, success: false,
+                    $"target={currentComputer.Name} write-audit.jsonl への保存失敗");
+
+            _selectedComputer = verifiedComputer ?? currentComputer;
+            EditComputerDescriptionBox.Text = _selectedComputer.Description;
+            ComputerDetailBox.Text = FormatComputerDetails(_selectedComputer);
+            _pendingComputer = null;
+            _vm.SetComputerPendingReady(false);
+
+            _computerRevertMemoText = BuildComputerRevertMemo(currentComputer.Name, revertCandidate);
+            CopyComputerRevertMemoButton.IsEnabled = true;
+
+            OutputBox.Text = BuildComputerSuccessOutput(currentComputer, changeSet, verifiedComputer, auditSaved);
+        }
+        finally
+        {
+            Mouse.OverrideCursor = null;
+        }
+    }
+
+    private void EvaluateComputerEditability()
+    {
+        if (_selectedComputer is null) { ApplyComputerEditability(false, "コンピュータ未選択"); return; }
+        if (!_vm.IsReadOnlyMode) { ApplyComputerEditability(false, "DirectoryReadOnly モードが必要です"); return; }
+        if (!_vm.IsEditSessionActive) { ApplyComputerEditability(false, "編集セッション未開始（ログインしてください）"); return; }
+        if (_policy.EffectiveComputerOuDns.Count == 0) { ApplyComputerEditability(false, "AllowedComputerOuDns / AllowedTargetOuDns 未設定のため更新不可"); return; }
+        if (!_policy.EffectiveComputerOuDns.Any(ou => IsUnderOu(_selectedComputer.DistinguishedName, ou))) { ApplyComputerEditability(false, "対象コンピュータが許可OU外"); return; }
+        if (_policy.ExcludedComputerNames.Any(x => string.Equals(x, _selectedComputer.Name, StringComparison.OrdinalIgnoreCase))) { ApplyComputerEditability(false, "除外コンピュータ名のため更新不可"); return; }
+        ApplyComputerEditability(true, string.Empty);
+    }
+
+    private void ApplyComputerEditability(bool canEdit, string reason)
+    {
+        _vm.ComputerCanEdit = canEdit;
+        _vm.ComputerEditBlockedReason = reason;
+    }
+
+    private void ClearComputerSearchResults()
+    {
+        _lastComputerSearchResults = Array.Empty<AdComputer>();
+        ComputerSearchResultGrid.ItemsSource = Array.Empty<AdComputer>();
+        ComputerDetailBox.Text = string.Empty;
+        ComputerGroupListBox.Text = string.Empty;
+    }
+
+    private AdComputerSearchCriteria BuildComputerSearchCriteria()
+        => new()
+        {
+            Keyword = ComputerSearchBox.Text.Trim(),
+            OperatingSystem = ComputerOsFilterBox.Text.Trim(),
+            HasDescription = ComputerDescFilterBox.SelectedIndex switch { 1 => true, 2 => false, _ => null },
+            IncludeDisabled = IncludeDisabledComputersBox.IsChecked == true
+        };
+
+    private static string FormatComputerDetails(AdComputer computer)
+    {
+        var lines = new List<string>
+        {
+            $"Name: {computer.Name}",
+            $"SamAccountName: {computer.SamAccountName}",
+            $"DNSHostName: {computer.DnsHostName}",
+            $"OperatingSystem: {computer.OperatingSystem}",
+            $"Description: {computer.Description}",
+            $"Enabled: {FormatBool(computer.Enabled)}",
+            $"DistinguishedName: {computer.DistinguishedName}",
+            $"LastLogon: {FormatDateTime(computer.LastLogonAt)}",
+            $"WhenCreated: {FormatDateTime(computer.WhenCreated)}",
+            $"WhenChanged: {FormatDateTime(computer.WhenChanged)}"
+        };
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    private static string FormatComputerChangePreview(ChangeSet cs, string operation)
+    {
+        if (cs.Changes.Count == 0) return "差分なし（更新不要）";
+        var lines = new List<string> { $"対象コンピュータ: {cs.TargetSamAccountName}（{cs.TargetDisplayName}）", $"操作: {operation}" };
+        lines.AddRange(cs.Changes.Select(c => $"- {c.Field}（{c.LdapAttribute}）: 「{c.Before}」→「{c.After}」"));
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    private static string BuildComputerSuccessOutput(AdComputer target, ChangeSet changeSet, AdComputer? verifiedComputer, bool auditSaved)
+    {
+        var lines = new List<string>
+        {
+            $"更新成功: {target.Name}（{target.DnsHostName}）",
+            string.Empty,
+            "対象DN:",
+            $"  {target.DistinguishedName}",
+            string.Empty,
+            "更新内容:"
+        };
+
+        foreach (var change in changeSet.Changes)
+        {
+            var verifiedVal = verifiedComputer is null ? "（AD再取得失敗）"
+                : change.LdapAttribute == "description" ? verifiedComputer.Description : "（不明）";
+            lines.Add($"  - {change.Field}");
+            lines.Add($"    変更前: {change.Before}");
+            lines.Add($"    変更後: {change.After}");
+            lines.Add($"    AD再取得: {verifiedVal}");
+        }
+
+        if (verifiedComputer is null)
+        {
+            lines.Add(string.Empty);
+            lines.Add("※ 更新後のAD再取得に失敗しました。ADUCで手動確認してください。");
+        }
+
+        lines.Add(string.Empty);
+        lines.Add("戻し候補（変更前の値）:");
+        foreach (var change in changeSet.Changes)
+            lines.Add($"  {change.Field} = {change.Before}");
+        lines.Add("  ↑「戻し用メモをコピー」ボタンでクリップボードにコピーできます");
+
+        lines.Add(string.Empty);
+        lines.Add(auditSaved
+            ? "監査ログ: write-audit.jsonl に保存済み"
+            : "監査ログ: ⚠ write-audit.jsonl への保存に失敗しました。管理者に連絡してください。");
+
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    private static string BuildComputerRevertMemo(string computerName, Dictionary<string, string> revertValues)
+    {
+        var lines = new List<string>
+        {
+            "戻し候補メモ (ManageAdTool v0.5.0 - Computer)",
+            $"対象コンピュータ: {computerName}",
+            $"記録日時: {DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss}",
+            "戻し値:"
+        };
+        foreach (var kv in revertValues)
+            lines.Add($"  {kv.Key} = {kv.Value}");
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    private void LogComputerWriteFailure(ChangeSet changeSet, string targetDn, string editorUser, string error,
+        bool ouMatched, bool excludedMatched)
+    {
+        _writeAuditLogger.Log(new WriteAuditEntry
+        {
+            ServiceMode = _policy.ServiceMode,
+            Executor = Executor,
+            MachineName = Environment.MachineName,
+            EditorUser = editorUser,
+            TargetType = "Computer",
+            TargetName = changeSet.TargetSamAccountName,
+            OperationName = "UpdateComputerDescription",
+            TargetSamAccountName = changeSet.TargetSamAccountName,
+            TargetDisplayName = changeSet.TargetDisplayName,
+            TargetDn = targetDn,
+            Changes = changeSet.Changes,
+            Success = false,
+            Error = error,
+            AllowedTargetOuMatched = ouMatched,
+            ExcludedAccountMatched = excludedMatched
+        });
+    }
+
+    private static string BuildComputerSearchResultsCsv(IEnumerable<AdComputer> computers)
+    {
+        var lines = new List<string>
+        {
+            string.Join(",", new[]
+            {
+                "Name", "SamAccountName", "DNSHostName", "OperatingSystem", "Description",
+                "Enabled", "DistinguishedName", "LastLogon", "WhenCreated", "WhenChanged"
+            }.Select(CsvEscape))
+        };
+
+        lines.AddRange(computers.Select(c => string.Join(",", new[]
+        {
+            c.Name, c.SamAccountName, c.DnsHostName, c.OperatingSystem, c.Description,
+            FormatBool(c.Enabled), c.DistinguishedName,
+            FormatDateTime(c.LastLogonAt), FormatDateTime(c.WhenCreated), FormatDateTime(c.WhenChanged)
+        }.Select(CsvEscape))));
+
+        return string.Join(Environment.NewLine, lines) + Environment.NewLine;
+    }
+
+    private static string FormatComputerCriteria(AdComputerSearchCriteria criteria)
+    {
+        var desc = criteria.HasDescription switch { true => "あり", false => "なし", _ => "指定なし" };
+        return $"keyword={criteria.Keyword}; os={criteria.OperatingSystem}; description={desc}; includeDisabled={criteria.IncludeDisabled}";
+    }
 }

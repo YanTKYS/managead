@@ -14,4 +14,9 @@ public class AppPolicy
     public string AdminGroupDn { get; set; } = string.Empty;
     public bool AllowNestedAdminGroupMembership { get; set; } = false;
     public int EditSessionMinutes { get; set; } = 15;
+    public List<string> AllowedComputerOuDns { get; set; } = new();
+    public List<string> ExcludedComputerNames { get; set; } = new();
+    public List<string> EditableComputerAttributes { get; set; } = new() { "description" };
+    public IReadOnlyList<string> EffectiveComputerOuDns
+        => AllowedComputerOuDns.Count > 0 ? AllowedComputerOuDns : AllowedTargetOuDns;
 }

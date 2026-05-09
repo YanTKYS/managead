@@ -17,4 +17,7 @@ public class WriteAuditEntry
     public Dictionary<string, string>? RevertCandidate { get; init; }
     public bool AllowedTargetOuMatched { get; init; }
     public bool ExcludedAccountMatched { get; init; }
+    public string TargetType { get; init; } = "User";
+    public string TargetName { get; init; } = string.Empty;
+    public string OperationName { get; init; } = "UpdateUserAttributes";
 }

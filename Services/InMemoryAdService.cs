@@ -32,6 +32,49 @@ public class InMemoryAdService : IAdService
         }
     };
 
+    private readonly Dictionary<string, AdComputer> _computers = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["PC-001"] = new AdComputer
+        {
+            Name = "PC-001", SamAccountName = "PC-001$",
+            DnsHostName = "PC-001.example.local",
+            OperatingSystem = "Windows 11 Pro",
+            Description = "情報政策課端末",
+            DistinguishedName = "CN=PC-001,OU=Computers,DC=example,DC=local",
+            Enabled = true,
+            LastLogonAt = DateTimeOffset.UtcNow.AddHours(-2),
+            WhenCreated = DateTimeOffset.UtcNow.AddDays(-365),
+            WhenChanged = DateTimeOffset.UtcNow.AddDays(-10),
+            Groups = new[] { "GG_Workstations" }
+        },
+        ["PC-002"] = new AdComputer
+        {
+            Name = "PC-002", SamAccountName = "PC-002$",
+            DnsHostName = "PC-002.example.local",
+            OperatingSystem = "Windows 10 Pro",
+            Description = string.Empty,
+            DistinguishedName = "CN=PC-002,OU=Computers,DC=example,DC=local",
+            Enabled = true,
+            LastLogonAt = DateTimeOffset.UtcNow.AddDays(-3),
+            WhenCreated = DateTimeOffset.UtcNow.AddDays(-730),
+            WhenChanged = DateTimeOffset.UtcNow.AddDays(-30),
+            Groups = new[] { "GG_Workstations" }
+        },
+        ["SRV-001"] = new AdComputer
+        {
+            Name = "SRV-001", SamAccountName = "SRV-001$",
+            DnsHostName = "SRV-001.example.local",
+            OperatingSystem = "Windows Server 2022 Standard",
+            Description = "ファイルサーバー（本番）",
+            DistinguishedName = "CN=SRV-001,OU=Servers,DC=example,DC=local",
+            Enabled = true,
+            LastLogonAt = DateTimeOffset.UtcNow.AddMinutes(-30),
+            WhenCreated = DateTimeOffset.UtcNow.AddDays(-1000),
+            WhenChanged = DateTimeOffset.UtcNow.AddDays(-1),
+            Groups = new[] { "GG_Servers" }
+        }
+    };
+
     private readonly List<AdGroup> _groups = new()
     {
         new() { Name = "GG_OfficeUsers", DistinguishedName = "CN=GG_OfficeUsers,OU=Groups,DC=example,DC=local" },
@@ -90,6 +133,38 @@ public class InMemoryAdService : IAdService
             : groupNameOrDn;
         if (!_directGroupMembers.TryGetValue(name, out var members)) return Array.Empty<AdUser>();
         return members.Where(_users.ContainsKey).Select(sam => _users[sam]).ToList();
+    }
+
+    public IReadOnlyList<AdComputer> SearchComputers(AdComputerSearchCriteria criteria)
+    {
+        var keyword = criteria.Keyword.Trim();
+        return _computers.Values.Where(c =>
+            (keyword.Length == 0 ||
+                c.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
+                c.DnsHostName.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
+                c.SamAccountName.Contains(keyword, StringComparison.OrdinalIgnoreCase)) &&
+            (string.IsNullOrWhiteSpace(criteria.OperatingSystem) ||
+                c.OperatingSystem.Contains(criteria.OperatingSystem.Trim(), StringComparison.OrdinalIgnoreCase)) &&
+            (!criteria.HasDescription.HasValue || criteria.HasDescription.Value == !string.IsNullOrWhiteSpace(c.Description)) &&
+            (criteria.IncludeDisabled || c.Enabled))
+            .ToList();
+    }
+
+    public AdComputer? GetComputer(string name)
+        => _computers.TryGetValue(name, out var computer) ? computer : null;
+
+    public IReadOnlyList<string> GetComputerGroups(string name)
+    {
+        if (!_computers.TryGetValue(name, out var computer)) return Array.Empty<string>();
+        return computer.Groups.ToList();
+    }
+
+    public ChangeSet BuildComputerChangeSet(AdComputer current, string newDescription)
+    {
+        var cs = new ChangeSet { TargetSamAccountName = current.Name, TargetDisplayName = current.DnsHostName };
+        if (!string.Equals(current.Description, newDescription, StringComparison.Ordinal))
+            cs.Changes.Add(new("説明 (description)", current.Description, newDescription) { LdapAttribute = "description" });
+        return cs;
     }
 
     public ChangeSet BuildChangeSet(AdUser current, string newMail, string newDisplayName, string newSurname, string newGivenName)
