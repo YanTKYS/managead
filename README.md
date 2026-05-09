@@ -29,15 +29,25 @@
 - 参照ログ（JSON Lines 形式）
 
 ### コンピュータ参照・限定編集（v0.5.0 新機能）
+
+**参照:**
 - AD コンピュータ検索（Name / DNSHostName / sAMAccountName、2文字以上）
 - 検索条件の絞り込み（OS / description 有無 / 無効端末表示）
 - コンピュータ詳細表示（Name / DNSHostName / OS / Enabled / Description / DN / LastLogon / WhenCreated / WhenChanged）
 - 所属グループ表示・クリップボードコピー
 - コンピュータ検索結果 CSV 出力
-- **description 限定更新**（AllowedComputerOuDns 配下 + Domain Admins セッション必須）
+
+**description 限定更新:**
+- 更新可能な属性は **description のみ**（LDAP属性名: `description`）
+- **Domain Admins 認証済みセッション**が必須
+- `AllowedComputerOuDns`（空なら `AllowedTargetOuDns` をフォールバック）配下のコンピュータのみ更新可能
+- `ExcludedComputerNames` に登録されたコンピュータは更新不可
+- 空文字への更新は禁止（属性クリアは対象外）
 - 更新フロー: 差分確認 → 再認証 → 実行前確認ダイアログ → AD再取得・整合性チェック → 更新 → AD再取得
 - 書き込み監査ログ（`write-audit.jsonl`、`targetType: "Computer"` / `operationName: "UpdateComputerDescription"` 記録）
 - 戻し候補表示・クリップボードコピー
+
+> **コンピュータ操作の対象外**: 無効化・OU移動・削除・グループ変更・GPO編集・パスワードリセット・一括更新は実装していません。
 
 ### 認証基盤（v0.3.0 以降）
 - 別ユーザーログイン・Domain Admins 判定

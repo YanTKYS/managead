@@ -59,10 +59,11 @@
 ### v0.5.0
 - コンピュータオブジェクト参照・description 限定編集
 - コンピュータ検索（Name / DNSHostName / sAMAccountName、OS フィルタ、description 有無、無効端末表示）
-- コンピュータ詳細表示・所属グループ表示・CSV出力
-- description のみ更新可（AllowedComputerOuDns 配下 + Domain Admins セッション必須）
+- コンピュータ詳細表示（Name / DNSHostName / OS / Enabled / Description / DN / LastLogon / WhenCreated / WhenChanged）・所属グループ表示・CSV出力
+- 更新対象は **description のみ**（Domain Admins セッション必須・AllowedComputerOuDns 配下のみ・ExcludedComputerNames は不可・空文字禁止）
+- 禁止操作（実装しない）: 無効化・OU移動・削除・グループ変更・GPO編集・パスワードリセット・一括更新
 - 更新フロー: 差分確認 → 再認証 → 確認ダイアログ → AD再取得・整合性チェック → 更新 → AD再取得
-- write-audit.jsonl に targetType / targetName / operationName フィールドを追加
+- write-audit.jsonl に targetType / targetName / operationName フィールドを追加（ユーザー更新ログとの後方互換あり）
 - AppPolicy に AllowedComputerOuDns / ExcludedComputerNames / EditableComputerAttributes を追加
 - `docs/validation-computer-edit.md` / `appsettings.ComputerDescriptionEdit.sample.json` を追加
 
