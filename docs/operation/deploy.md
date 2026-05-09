@@ -35,7 +35,7 @@
 4. 更新実行機能が無効化されていることを確認する
 
 ## 6. DirectoryReadOnly 検証への移行
-- 実AD接続の読み取り専用検証は `docs/validation-readonly.md` を参照して実施する
+- 実AD接続の読み取り専用検証は `docs/operation/validation-readonly.md` を参照して実施する
 - DirectoryReadOnly では更新操作は実行できない（更新ボタン無効）
 
 ## 注意（v0.3.0 以前）
@@ -74,6 +74,6 @@ mail / department / title の限定編集が可能になります。以下の点
 - 自動ロールバック機能はありません（v0.4.x）
 
 ### 成果物の閉域への持ち込み時の注意
-- ZIP 展開後、`appsettings.UserAttributeEdit.sample.json` をコピーして `appsettings.json` を作成してください
+- ZIP 展開後、`config-samples/appsettings.UserAttributeEdit.sample.json` をコピーして `appsettings.json` を作成してください
 - `AllowedTargetOuDns`・`AdminGroupDn`・`LogPath` は環境に合わせて必ず書き換えてください
 - パスワードは appsettings.json に記載しません（起動時のログイン UI で入力する設計です）

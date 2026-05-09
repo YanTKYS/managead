@@ -31,7 +31,7 @@
 
 ## DirectoryReadOnly モード確認項目
 
-実AD接続が必要な項目。`docs/validation-readonly.md` の手順に従って実施する。
+実AD接続が必要な項目。`docs/operation/validation-readonly.md` の手順に従って実施する。
 
 | # | 確認項目 | 結果 | 備考 |
 |---|---|---|---|
