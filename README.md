@@ -98,7 +98,7 @@
 | `ServiceMode` | `"InMemory"` / `"DirectoryReadOnly"` | `"InMemory"` |
 | `AllowedTargetOuDns` | ユーザー参照・更新対象 OU | `[]` |
 | `ExcludedSamAccountNames` | 除外ユーザーアカウント | `[]` |
-| `AllowedComputerOuDns` | コンピュータ更新対象 OU（空なら AllowedTargetOuDns を使用） | `[]` |
+| `AllowedComputerOuDns` | コンピュータ更新対象 OU（**明示設定を推奨**。空のとき AllowedTargetOuDns にフォールバックするが、コンピュータ用に個別設定することを推奨） | `[]` |
 | `ExcludedComputerNames` | 除外コンピュータ名 | `[]` |
 | `MaxSearchResults` | 検索上限件数 | `200` |
 | `EditorAuthMode` | `"DomainAdmins"` で認証 UI 有効化 | `"None"` |

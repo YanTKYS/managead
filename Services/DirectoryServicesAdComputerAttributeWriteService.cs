@@ -17,15 +17,19 @@ public class DirectoryServicesAdComputerAttributeWriteService : IAdComputerAttri
         if (disallowed.Count > 0)
             return new UpdateResult(false, $"許可されていない属性への更新要求: {string.Join(", ", disallowed)}。コンピュータ編集は description のみ可能です。");
 
+        var emptyUpdates = changeSet.Changes
+            .Where(c => string.IsNullOrWhiteSpace(c.After))
+            .Select(c => string.IsNullOrEmpty(c.LdapAttribute) ? c.Field : c.LdapAttribute)
+            .ToList();
+        if (emptyUpdates.Count > 0)
+            return new UpdateResult(false, $"空文字更新は禁止されています: {string.Join(", ", emptyUpdates)}。description の属性クリアは対象外です。");
+
         try
         {
             using var entry = new DirectoryEntry($"LDAP://{targetDn}", domainUser, password);
             foreach (var change in changeSet.Changes)
             {
-                if (string.IsNullOrWhiteSpace(change.After))
-                    entry.Properties[change.LdapAttribute].Clear();
-                else
-                    entry.Properties[change.LdapAttribute].Value = change.After;
+                entry.Properties[change.LdapAttribute].Value = change.After;
             }
             entry.CommitChanges();
             return new UpdateResult(true, null);
