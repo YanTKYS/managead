@@ -46,6 +46,23 @@ ManageAdTool 別ユーザーログイン・Domain Admins 判定基盤
 - InMemory モードでは認証非対応メッセージを表示（ログイン入力無効）。
 - `docs/roadmap.md` を追加。
 
+## v0.4.2
+### Title
+ManageAdTool ユーザー属性限定編集 属性見直し版（メールアドレス / 表示名 / 姓 / 名）
+
+### Note
+- **編集対象属性の見直し**: mail / department / title → **mail / displayName / sn / givenName**（メールアドレス / 表示名 / 姓 / 名）に変更。department / title は編集UIから除外（参照表示は継続）。
+- **ユーザー名（sAMAccountName）の参照専用化**: UI に読み取り専用テキストボックス（SamAccountNameReadBox）を追加。書き込み対象から永久除外の設計方針を確立。
+- **EditableAttributeDefs の追加**: Mail / DisplayName / Surname / GivenName の属性定義（日本語表示名・LDAP属性名）を一元管理するクラスを追加。
+- **FieldChange.LdapAttribute の追加**: `write-audit.jsonl` の `changes` に `ldapAttribute` フィールドを追加。監査ログの機械可読性を向上。
+- **書き込みサービスのバリデーション強化**: LdapAttribute ベースの許可リスト（"mail"/"displayName"/"sn"/"givenName"）チェックに切り替え。
+- **AdUser モデルの拡張**: `Surname`（sn）/ `GivenName`（givenName）プロパティを追加。
+- **差分確認プレビューに LDAP属性名を表示**: 「メールアドレス（mail）: ...」形式に変更。
+- **整合性チェック・AD再取得検証の更新**: LdapAttribute ベースの switch 式に切り替え。
+- `docs/retrospective-v0.4.1.md` を追加（v0.4.1 振り返り・設計議事録）。
+- `docs/design-account-expiration.md` を追加（アカウント有効期限設計方針、v0.4.2 では実装しない）。
+- `appsettings.UserAttributeEdit.sample.json` の `EditableAttributes` を更新。
+
 ## v0.4.1
 ### Title
 ManageAdTool ユーザー属性限定編集 安定化版（UI改善・戻し支援・監査強化）

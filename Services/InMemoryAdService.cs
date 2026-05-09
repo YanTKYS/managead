@@ -9,6 +9,7 @@ public class InMemoryAdService : IAdService
         ["sato.taro"] = new AdUser
         {
             SamAccountName = "sato.taro", DisplayName = "佐藤 太郎", Name = "Taro Sato",
+            Surname = "佐藤", GivenName = "太郎",
             Mail = "taro.sato@example.local", Department = "情報政策課", Title = "主任",
             Enabled = true, UserAccountControl = 512,
             AccountExpiresAt = DateTimeOffset.UtcNow.AddDays(-1),
@@ -20,6 +21,7 @@ public class InMemoryAdService : IAdService
         ["tanaka.hana"] = new AdUser
         {
             SamAccountName = "tanaka.hana", DisplayName = "田中 花", Name = "Hana Tanaka",
+            Surname = "田中", GivenName = "花",
             Mail = "hana.tanaka@example.local", Department = "総務課", Title = "担当",
             Enabled = true, UserAccountControl = 512,
             AccountExpiresAt = DateTimeOffset.UtcNow.AddDays(-2),
@@ -90,15 +92,17 @@ public class InMemoryAdService : IAdService
         return members.Where(_users.ContainsKey).Select(sam => _users[sam]).ToList();
     }
 
-    public ChangeSet BuildChangeSet(AdUser current, string newMail, string newDepartment, string newTitle)
+    public ChangeSet BuildChangeSet(AdUser current, string newMail, string newDisplayName, string newSurname, string newGivenName)
     {
         var cs = new ChangeSet { TargetSamAccountName = current.SamAccountName, TargetDisplayName = current.DisplayName };
         if (!string.Equals(current.Mail, newMail, StringComparison.Ordinal))
-            cs.Changes.Add(new("Mail", current.Mail, newMail));
-        if (!string.Equals(current.Department, newDepartment, StringComparison.Ordinal))
-            cs.Changes.Add(new("Department", current.Department, newDepartment));
-        if (!string.Equals(current.Title, newTitle, StringComparison.Ordinal))
-            cs.Changes.Add(new("Title", current.Title, newTitle));
+            cs.Changes.Add(new(EditableAttributeDefs.Mail.DisplayName, current.Mail, newMail) { LdapAttribute = EditableAttributeDefs.Mail.LdapAttribute });
+        if (!string.Equals(current.DisplayName, newDisplayName, StringComparison.Ordinal))
+            cs.Changes.Add(new(EditableAttributeDefs.DisplayName.DisplayName, current.DisplayName, newDisplayName) { LdapAttribute = EditableAttributeDefs.DisplayName.LdapAttribute });
+        if (!string.Equals(current.Surname, newSurname, StringComparison.Ordinal))
+            cs.Changes.Add(new(EditableAttributeDefs.Surname.DisplayName, current.Surname, newSurname) { LdapAttribute = EditableAttributeDefs.Surname.LdapAttribute });
+        if (!string.Equals(current.GivenName, newGivenName, StringComparison.Ordinal))
+            cs.Changes.Add(new(EditableAttributeDefs.GivenName.DisplayName, current.GivenName, newGivenName) { LdapAttribute = EditableAttributeDefs.GivenName.LdapAttribute });
         return cs;
     }
 }

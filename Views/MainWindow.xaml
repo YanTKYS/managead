@@ -63,17 +63,32 @@
         <GroupBox Grid.Row="4" Margin="0,0,0,8">
             <GroupBox.Header>
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="属性表示・変更予定確認 / 限定更新 (mail / department / title)"/>
-                    <TextBlock Text="【更新対象: mail / department / title のみ】【対象OU制限あり】【Domain Admins セッション必須】"
+                    <TextBlock Text="属性表示・変更予定確認 / 限定更新"/>
+                    <TextBlock Text="【更新対象: メールアドレス / 表示名 / 姓 / 名】【ユーザー名は参照のみ（v0.4.2 更新対象外）】【Domain Admins セッション必須】"
                                Foreground="DarkOrange" FontSize="11" Margin="8,0,0,0" VerticalAlignment="Center"/>
                 </StackPanel>
             </GroupBox.Header>
             <Grid Margin="8">
-                <Grid.ColumnDefinitions><ColumnDefinition Width="120"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                <Grid.RowDefinitions><RowDefinition/><RowDefinition/><RowDefinition/></Grid.RowDefinitions>
-                <TextBlock Text="Mail"/><TextBox x:Name="MailBox" Grid.Column="1" IsEnabled="{Binding EditControlsEnabled}" TextChanged="EditInput_TextChanged"/>
-                <TextBlock Text="Department" Grid.Row="1"/><TextBox x:Name="DepartmentBox" Grid.Row="1" Grid.Column="1" IsEnabled="{Binding EditControlsEnabled}" TextChanged="EditInput_TextChanged"/>
-                <TextBlock Text="Title" Grid.Row="2"/><TextBox x:Name="TitleBox" Grid.Row="2" Grid.Column="1" IsEnabled="{Binding EditControlsEnabled}" TextChanged="EditInput_TextChanged"/>
+                <Grid.ColumnDefinitions><ColumnDefinition Width="180"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <TextBlock Text="メールアドレス (mail)" VerticalAlignment="Center"/>
+                <TextBox x:Name="EditMailBox" Grid.Column="1" IsEnabled="{Binding EditControlsEnabled}" TextChanged="EditInput_TextChanged"/>
+                <TextBlock Text="表示名 (displayName)" Grid.Row="1" VerticalAlignment="Center" Margin="0,4,0,0"/>
+                <TextBox x:Name="EditDisplayNameBox" Grid.Row="1" Grid.Column="1" Margin="0,4,0,0" IsEnabled="{Binding EditControlsEnabled}" TextChanged="EditInput_TextChanged"/>
+                <TextBlock Text="姓 (sn)" Grid.Row="2" VerticalAlignment="Center" Margin="0,4,0,0"/>
+                <TextBox x:Name="EditSurnameBox" Grid.Row="2" Grid.Column="1" Margin="0,4,0,0" IsEnabled="{Binding EditControlsEnabled}" TextChanged="EditInput_TextChanged"/>
+                <TextBlock Text="名 (givenName)" Grid.Row="3" VerticalAlignment="Center" Margin="0,4,0,0"/>
+                <TextBox x:Name="EditGivenNameBox" Grid.Row="3" Grid.Column="1" Margin="0,4,0,0" IsEnabled="{Binding EditControlsEnabled}" TextChanged="EditInput_TextChanged"/>
+                <TextBlock Text="ユーザー名 ※参照のみ（高リスク）" Grid.Row="4" VerticalAlignment="Center" Margin="0,4,0,0" Foreground="Gray"/>
+                <TextBox x:Name="SamAccountNameReadBox" Grid.Row="4" Grid.Column="1" Margin="0,4,0,0"
+                         IsReadOnly="True" Background="#F4F4F4" Foreground="DimGray"
+                         ToolTip="ユーザー名（sAMAccountName）は参照のみです。v0.4.2では更新できません。"/>
             </Grid>
         </GroupBox>
 
@@ -100,7 +115,7 @@
                         </StackPanel>
                         <TextBlock Text="{Binding WriteButtonDisabledReason}"
                                    Foreground="DarkRed" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,2"/>
-                        <TextBlock Text="※ 更新対象: mail / department / title のみ（LDAPattr: mail/department/title）。空文字更新は禁止。実行前に再認証と確認が必要です。"
+                        <TextBlock Text="※ 更新対象: メールアドレス / 表示名 / 姓 / 名（LDAPattr: mail / displayName / sn / givenName）。ユーザー名は参照のみ。空文字更新は禁止。実行前に再認証と確認が必要です。"
                                    Foreground="Gray" FontSize="11" TextWrapping="Wrap"/>
                     </StackPanel>
                 </StackPanel>

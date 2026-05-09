@@ -10,5 +10,5 @@ public interface IAdService
     IReadOnlyList<string> GetUserGroups(string samAccountName);
     IReadOnlyList<AdGroup> SearchGroups(string keyword);
     IReadOnlyList<AdUser> GetGroupMembers(string groupName);
-    ChangeSet BuildChangeSet(AdUser current, string newMail, string newDepartment, string newTitle);
+    ChangeSet BuildChangeSet(AdUser current, string newMail, string newDisplayName, string newSurname, string newGivenName);
 }

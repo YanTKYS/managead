@@ -40,7 +40,7 @@ public class WriteAuditLogger
                 targetDisplayName = entry.TargetDisplayName,
                 targetDn = entry.TargetDn,
                 operationName = "UpdateUserAttributes",
-                changes = entry.Changes.Select(c => new { field = c.Field, before = c.Before, after = c.After }).ToList(),
+                changes = entry.Changes.Select(c => new { field = c.Field, ldapAttribute = c.LdapAttribute, before = c.Before, after = c.After }).ToList(),
                 success = entry.Success,
                 error = entry.Error,
                 verifiedAfterUpdate = entry.VerifiedAfterUpdate,

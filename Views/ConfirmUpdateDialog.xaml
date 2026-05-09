@@ -65,17 +65,20 @@
                         <DataTemplate>
                             <Grid Margin="0,3,0,3">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="110"/>
+                                    <ColumnDefinition Width="130"/>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="24"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Text="{Binding Field}" FontWeight="Bold" VerticalAlignment="Center"/>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding Field}" FontWeight="Bold"/>
+                                    <TextBlock Text="{Binding LdapAttribute}" Foreground="Gray" FontSize="10"/>
+                                </StackPanel>
                                 <TextBox Grid.Column="1" Text="{Binding Before}" IsReadOnly="True"
-                                         Background="#FFF0F0" BorderBrush="#FFCCCC" Padding="4,2"/>
+                                         Background="#FFF0F0" BorderBrush="#FFCCCC" Padding="4,2" VerticalAlignment="Center"/>
                                 <TextBlock Grid.Column="2" Text="→" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 <TextBox Grid.Column="3" Text="{Binding After}" IsReadOnly="True"
-                                         Background="#F0FFF0" BorderBrush="#AADDAA" Padding="4,2"/>
+                                         Background="#F0FFF0" BorderBrush="#AADDAA" Padding="4,2" VerticalAlignment="Center"/>
                             </Grid>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>

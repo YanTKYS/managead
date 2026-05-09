@@ -3,8 +3,10 @@ namespace ManageAdTool.Models;
 public class AdUser
 {
     public string SamAccountName { get; init; } = string.Empty;
-    public string DisplayName { get; init; } = string.Empty;
+    public string DisplayName { get; set; } = string.Empty;
     public string Name { get; init; } = string.Empty;
+    public string Surname { get; set; } = string.Empty;
+    public string GivenName { get; set; } = string.Empty;
     public string Mail { get; set; } = string.Empty;
     public string Department { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;

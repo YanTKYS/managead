@@ -5,7 +5,7 @@
 本ツールは閉域ネットワーク向けの **Active Directory 参照・限定編集支援ツール** として開発しています。
 
 - 参照機能を主目的とし、安全性・シンプルさを優先します
-- 書き込みは mail / department / title のみに限定します（v0.4.0 時点）
+- 書き込みは mail / displayName / sn / givenName のみに限定します（v0.4.2 時点）
 - パスワードは appsettings.json / ログへの保存を行いません
 - グループ操作・GPO編集・OU移動・ユーザー無効化・一括更新は対象外とします
 
@@ -45,13 +45,23 @@
 - エラーメッセージの利用者向け整理
 - LogPath 書き込み権限チェック（起動時 + 更新前確認ダイアログ）
 
+### v0.4.2
+- 編集対象属性の見直し: mail / department / title → mail / displayName / sn / givenName
+- UI の日本語ラベル整備（メールアドレス / 表示名 / 姓 / 名）
+- ユーザー名（sAMAccountName）は参照専用（参照のみ表示・編集不可）とする設計を確立
+- `EditableAttributeDefs` による属性定義の一元管理
+- `FieldChange.LdapAttribute` を追加し write-audit.jsonl の ldapAttribute フィールドを強化
+- 書き込みサービスの LdapAttribute ベースバリデーションへの切り替え
+- `AdUser` に Surname / GivenName を追加
+- アカウント有効期限（accountExpires）設計方針を docs/design-account-expiration.md に記録
+
 ---
 
 ## 今後の検討事項
 
 ### v0.4.x 完了条件
-- 実AD環境での v0.4.1 限定編集動作検証（`docs/validation-user-edit.md` 参照）
-- 検証結果を `docs/test-record-v0.4.1.md` に記録する
+- 実AD環境での v0.4.2 限定編集動作検証（`docs/validation-user-edit.md` 参照）
+- 検証結果を `docs/test-record-v0.4.1.md` に記録する（v0.4.2 追加項目含む）
 
 ### v0.5.0 以降の候補（優先度順・未確定）
 

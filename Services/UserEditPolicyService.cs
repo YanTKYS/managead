@@ -15,7 +15,7 @@ public class UserEditPolicyService
             return (false, "編集不可: 許可OU外");
 
         var editable = new HashSet<string>(policy.EditableAttributes, StringComparer.OrdinalIgnoreCase);
-        var required = new[] { "mail", "department", "title" };
+        var required = new[] { "mail", "displayName", "sn", "givenName" };
         var missing = required.Where(r => !editable.Contains(r)).ToList();
         if (missing.Count > 0)
             return (false, $"編集不可: EditableAttributes不足 ({string.Join(",", missing)})");
