@@ -545,6 +545,104 @@
                     </WrapPanel>
                 </Grid>
             </TabItem>
+
+            <!-- ログ確認タブ -->
+            <TabItem Header="ログ確認">
+                <Grid Margin="8">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="4"/>
+                        <RowDefinition Height="160"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Log kind + Load -->
+                    <GroupBox Header="ログ選択" Margin="0,0,0,6">
+                        <WrapPanel Margin="4">
+                            <TextBlock Text="ログ種別" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <ComboBox x:Name="LogKindComboBox" Width="160" SelectedIndex="0" Margin="0,0,12,0">
+                                <ComboBoxItem Content="参照ログ (audit.jsonl)"/>
+                                <ComboBoxItem Content="認証ログ (auth.jsonl)"/>
+                                <ComboBoxItem Content="書き込みログ (write-audit.jsonl)"/>
+                            </ComboBox>
+                            <Button Content="読み込み" Width="90" Margin="0,0,8,0" Click="LogLoad_Click"/>
+                            <Button Content="フォルダを開く" Width="110" Click="LogOpenFolder_Click"/>
+                            <TextBlock x:Name="LogWarningText" Foreground="DarkOrange" FontSize="11"
+                                       VerticalAlignment="Center" Margin="12,0,0,0" TextWrapping="Wrap"/>
+                        </WrapPanel>
+                    </GroupBox>
+
+                    <!-- Filters -->
+                    <GroupBox Grid.Row="1" Header="フィルター" Margin="0,0,0,6">
+                        <WrapPanel Margin="4">
+                            <TextBlock Text="開始日" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                            <DatePicker x:Name="LogStartDatePicker" Width="120" Margin="0,0,12,0"/>
+                            <TextBlock Text="終了日" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                            <DatePicker x:Name="LogEndDatePicker" Width="120" Margin="0,0,12,0"/>
+                            <TextBlock Text="成否" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                            <ComboBox x:Name="LogSuccessFilterComboBox" Width="80" SelectedIndex="0" Margin="0,0,12,0">
+                                <ComboBoxItem Content="すべて"/>
+                                <ComboBoxItem Content="成功"/>
+                                <ComboBoxItem Content="失敗"/>
+                            </ComboBox>
+                            <TextBlock Text="操作キーワード" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                            <TextBox x:Name="LogActionFilterBox" Width="140" Margin="0,0,12,0"/>
+                            <TextBlock Text="対象キーワード" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                            <TextBox x:Name="LogTargetFilterBox" Width="140" Margin="0,0,12,0"/>
+                            <Button Content="フィルター適用" Width="110" Margin="0,0,6,0" Click="LogFilter_Click"/>
+                            <Button Content="クリア" Width="70" Click="LogFilterClear_Click"/>
+                        </WrapPanel>
+                    </GroupBox>
+
+                    <!-- Status -->
+                    <TextBlock x:Name="LogStatusText" Grid.Row="2" FontSize="11" Foreground="Gray" Margin="0,0,0,4"/>
+
+                    <!-- Log DataGrid -->
+                    <DataGrid x:Name="LogGrid" Grid.Row="3" AutoGenerateColumns="False"
+                              SelectionMode="Single" IsReadOnly="True"
+                              SelectionChanged="LogGrid_SelectionChanged">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="日時" Binding="{Binding TimestampDisplay}" Width="150"/>
+                            <DataGridTextColumn Header="操作" Binding="{Binding Action}" Width="2*"/>
+                            <DataGridTextColumn Header="対象" Binding="{Binding Target}" Width="2*"/>
+                            <DataGridTextColumn Header="実行者・編集者" Binding="{Binding ExecutorDisplay}" Width="2*"/>
+                            <DataGridTextColumn Header="成否" Binding="{Binding SuccessDisplay}" Width="60"/>
+                            <DataGridTextColumn Header="備考" Binding="{Binding DetailSummary}" Width="2*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <!-- Splitter -->
+                    <GridSplitter Grid.Row="4" HorizontalAlignment="Stretch" Background="LightGray"/>
+
+                    <!-- Detail JSON pane -->
+                    <Grid Grid.Row="5" Margin="0,4,0,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,2">
+                            <TextBlock Text="詳細（JSON）" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <Button Content="コピー" Width="70" Click="LogCopyDetail_Click"/>
+                        </StackPanel>
+                        <TextBox x:Name="LogDetailBox" Grid.Row="1"
+                                 FontFamily="Consolas" FontSize="12"
+                                 IsReadOnly="True" AcceptsReturn="True"
+                                 VerticalScrollBarVisibility="Auto"
+                                 HorizontalScrollBarVisibility="Auto"
+                                 TextWrapping="NoWrap"/>
+                    </Grid>
+
+                    <!-- CSV export -->
+                    <WrapPanel Grid.Row="6" Margin="0,4,0,0">
+                        <Button Content="CSV出力" Width="100" Click="LogExportCsv_Click"/>
+                        <TextBlock Text="※ ログファイルは直接編集しないでください。参照のみ。"
+                                   Foreground="DarkOrange" FontSize="11" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                    </WrapPanel>
+                </Grid>
+            </TabItem>
         </TabControl>
 
         <!-- Row 6: Output GroupBox -->

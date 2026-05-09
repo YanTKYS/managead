@@ -196,3 +196,28 @@
 - `GpoSimulationResult` モデルを追加（GpoName / GpoId / AppliesTo / LinkedOuDn / LinkEnabled / Enforced / Remarks）。
 - `ReferenceAuditLogger` に `LogGpoSimulation` メソッドを追加。
 - 禁止操作（意図的に未実装）: GPO 編集 / GPO リンク変更 / セキュリティフィルタ変更 / WMI フィルタ変更。
+- docs を v0.8.0 向けに更新（backlog / roadmap / release-note / completed-work / README）。
+- `docs/operation/validation-gpo-simulation.md` を追加。
+- 未考慮項目を明記（セキュリティフィルタ / WMIフィルタ / 継承ブロック / ループバック処理 / サイトリンク）。
+
+---
+
+## v0.9.0 完了
+
+- 「ログ確認」タブを追加（audit.jsonl / auth.jsonl / write-audit.jsonl の参照・フィルタリング）。
+- ログ種別選択（参照ログ / 認証ログ / 書き込みログ）と「読み込み」ボタンで指定ファイルを読み込み。
+- 最大表示行数（`MaxLogDisplayRows`、デフォルト 1000）を末尾から読み取り、超過時に警告表示。
+- DataGrid 表示：日時 / 操作 / 対象 / 実行者・編集者 / 成否 / 備考 の6列。
+- フィルター機能：日付範囲・成否（すべて / 成功 / 失敗）・操作キーワード・対象キーワード。
+- 行選択でJSON詳細ペインに pretty-print 表示（パスワードフィールドはマスク）。
+- 詳細のクリップボードコピー・CSV出力（BOM付きUTF-8）。
+- 「フォルダを開く」ボタンでエクスプローラー起動。
+- 解析エラー行（不正 JSON 等）は "(解析エラー)" として一覧表示し、処理を継続。
+- AD更新は一切行わない（読み取り専用タブ）。
+- `LogEntry` モデル / `LogReader` 静的クラスを追加。
+- `AppPolicy` に `MaxLogDisplayRows`（デフォルト 1000）を追加。
+- `ReferenceAuditLogger` コンストラクターに `executor` / `machineName` 省略可能引数を追加し、全ログエントリに記録。
+- `MainWindow.xaml.cs` で `ReferenceAuditLogger` コンストラクターに `Executor` / `Environment.MachineName` を渡すよう更新。
+- 禁止操作（意図的に未実装）: ログ編集・削除・ログエクスポートからのAD操作。
+- docs を v0.9.0 向けに更新（backlog / roadmap / release-note / completed-work / README）。
+- `docs/operation/validation-log-viewer.md` を追加。

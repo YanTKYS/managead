@@ -16,6 +16,7 @@ ManageAdTool のドキュメント一覧です。
 | `validation-group-edit.md` | グループメンバー編集の検証手順 |
 | `validation-operation-support.md` | オペレーション支援機能の検証手順 |
 | `validation-gpo-simulation.md` | GPOシミュレーション機能の検証手順 |
+| `validation-log-viewer.md` | ログ確認機能の検証手順 |
 | `test-record-v0.2.0.md` | v0.2.0 検証結果記録 |
 | `test-record-v0.4.1.md` | v0.4.1 検証結果記録 |
 | `test-record-v0.7.0.md` | v0.7.0 検証結果記録 |
