@@ -167,6 +167,34 @@ public class InMemoryAdService : IAdService
         return cs;
     }
 
+    public AdGroupDetail? GetGroupDetail(string groupNameOrDn)
+    {
+        var group = groupNameOrDn.Contains(',', StringComparison.Ordinal)
+            ? _groups.FirstOrDefault(g => string.Equals(g.DistinguishedName, groupNameOrDn, StringComparison.OrdinalIgnoreCase))
+            : _groups.FirstOrDefault(g => string.Equals(g.Name, groupNameOrDn, StringComparison.OrdinalIgnoreCase));
+        if (group is null) return null;
+
+        if (!_directGroupMembers.TryGetValue(group.Name, out var memberSams))
+            memberSams = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        var userMembers = memberSams.Where(_users.ContainsKey).Select(sam => _users[sam])
+            .OrderBy(u => u.SamAccountName, StringComparer.OrdinalIgnoreCase).ToList();
+
+        return new AdGroupDetail
+        {
+            Name = group.Name,
+            DistinguishedName = group.DistinguishedName,
+            Description = string.Empty,
+            UserMembers = userMembers,
+            ComputerMemberNames = Array.Empty<string>(),
+            GroupMemberNames = Array.Empty<string>(),
+            MemberOfNames = Array.Empty<string>()
+        };
+    }
+
+    public AdUser? FindUserForGroupAdd(string samAccountName)
+        => _users.TryGetValue(samAccountName, out var user) ? user : null;
+
     public ChangeSet BuildChangeSet(AdUser current, string newMail, string newDisplayName, string newSurname, string newGivenName)
     {
         var cs = new ChangeSet { TargetSamAccountName = current.SamAccountName, TargetDisplayName = current.DisplayName };

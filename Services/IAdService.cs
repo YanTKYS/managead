@@ -15,4 +15,6 @@ public interface IAdService
     AdComputer? GetComputer(string name);
     IReadOnlyList<string> GetComputerGroups(string name);
     ChangeSet BuildComputerChangeSet(AdComputer current, string newDescription);
+    AdGroupDetail? GetGroupDetail(string groupNameOrDn);
+    AdUser? FindUserForGroupAdd(string samAccountName);
 }

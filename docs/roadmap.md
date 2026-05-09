@@ -7,8 +7,9 @@
 - 参照機能を主目的とし、安全性・シンプルさを優先します
 - ユーザー書き込みは mail / displayName / sn / givenName のみに限定します
 - コンピュータ書き込みは description のみに限定します（v0.5.0 以降）
+- グループ書き込みはユーザーのメンバー追加・削除のみに限定します（v0.6.0 以降）
 - パスワードは appsettings.json / ログへの保存を行いません
-- グループ操作・GPO編集・OU移動・ユーザー無効化・一括更新は対象外とします
+- グループ作成・削除・リネーム・グループをグループに追加・GPO編集・OU移動・ユーザー無効化・一括更新は対象外とします
 
 ---
 
@@ -67,18 +68,30 @@
 - AppPolicy に AllowedComputerOuDns / ExcludedComputerNames / EditableComputerAttributes を追加
 - `docs/validation-computer-edit.md` / `appsettings.ComputerDescriptionEdit.sample.json` を追加
 
+### v0.6.0
+- グループ詳細表示強化（ユーザーメンバー / コンピュータメンバー / ネストグループ / memberOf）
+- グループメンバー限定編集: **ユーザーのみ追加・削除可能**（グループをグループに追加・コンピュータ追加は不可）
+- 追加予定・削除予定のステージング UI（差分確認後のみ更新可能）
+- `EditableGroupOuDns` 配下のみ編集可能。空なら更新不可（セーフガード）
+- `ProtectedGroupNames` / `ProtectedGroupDns` に登録されたグループは編集不可
+- 整合性チェック（更新前にAD再取得し既存メンバー状態を確認）
+- 更新フロー: 差分確認 → 再認証 → 確認ダイアログ → AD再取得・整合性チェック → 更新 → AD再取得
+- write-audit.jsonl に `targetType: "Group"` / `operationName: "UpdateGroupMembers"` として記録
+- AppPolicy に EditableGroupOuDns / ProtectedGroupNames / ProtectedGroupDns を追加
+- `docs/validation-group-member-edit.md` / `appsettings.GroupMemberEdit.sample.json` を追加
+- 禁止操作（実装しない）: グループ作成・削除・リネーム / グループをグループに追加 / コンピュータをグループに追加 / GPO編集 / OU移動 / 一括更新
+
 ---
 
 ## 今後の検討事項
 
-### v0.5.x 完了条件
-- 実AD環境での v0.5.0 コンピュータ description 編集動作検証（`docs/validation-computer-edit.md` 参照）
-- 検証結果を `docs/test-record-v0.5.0.md` に記録する（別途作成）
+### v0.6.x 完了条件
+- 実AD環境での v0.6.0 グループメンバー編集動作検証（`docs/validation-group-member-edit.md` 参照）
+- 検証結果を `docs/test-record-v0.6.0.md` に記録する（別途作成）
 
-### v0.6.0 以降の候補（優先度順・未確定）
+### v0.7.0 以降の候補（優先度順・未確定）
 
 1. **参照強化**
-   - グループの詳細参照（説明・管理者・ネスト状態）
    - 検索条件の拡張（OU指定・LastLogon日付範囲など）
 
 2. **キャッシュ**（DirectoryReadOnly 実運用後に評価）
@@ -89,7 +102,9 @@
    - ユーザー更新対象属性の追加（要件定義次第）
 
 ### 対象外（今後も実装しない）
-- グループ追加・削除
+- グループ作成・削除・リネーム
+- グループをグループに追加
+- コンピュータをグループに追加
 - GPO 編集
 - OU 移動
 - ユーザー無効化・退職処理

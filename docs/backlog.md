@@ -107,15 +107,27 @@
 - docs/validation-computer-edit.md / appsettings.ComputerDescriptionEdit.sample.json を追加。
 - README / backlog / release-note / roadmap を v0.5.0 向けに更新。
 
-## Next（v0.5.x 完了条件 - v0.6.0 に進む前に確認）
-- 実AD環境での v0.5.0 コンピュータ description 編集動作検証（docs/validation-computer-edit.md に沿って実施）。
-- 検証結果を docs/test-record-v0.5.0.md に記録する。
-- write-audit.jsonl の targetType / targetName / operationName が正しく記録されることを確認する。
+## v0.6.0 完了
+- グループ詳細表示強化: ユーザーメンバー DataGrid（SAM / DisplayName / Mail / Department / Enabled）・コンピュータメンバー数・ネストグループ数・memberOf 表示。
+- グループメンバー限定編集: ユーザーのみ追加・削除可能（グループをグループに追加・コンピュータ追加は不可）。
+- ステージング UI: 追加予定・削除予定リストへの積み上げ、差分確認後のみ更新可能。
+- EditableGroupOuDns 未設定なら更新不可のセーフガード実装。
+- ProtectedGroupNames / ProtectedGroupDns による保護グループの編集ブロック。
+- SAM 検索してユーザー DN を解決してから追加予定リストへ（DN不明ユーザーの追加を防止）。
+- 整合性チェック（更新前にAD再取得）。
+- 更新フロー: 差分確認 → 再認証 → ConfirmGroupMemberUpdateDialog → AD再取得・整合性チェック → 更新 → AD再取得。
+- write-audit.jsonl に targetType: "Group" / operationName: "UpdateGroupMembers" として記録。
+- AdGroupDetail / IAdGroupMemberWriteService / DirectoryServicesAdGroupMemberWriteService を追加。
+- IAdService に GetGroupDetail / FindUserForGroupAdd を追加。
+- AppPolicy に EditableGroupOuDns / ProtectedGroupNames / ProtectedGroupDns を追加。
+- docs/validation-group-member-edit.md / appsettings.GroupMemberEdit.sample.json を追加。
+- README / release-note / roadmap / backlog を v0.6.0 向けに更新。
 
-## v0.6.0 候補（v0.5.x 完了後に検討）
-- グループの詳細参照（説明・管理者・ネスト状態）。
-- 検索条件の拡張（OU指定・LastLogon日付範囲など）。
-- DirectoryServicesAdReadService の検索パフォーマンス検証（実AD環境での PageSize・SizeLimit の効果測定）。
+## Next（v0.6.x 完了条件 - v0.7.0 に進む前に確認）
+- 実AD環境での v0.6.0 グループメンバー編集動作検証（docs/validation-group-member-edit.md に沿って実施）。
+- 検証結果を docs/test-record-v0.6.0.md に記録する。
+- write-audit.jsonl の targetType: "Group" / operationName: "UpdateGroupMembers" が正しく記録されることを確認する。
+- 保護グループ（ProtectedGroupNames / ProtectedGroupDns）が正しくブロックされることを確認する。
 
 ## AD実運用検討（キャッシュ）
 - 目的: ユーザー選択切替ごとの `memberOf` 再取得を減らし、DC負荷を抑制する。

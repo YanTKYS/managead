@@ -38,7 +38,7 @@ public class MainWindowViewModel : INotifyPropertyChanged
             var remaining = Math.Max(1, (int)Math.Ceiling((_session.ExpiresAt - DateTimeOffset.UtcNow).TotalMinutes));
             var ouNote = _policy.AllowedTargetOuDns.Count == 0 && _policy.EffectiveComputerOuDns.Count == 0
                 ? "【AllowedTargetOuDns / AllowedComputerOuDns 未設定のため更新不可】" : string.Empty;
-            return $"編集セッション: {_session.EditorUser}（残 {remaining} 分）【ユーザー: mail/displayName/sn/givenName のみ】【コンピュータ: description のみ】{ouNote}";
+            return $"編集セッション: {_session.EditorUser}（残 {remaining} 分）【ユーザー: mail/displayName/sn/givenName】【コンピュータ: description】【グループ: メンバー追加・削除のみ】{ouNote}";
         }
     }
 
@@ -94,6 +94,57 @@ public class MainWindowViewModel : INotifyPropertyChanged
             if (!_canEdit) return $"更新不可: {_editBlockedReason}";
             return "「差分確認」ボタンを押して差分を確認してください";
         }
+    }
+
+    private bool _isGroupPendingReady;
+    private bool _groupCanEdit;
+    private string _groupEditBlockedReason = "グループ未選択";
+
+    public string GroupEditBlockedReason
+    {
+        get => _groupEditBlockedReason;
+        set { _groupEditBlockedReason = value; OnPropertyChanged(); }
+    }
+
+    public bool GroupCanEdit
+    {
+        get => _groupCanEdit;
+        set
+        {
+            _groupCanEdit = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(GroupEditControlsEnabled));
+            OnPropertyChanged(nameof(IsGroupWriteButtonEnabled));
+            OnPropertyChanged(nameof(GroupWriteButtonDisabledReason));
+        }
+    }
+
+    public bool GroupEditControlsEnabled
+        => IsReadOnlyMode && _groupCanEdit && IsEditSessionActive;
+
+    public bool IsGroupWriteButtonEnabled
+        => IsReadOnlyMode && IsEditSessionActive && _isGroupPendingReady;
+
+    public string GroupWriteButtonDisabledReason
+    {
+        get
+        {
+            if (IsGroupWriteButtonEnabled) return string.Empty;
+            if (!IsReadOnlyMode) return "DirectoryReadOnly モードが必要です";
+            if (!IsAuthSupported) return "認証設定未構成（EditorAuthMode / AdminGroupDn を設定してください）";
+            if (_session is null) return "未ログイン（Domain Admins アカウントでログインしてください）";
+            if (!IsEditSessionActive) return "セッション期限切れ（再ログインしてください）";
+            if (_policy.EditableGroupOuDns.Count == 0) return "EditableGroupOuDns 未設定のため更新不可（appsettings.json を確認してください）";
+            if (!_groupCanEdit) return $"更新不可: {_groupEditBlockedReason}";
+            return "「差分確認」ボタンを押して差分を確認してください";
+        }
+    }
+
+    public void SetGroupPendingReady(bool value)
+    {
+        _isGroupPendingReady = value;
+        OnPropertyChanged(nameof(IsGroupWriteButtonEnabled));
+        OnPropertyChanged(nameof(GroupWriteButtonDisabledReason));
     }
 
     private bool _isComputerPendingReady;
@@ -173,6 +224,7 @@ public class MainWindowViewModel : INotifyPropertyChanged
         _session = null;
         _isPendingReady = false;
         _isComputerPendingReady = false;
+        _isGroupPendingReady = false;
         RefreshSessionStatus();
     }
 
@@ -189,6 +241,9 @@ public class MainWindowViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(ComputerEditControlsEnabled));
         OnPropertyChanged(nameof(IsComputerWriteButtonEnabled));
         OnPropertyChanged(nameof(ComputerWriteButtonDisabledReason));
+        OnPropertyChanged(nameof(GroupEditControlsEnabled));
+        OnPropertyChanged(nameof(IsGroupWriteButtonEnabled));
+        OnPropertyChanged(nameof(GroupWriteButtonDisabledReason));
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

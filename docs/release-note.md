@@ -1,5 +1,23 @@
 # Release Notes
 
+## v0.6.0
+### Title
+ManageAdTool グループ詳細表示強化・ユーザー限定グループメンバー追加・削除
+
+### Note
+- **グループ詳細表示強化**: 「グループ参照・メンバー編集」タブを刷新。ユーザーメンバー DataGrid（SamAccountName / DisplayName / Mail / Department / Enabled）、コンピュータメンバー数・ネストグループ数・memberOf 表示に対応。
+- **グループメンバー限定編集**: ユーザーのみグループへの追加・削除を可能にした。グループをグループに追加・コンピュータをグループに追加・グループ作成・削除・リネームは対象外。
+- **ステージング UI**: 追加予定・削除予定リストにユーザーを積み上げ、「差分確認」後のみ「限定更新実行」が可能。
+- **セーフガード**: `EditableGroupOuDns` 未設定なら更新不可。`ProtectedGroupNames` / `ProtectedGroupDns` に登録されたグループは編集不可。既存メンバーの重複追加禁止・非メンバーの削除禁止。矛盾する操作（同一ユーザーの追加と削除の同時ステージング）を禁止。
+- **SAM検索**: ユーザー追加時は SAM を入力して AD 検索し、見つかった場合のみ追加予定リストに登録（DN 不明ユーザーの追加を防止）。
+- **整合性チェック**: 更新前に AD からグループを再取得し、追加予定ユーザーが既にメンバーでないか・削除予定ユーザーが依然メンバーかを確認して不一致なら中止。
+- **更新フロー**: 差分確認 → 再認証ダイアログ → ConfirmGroupMemberUpdateDialog（グループ名・DN・実行端末・編集者・追加ユーザー（緑）・削除ユーザー（赤）表示） → AD再取得・整合性チェック → 更新 → AD再取得して結果表示。
+- **write-audit.jsonl**: `targetType: "Group"` / `operationName: "UpdateGroupMembers"` で記録。各 member 変更は `ldapAttribute: "member"`, `before = ""` (追加) または `after = ""` (削除) として個別に記録。
+- **AppPolicy 拡張**: `EditableGroupOuDns` / `ProtectedGroupNames` / `ProtectedGroupDns` を追加。
+- **新規モデル・サービス**: `AdGroupDetail` / `IAdGroupMemberWriteService` / `DirectoryServicesAdGroupMemberWriteService` を追加。`IAdService` に `GetGroupDetail` / `FindUserForGroupAdd` を追加。
+- **禁止操作**: グループ作成・削除・リネーム / グループをグループに追加 / コンピュータをグループに追加 / GPO編集 / OU移動 / 一括更新は実装していません。
+- `docs/validation-group-member-edit.md` / `appsettings.GroupMemberEdit.sample.json` を追加。
+
 ## v0.5.0
 ### Title
 ManageAdTool コンピュータオブジェクト参照・description 限定編集
