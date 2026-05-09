@@ -290,6 +290,7 @@ public partial class MainWindow : Window
         if (reAuthDlg.ShowDialog() != true) return;
 
         var reAuthUser = reAuthDlg.DomainUser!;
+        // パスワードは認証と書き込みに即時使用し、finally で参照を切り離す。永続化しない。
         var reAuthPassword = reAuthDlg.Password!;
 
         try
@@ -309,6 +310,14 @@ public partial class MainWindow : Window
             {
                 OutputBox.Text = $"再認証失敗: {authResult.ResolvedUser} は Domain Admins のメンバーではありません";
                 _authAuditLogger.Log("ReAuthDenied", authResult.ResolvedUser, success: false, "Domain Admins 非メンバー");
+                return;
+            }
+
+            if (!string.Equals(authResult.ResolvedUser, _vm.CurrentEditorUser, StringComparison.OrdinalIgnoreCase))
+            {
+                OutputBox.Text = "編集セッションユーザーと再認証ユーザーが一致しないため更新を中止しました";
+                _authAuditLogger.Log("ReAuthUserMismatch", authResult.ResolvedUser, success: false,
+                    $"session={_vm.CurrentEditorUser} reauth={authResult.ResolvedUser}");
                 return;
             }
 
@@ -420,9 +429,13 @@ public partial class MainWindow : Window
                 AllowedTargetOuMatched = true,
                 ExcludedAccountMatched = false
             };
-            _writeAuditLogger.Log(auditEntry);
+            var auditSaved = _writeAuditLogger.Log(auditEntry);
             _authAuditLogger.Log("WriteExecuted", authResult.ResolvedUser, success: true,
                 $"target={currentUser.SamAccountName}");
+
+            if (!auditSaved)
+                _authAuditLogger.Log("WriteAuditSaveFailed", authResult.ResolvedUser, success: false,
+                    $"target={currentUser.SamAccountName} write-audit.jsonl への保存失敗");
 
             // Update UI with verified values
             _selected = verifiedUser ?? currentUser;
@@ -437,7 +450,8 @@ public partial class MainWindow : Window
             var verifiedText = verifiedUser is not null
                 ? $"\nAD再取得: mail={verifiedUser.Mail} / department={verifiedUser.Department} / title={verifiedUser.Title}"
                 : "\n（AD再取得失敗 - 監査ログで確認してください）";
-            OutputBox.Text = $"更新成功: {currentUser.SamAccountName}\n{diffText}{verifiedText}\n監査ログ: write-audit.jsonl";
+            var auditWarning = auditSaved ? string.Empty : "\n警告: 監査ログ（write-audit.jsonl）の保存に失敗しました。管理者に連絡してください。";
+            OutputBox.Text = $"更新成功: {currentUser.SamAccountName}\n{diffText}{verifiedText}\n監査ログ: write-audit.jsonl{auditWarning}";
         }
         finally
         {

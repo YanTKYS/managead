@@ -33,6 +33,7 @@ public partial class ReAuthDialog : Window
         }
 
         DomainUser = user;
+        // パスワードは呼び出し元で即時使用・破棄する。永続化しない。
         Password = pass;
         PasswordBox.Clear();
         DialogResult = true;
