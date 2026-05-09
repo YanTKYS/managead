@@ -19,7 +19,7 @@
 - **パスワードは保存しません**（appsettings.json / ログ / メモリへの永続化なし）。更新実行時に再認証ダイアログで入力し、即時使用・破棄します。
 - グループ追加・削除、GPO編集、OU移動、ユーザー無効化、退職処理、パスワードリセット、一括更新は対象外です。
 
-## 実装済み機能（v0.4.0）
+## 実装済み機能（v0.4.2）
 
 ### 参照機能（v0.2.0 以降）
 - AD ユーザー検索（SamAccountName / DisplayName / 氏名 / Mail）
@@ -27,7 +27,7 @@
 - ユーザー詳細表示（userAccountControl / lastLogonTimestamp / accountExpires）
 - 所属グループ一覧表示（名前順）・クリップボードコピー
 - グループ検索・グループメンバー一覧表示
-- 検索結果 CSV 出力
+- 検索結果 CSV 出力（SamAccountName / DisplayName / Surname / GivenName / Name / Mail / Department / Title 他）
 - 参照ログ（JSON Lines 形式）
 
 ### 認証基盤（v0.3.0 以降）
@@ -52,10 +52,10 @@
 - `InMemory`: デモ・画面確認用。実 AD 接続・更新は行いません
 - `DirectoryReadOnly`: 実 AD 参照 + Domain Admins セッション有効時に限定属性更新が可能
 
-> v0.4.0 では新しい ServiceMode を追加していません。  
+> v0.4.x では新しい ServiceMode を追加していません。  
 > DirectoryReadOnly + Domain Admins 認証済みセッション + AllowedTargetOuDns 設定 = 限定編集が有効になります。
 
-## appsettings.json 設定例（v0.4.0 限定編集有効構成）
+## appsettings.json 設定例（v0.4.2 限定編集有効構成）
 ```json
 {
   "AppPolicy": {
@@ -115,7 +115,7 @@
 - リリース ZIP は self-contained 形式のため、利用端末への .NET Desktop Runtime の別途インストールは不要です。
 
 ## 現在の対象外機能
-グループ追加・削除 / GPO編集 / OU移動 / ユーザー無効化・退職処理 / パスワードリセット / 新規ユーザー作成 / 一括更新は **v0.4.0 の対象外**です。
+グループ追加・削除 / GPO編集 / OU移動 / ユーザー無効化・退職処理 / パスワードリセット / 新規ユーザー作成 / 一括更新は実装していません。
 
 ## 今後の検討事項
 詳細は `docs/backlog.md`・`docs/roadmap.md` を参照してください。

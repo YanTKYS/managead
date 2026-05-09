@@ -562,7 +562,7 @@ public partial class MainWindow : Window
     {
         var lines = new List<string>
         {
-            "戻し候補メモ (ManageAdTool v0.4.1)",
+            "戻し候補メモ (ManageAdTool v0.4.2)",
             $"対象: {sam}（{displayName}）",
             $"記録日時: {DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss}",
             "戻し値:"
@@ -677,14 +677,14 @@ public partial class MainWindow : Window
         {
             string.Join(",", new[]
             {
-                "SamAccountName", "DisplayName", "Name", "Mail", "Department", "Title",
+                "SamAccountName", "DisplayName", "Surname", "GivenName", "Name", "Mail", "Department", "Title",
                 "Enabled", "UserAccountControl", "LastLogonTimestamp", "AccountExpires", "DistinguishedName"
             }.Select(CsvEscape))
         };
 
         lines.AddRange(users.Select(user => string.Join(",", new[]
         {
-            user.SamAccountName, user.DisplayName, user.Name, user.Mail, user.Department, user.Title,
+            user.SamAccountName, user.DisplayName, user.Surname, user.GivenName, user.Name, user.Mail, user.Department, user.Title,
             FormatBool(user.Enabled), FormatNullable(user.UserAccountControl),
             FormatDateTime(user.LastLogonAt), FormatDateTime(user.AccountExpiresAt), user.DistinguishedName
         }.Select(CsvEscape))));
