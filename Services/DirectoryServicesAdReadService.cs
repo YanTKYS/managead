@@ -232,6 +232,110 @@ public class DirectoryServicesAdReadService : IAdService
         return computer?.Groups ?? Array.Empty<string>();
     }
 
+    public AdGroupDetail? GetGroupDetail(string groupNameOrDn)
+    {
+        try
+        {
+            var groupDn = groupNameOrDn.Contains('=', StringComparison.Ordinal) && groupNameOrDn.Contains(',', StringComparison.Ordinal)
+                ? groupNameOrDn
+                : ResolveGroupDistinguishedName(groupNameOrDn);
+            if (string.IsNullOrWhiteSpace(groupDn)) return null;
+
+            string groupName;
+            string groupDescription;
+            IReadOnlyList<string> memberOfNames;
+
+            using (var root = new DirectoryEntry($"LDAP://{groupDn}"))
+            using (var ds = new DirectorySearcher(root) { Filter = "(objectClass=group)", SearchScope = SearchScope.Base })
+            {
+                ds.PropertiesToLoad.AddRange(new[] { "cn", "description", "memberOf" });
+                var r = ds.FindOne();
+                if (r is null) return null;
+                groupName = GetProperty(r, "cn", groupNameOrDn);
+                groupDescription = GetProperty(r, "description", string.Empty);
+                memberOfNames = r.Properties.Contains("memberOf")
+                    ? r.Properties["memberOf"].Cast<string>()
+                        .Select(dn => dn.Split(',')[0].Replace("CN=", string.Empty, StringComparison.OrdinalIgnoreCase))
+                        .OrderBy(n => n, StringComparer.OrdinalIgnoreCase).ToList()
+                    : Array.Empty<string>();
+            }
+
+            var defaultBase = GetDefaultNamingContext();
+            var userMembers = new List<AdUser>();
+            var computerNames = new List<string>();
+            var groupNames = new List<string>();
+
+            foreach (var searchBase in new[] { defaultBase })
+            {
+                using var root = new DirectoryEntry($"LDAP://{searchBase}");
+
+                using var uds = new DirectorySearcher(root)
+                {
+                    Filter = $"(&(objectClass=user)(!(objectClass=computer))(memberOf={EscapeLdap(groupDn)}))",
+                    PageSize = 200,
+                    SizeLimit = _policy.MaxSearchResults
+                };
+                AddSearchUserProperties(uds);
+                foreach (SearchResult r in uds.FindAll())
+                    userMembers.Add(DirectoryServicesUserMapper.MapUser(r));
+
+                using var cds = new DirectorySearcher(root)
+                {
+                    Filter = $"(&(objectClass=computer)(memberOf={EscapeLdap(groupDn)}))",
+                    PageSize = 200
+                };
+                cds.PropertiesToLoad.AddRange(new[] { "name" });
+                foreach (SearchResult r in cds.FindAll())
+                    computerNames.Add(GetProperty(r, "name", string.Empty));
+
+                using var gds = new DirectorySearcher(root)
+                {
+                    Filter = $"(&(objectClass=group)(memberOf={EscapeLdap(groupDn)}))",
+                    PageSize = 200
+                };
+                gds.PropertiesToLoad.AddRange(new[] { "cn" });
+                foreach (SearchResult r in gds.FindAll())
+                    groupNames.Add(GetProperty(r, "cn", string.Empty));
+            }
+
+            return new AdGroupDetail
+            {
+                Name = groupName,
+                DistinguishedName = groupDn,
+                Description = groupDescription,
+                UserMembers = userMembers.OrderBy(u => u.SamAccountName, StringComparer.OrdinalIgnoreCase).ToList(),
+                ComputerMemberNames = computerNames.OrderBy(n => n, StringComparer.OrdinalIgnoreCase).ToList(),
+                GroupMemberNames = groupNames.OrderBy(n => n, StringComparer.OrdinalIgnoreCase).ToList(),
+                MemberOfNames = memberOfNames
+            };
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException("ADグループ詳細取得の実行中にエラーが発生しました。", ex);
+        }
+    }
+
+    public AdUser? FindUserForGroupAdd(string samAccountName)
+    {
+        try
+        {
+            var defaultBase = GetDefaultNamingContext();
+            using var root = new DirectoryEntry($"LDAP://{defaultBase}");
+            using var ds = new DirectorySearcher(root)
+            {
+                Filter = $"(&(objectClass=user)(!(objectClass=computer))(sAMAccountName={EscapeLdap(samAccountName)}))",
+                PageSize = 1
+            };
+            AddSearchUserProperties(ds);
+            var r = ds.FindOne();
+            return r is null ? null : DirectoryServicesUserMapper.MapUser(r);
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException("ADユーザー検索の実行中にエラーが発生しました。", ex);
+        }
+    }
+
     public ChangeSet BuildComputerChangeSet(AdComputer current, string newDescription)
     {
         var cs = new ChangeSet { TargetSamAccountName = current.Name, TargetDisplayName = current.DnsHostName };

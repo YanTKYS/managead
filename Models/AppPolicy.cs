@@ -19,4 +19,7 @@ public class AppPolicy
     public List<string> EditableComputerAttributes { get; set; } = new() { "description" };
     public IReadOnlyList<string> EffectiveComputerOuDns
         => AllowedComputerOuDns.Count > 0 ? AllowedComputerOuDns : AllowedTargetOuDns;
+    public List<string> EditableGroupOuDns { get; set; } = new();
+    public List<string> ProtectedGroupNames { get; set; } = new();
+    public List<string> ProtectedGroupDns { get; set; } = new();
 }

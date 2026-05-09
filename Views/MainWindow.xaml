@@ -120,35 +120,122 @@
                     </StackPanel>
                 </StackPanel>
             </TabItem>
-            <TabItem Header="グループ参照">
+            <TabItem Header="グループ参照・メンバー編集">
                 <Grid Margin="8">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="120"/>
-                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="100"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
+
+                    <!-- Row 0: Group search bar -->
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                         <TextBlock Text="グループ検索" VerticalAlignment="Center" Margin="0,0,4,0"/>
                         <TextBox x:Name="GroupSearchBox" Width="260" Margin="0,0,8,0"/>
                         <Button Content="検索" Width="100" Click="GroupSearch_Click"/>
                     </StackPanel>
+
+                    <!-- Row 1: Group search result grid -->
                     <DataGrid x:Name="GroupSearchResultGrid" Grid.Row="1" AutoGenerateColumns="False" SelectionMode="Single" SelectionChanged="GroupSearchResultGrid_SelectionChanged">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="2*"/>
                             <DataGridTextColumn Header="DistinguishedName" Binding="{Binding DistinguishedName}" Width="5*"/>
                         </DataGrid.Columns>
                     </DataGrid>
-                    <TextBlock Grid.Row="2" Text="グループメンバー（表示のみ）" FontWeight="Bold" Margin="0,8,0,4"/>
-                    <DataGrid x:Name="GroupMemberGrid" Grid.Row="3" AutoGenerateColumns="False">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="SamAccountName" Binding="{Binding SamAccountName}" Width="2*"/>
-                            <DataGridTextColumn Header="DisplayName" Binding="{Binding DisplayName}" Width="2*"/>
-                            <DataGridTextColumn Header="Mail" Binding="{Binding Mail}" Width="3*"/>
-                            <DataGridTextColumn Header="Department" Binding="{Binding Department}" Width="2*"/>
-                            <DataGridCheckBoxColumn Header="Enabled" Binding="{Binding Enabled}" Width="Auto"/>
-                        </DataGrid.Columns>
-                    </DataGrid>
+
+                    <!-- Row 2: Detail + edit split panel -->
+                    <Grid Grid.Row="2" Margin="0,8,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="4"/>
+                            <ColumnDefinition Width="300"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Left: member detail -->
+                        <Grid Grid.Column="0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="90"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="60"/>
+                            </Grid.RowDefinitions>
+                            <TextBox x:Name="GroupDetailBox" Grid.Row="0" IsReadOnly="True" AcceptsReturn="True"
+                                     VerticalScrollBarVisibility="Auto" TextWrapping="Wrap"/>
+                            <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,6,0,4">
+                                <TextBlock Text="ユーザーメンバー" FontWeight="Bold" VerticalAlignment="Center"/>
+                                <Button Content="選択を削除予定へ" Width="120" Margin="8,0,0,0"
+                                        Click="GroupAddToRemoveStaging_Click"
+                                        IsEnabled="{Binding GroupEditControlsEnabled}"
+                                        ToolTip="選択中のユーザーを削除予定リストに追加します"/>
+                            </StackPanel>
+                            <DataGrid x:Name="GroupUserMemberGrid" Grid.Row="2" AutoGenerateColumns="False" SelectionMode="Single">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="SamAccountName" Binding="{Binding SamAccountName}" Width="2*"/>
+                                    <DataGridTextColumn Header="DisplayName" Binding="{Binding DisplayName}" Width="2*"/>
+                                    <DataGridTextColumn Header="Mail" Binding="{Binding Mail}" Width="3*"/>
+                                    <DataGridTextColumn Header="Department" Binding="{Binding Department}" Width="2*"/>
+                                    <DataGridCheckBoxColumn Header="Enabled" Binding="{Binding Enabled}" Width="Auto"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            <TextBox x:Name="GroupOtherMembersBox" Grid.Row="3" IsReadOnly="True" AcceptsReturn="True"
+                                     VerticalScrollBarVisibility="Auto" Margin="0,4,0,0" FontSize="11"
+                                     ToolTip="コンピュータメンバー、ネストグループ、所属グループ（memberOf）"/>
+                        </Grid>
+
+                        <GridSplitter Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+
+                        <!-- Right: edit panel -->
+                        <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto" Margin="4,0,0,0">
+                            <StackPanel>
+                                <GroupBox Margin="0,0,0,8">
+                                    <GroupBox.Header>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="メンバー編集"/>
+                                            <TextBlock Text="【ユーザーのみ・Domain Admins必須】"
+                                                       Foreground="DarkOrange" FontSize="10" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </GroupBox.Header>
+                                    <StackPanel Margin="4">
+                                        <TextBlock Text="{Binding GroupEditBlockedReason}" Foreground="DarkRed" FontSize="11"
+                                                   TextWrapping="Wrap" Margin="0,0,0,6"/>
+                                        <TextBlock Text="追加するユーザーのSamAccountName:" FontSize="11" Margin="0,0,0,2"/>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                            <TextBox x:Name="GroupAddUserBox" Width="140" Margin="0,0,4,0"
+                                                     IsEnabled="{Binding GroupEditControlsEnabled}"/>
+                                            <Button Content="検索して追加予定へ" FontSize="11"
+                                                    Click="GroupAddUserToStaging_Click"
+                                                    IsEnabled="{Binding GroupEditControlsEnabled}"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,2">
+                                            <TextBlock Text="追加予定:" FontWeight="Bold" FontSize="11" VerticalAlignment="Center"/>
+                                            <Button Content="選択を除去" FontSize="10" Margin="6,0,0,0" Width="60"
+                                                    Click="GroupRemoveFromAddStaging_Click"/>
+                                        </StackPanel>
+                                        <ListBox x:Name="GroupAddStagingList" Height="70" FontSize="11" Margin="0,0,0,6"/>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,2">
+                                            <TextBlock Text="削除予定:" FontWeight="Bold" FontSize="11" VerticalAlignment="Center"/>
+                                            <Button Content="選択を除去" FontSize="10" Margin="6,0,0,0" Width="60"
+                                                    Click="GroupRemoveFromRemoveStaging_Click"/>
+                                        </StackPanel>
+                                        <ListBox x:Name="GroupRemoveStagingList" Height="70" FontSize="11" Margin="0,0,0,8"/>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                            <Button x:Name="GroupPreviewButton" Content="差分確認" Width="90" Margin="0,0,8,0"
+                                                    Click="GroupPreview_Click"
+                                                    IsEnabled="{Binding GroupEditControlsEnabled}"/>
+                                            <Button x:Name="GroupExecuteButton" Content="限定更新実行" Width="120"
+                                                    Click="GroupExecute_Click"
+                                                    IsEnabled="{Binding IsGroupWriteButtonEnabled}"
+                                                    Background="#CC3333" Foreground="White" FontWeight="Bold"/>
+                                        </StackPanel>
+                                        <TextBlock Text="{Binding GroupWriteButtonDisabledReason}"
+                                                   Foreground="DarkRed" FontSize="10" TextWrapping="Wrap" Margin="0,0,0,2"/>
+                                        <TextBlock Foreground="Gray" FontSize="10" TextWrapping="Wrap"
+                                                   Text="※ ユーザーのみ追加・削除可能。コンピュータ・グループの追加は不可。グループ作成・削除・リネームは実行しません。"/>
+                                    </StackPanel>
+                                </GroupBox>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Grid>
                 </Grid>
             </TabItem>
             <TabItem Header="コンピュータ参照">

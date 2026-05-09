@@ -15,6 +15,7 @@ public partial class MainWindow : Window
     private readonly IAdService _ad;
     private readonly IAdUserAttributeWriteService? _writeService;
     private readonly IAdComputerAttributeWriteService? _computerWriteService;
+    private readonly IAdGroupMemberWriteService? _groupWriteService;
     private readonly UserEditPolicyService _policyService = new();
     private readonly UserAttributeCompareUseCase _useCase;
     private readonly ReferenceAuditLogger _auditLogger;
@@ -33,6 +34,12 @@ public partial class MainWindow : Window
     private ChangeSet? _pendingComputer;
     private string _computerRevertMemoText = string.Empty;
 
+    private record StagedUser(string Sam, string DisplayName, string Dn);
+    private AdGroup? _selectedGroup;
+    private AdGroupDetail? _selectedGroupDetail;
+    private readonly List<StagedUser> _groupAddStaging = new();
+    private readonly List<StagedUser> _groupRemoveStaging = new();
+
     private static readonly string Executor =
         $"{Environment.UserDomainName}\\{Environment.UserName}";
 
@@ -42,6 +49,7 @@ public partial class MainWindow : Window
         _ad = isReadOnly ? new DirectoryServicesAdReadService(_policy) : new InMemoryAdService();
         _writeService = isReadOnly ? new DirectoryServicesAdUserAttributeWriteService() : null;
         _computerWriteService = isReadOnly ? new DirectoryServicesAdComputerAttributeWriteService() : null;
+        _groupWriteService = isReadOnly ? new DirectoryServicesAdGroupMemberWriteService() : null;
         _useCase = new UserAttributeCompareUseCase(_ad);
         _auditLogger = new ReferenceAuditLogger(_policy.LogPath);
         _authAuditLogger = new AuthAuditLogger(_policy.LogPath);
@@ -81,6 +89,7 @@ public partial class MainWindow : Window
         _vm.RefreshSessionStatus();
         if (_selected is not null) EvaluateEditability();
         if (_selectedComputer is not null) EvaluateComputerEditability();
+        if (_selectedGroup is not null) EvaluateGroupEditability();
     }
 
     private void Login_Click(object sender, RoutedEventArgs e)
@@ -220,8 +229,11 @@ public partial class MainWindow : Window
         try
         {
             var groups = _ad.SearchGroups(keyword);
+            _selectedGroup = null;
+            _selectedGroupDetail = null;
+            ClearGroupDetail();
+            ClearGroupStaging();
             GroupSearchResultGrid.ItemsSource = groups;
-            GroupMemberGrid.ItemsSource = Array.Empty<AdUser>();
             var groupExceeded = groups.Count >= _policy.MaxSearchResults;
             OutputBox.Text = groupExceeded
                 ? $"グループ検索結果: {groups.Count}件（上限 {_policy.MaxSearchResults} 件に達しました。検索条件を絞り込んでください）"
@@ -231,33 +243,542 @@ public partial class MainWindow : Window
         catch (Exception ex)
         {
             ClearGroupResults();
-            OutputBox.Text = $"グループ検索に失敗しました。ネットワーク接続またはAD設定を確認してください。";
+            OutputBox.Text = "グループ検索に失敗しました。ネットワーク接続またはAD設定を確認してください。";
             _auditLogger.Log("GroupSearch", keyword, 0, success: false, FormatErrorForLog(ex));
         }
     }
 
     private void GroupSearchResultGrid_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
     {
-        if (GroupSearchResultGrid.SelectedItem is not AdGroup group) return;
+        _selectedGroup = GroupSearchResultGrid.SelectedItem as AdGroup;
+        _selectedGroupDetail = null;
+        ClearGroupDetail();
+        ClearGroupStaging();
+        if (_selectedGroup is null) return;
 
         try
         {
-            var members = _ad.GetGroupMembers(group.DistinguishedName)
-                .OrderBy(x => x.SamAccountName, StringComparer.OrdinalIgnoreCase)
-                .ToList();
-            GroupMemberGrid.ItemsSource = members;
-            var memberExceeded = members.Count >= _policy.MaxSearchResults;
-            OutputBox.Text = memberExceeded
-                ? $"グループメンバー表示: {group.Name} / {members.Count}件（上限 {_policy.MaxSearchResults} 件に達しました。実際のメンバー数が多い可能性があります）"
-                : $"グループメンバー表示: {group.Name} / {members.Count}件";
-            _auditLogger.Log("GroupMembers", group.Name, members.Count, success: true);
+            Mouse.OverrideCursor = Cursors.Wait;
+            var detail = _ad.GetGroupDetail(_selectedGroup.DistinguishedName);
+            _selectedGroupDetail = detail;
+
+            if (detail is null)
+            {
+                OutputBox.Text = $"グループ詳細を取得できませんでした: {_selectedGroup.Name}";
+                return;
+            }
+
+            GroupUserMemberGrid.ItemsSource = detail.UserMembers;
+            GroupDetailBox.Text = FormatGroupDetail(detail);
+            GroupOtherMembersBox.Text = FormatGroupOtherMembers(detail);
+
+            var total = detail.UserMembers.Count + detail.ComputerMemberNames.Count + detail.GroupMemberNames.Count;
+            OutputBox.Text = $"グループ詳細表示: {detail.Name} / ユーザー{detail.UserMembers.Count}名 / コンピュータ{detail.ComputerMemberNames.Count}台 / ネストグループ{detail.GroupMemberNames.Count}件 / 合計{total}件";
+            _auditLogger.Log("GroupDetail", _selectedGroup.Name, total, success: true);
         }
         catch (Exception ex)
         {
-            GroupMemberGrid.ItemsSource = Array.Empty<AdUser>();
-            OutputBox.Text = $"グループメンバーの取得に失敗しました。ネットワーク接続を確認してください。";
-            _auditLogger.Log("GroupMembers", group.Name, 0, success: false, FormatErrorForLog(ex));
+            OutputBox.Text = "グループ詳細の取得に失敗しました。ネットワーク接続を確認してください。";
+            _auditLogger.Log("GroupDetail", _selectedGroup.Name, 0, success: false, FormatErrorForLog(ex));
         }
+        finally
+        {
+            Mouse.OverrideCursor = null;
+        }
+
+        EvaluateGroupEditability();
+    }
+
+    // ── Group member staging ────────────────────────────────────────────────
+
+    private void GroupAddUserToStaging_Click(object sender, RoutedEventArgs e)
+    {
+        var sam = GroupAddUserBox.Text.Trim();
+        if (string.IsNullOrWhiteSpace(sam))
+        {
+            OutputBox.Text = "SamAccountName を入力してください";
+            return;
+        }
+
+        if (_groupAddStaging.Any(u => string.Equals(u.Sam, sam, StringComparison.OrdinalIgnoreCase)))
+        {
+            OutputBox.Text = $"「{sam}」は既に追加予定リストにあります";
+            return;
+        }
+
+        if (_groupRemoveStaging.Any(u => string.Equals(u.Sam, sam, StringComparison.OrdinalIgnoreCase)))
+        {
+            OutputBox.Text = $"「{sam}」は削除予定リストにあります。矛盾する操作は追加できません";
+            return;
+        }
+
+        if (_selectedGroupDetail is not null &&
+            _selectedGroupDetail.UserMembers.Any(u => string.Equals(u.SamAccountName, sam, StringComparison.OrdinalIgnoreCase)))
+        {
+            OutputBox.Text = $"「{sam}」は既にグループメンバーです";
+            return;
+        }
+
+        try
+        {
+            Mouse.OverrideCursor = Cursors.Wait;
+            var user = _ad.FindUserForGroupAdd(sam);
+            if (user is null)
+            {
+                OutputBox.Text = $"ユーザー「{sam}」がADに見つかりません。SamAccountName を確認してください。";
+                return;
+            }
+            _groupAddStaging.Add(new StagedUser(user.SamAccountName, user.DisplayName, user.DistinguishedName));
+            RefreshGroupStagingLists();
+            ResetGroupPending();
+            GroupAddUserBox.Text = string.Empty;
+            OutputBox.Text = $"追加予定に追加: {user.SamAccountName}（{user.DisplayName}）";
+        }
+        catch (Exception ex)
+        {
+            OutputBox.Text = "ユーザー検索に失敗しました。ネットワーク接続を確認してください。";
+            _ = FormatErrorForLog(ex);
+        }
+        finally
+        {
+            Mouse.OverrideCursor = null;
+        }
+    }
+
+    private void GroupAddToRemoveStaging_Click(object sender, RoutedEventArgs e)
+    {
+        if (GroupUserMemberGrid.SelectedItem is not AdUser user) return;
+
+        if (_groupRemoveStaging.Any(u => string.Equals(u.Sam, user.SamAccountName, StringComparison.OrdinalIgnoreCase)))
+        {
+            OutputBox.Text = $"「{user.SamAccountName}」は既に削除予定リストにあります";
+            return;
+        }
+
+        if (_groupAddStaging.Any(u => string.Equals(u.Sam, user.SamAccountName, StringComparison.OrdinalIgnoreCase)))
+        {
+            OutputBox.Text = $"「{user.SamAccountName}」は追加予定リストにあります。矛盾する操作は追加できません";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(user.DistinguishedName))
+        {
+            OutputBox.Text = $"「{user.SamAccountName}」の DN が取得できていません。グループを再選択してください";
+            return;
+        }
+
+        _groupRemoveStaging.Add(new StagedUser(user.SamAccountName, user.DisplayName, user.DistinguishedName));
+        RefreshGroupStagingLists();
+        ResetGroupPending();
+        OutputBox.Text = $"削除予定に追加: {user.SamAccountName}（{user.DisplayName}）";
+    }
+
+    private void GroupRemoveFromAddStaging_Click(object sender, RoutedEventArgs e)
+    {
+        var idx = GroupAddStagingList.SelectedIndex;
+        if (idx < 0 || idx >= _groupAddStaging.Count) return;
+        var removed = _groupAddStaging[idx];
+        _groupAddStaging.RemoveAt(idx);
+        RefreshGroupStagingLists();
+        ResetGroupPending();
+        OutputBox.Text = $"追加予定から除去: {removed.Sam}";
+    }
+
+    private void GroupRemoveFromRemoveStaging_Click(object sender, RoutedEventArgs e)
+    {
+        var idx = GroupRemoveStagingList.SelectedIndex;
+        if (idx < 0 || idx >= _groupRemoveStaging.Count) return;
+        var removed = _groupRemoveStaging[idx];
+        _groupRemoveStaging.RemoveAt(idx);
+        RefreshGroupStagingLists();
+        ResetGroupPending();
+        OutputBox.Text = $"削除予定から除去: {removed.Sam}";
+    }
+
+    private void GroupPreview_Click(object sender, RoutedEventArgs e)
+    {
+        if (!_vm.GroupCanEdit || _selectedGroup is null) return;
+
+        if (_groupAddStaging.Count == 0 && _groupRemoveStaging.Count == 0)
+        {
+            OutputBox.Text = "差分なし（追加予定・削除予定がありません）";
+            _vm.SetGroupPendingReady(false);
+            return;
+        }
+
+        _vm.SetGroupPendingReady(true);
+
+        var lines = new List<string> { $"グループメンバー差分確認: {_selectedGroup.Name}" };
+        if (_groupAddStaging.Count > 0)
+        {
+            lines.Add($"追加 ({_groupAddStaging.Count}名):");
+            lines.AddRange(_groupAddStaging.Select(u => $"  + {u.Sam}（{u.DisplayName}）"));
+        }
+        if (_groupRemoveStaging.Count > 0)
+        {
+            lines.Add($"削除 ({_groupRemoveStaging.Count}名):");
+            lines.AddRange(_groupRemoveStaging.Select(u => $"  - {u.Sam}（{u.DisplayName}）"));
+        }
+        lines.Add("「限定更新実行」ボタンで AD を更新します（再認証・確認ダイアログあり）");
+        OutputBox.Text = string.Join(Environment.NewLine, lines);
+    }
+
+    private void GroupExecute_Click(object sender, RoutedEventArgs e)
+    {
+        if (_groupWriteService is null)
+        {
+            OutputBox.Text = "ADグループ更新はこのモードでは使用できません（DirectoryReadOnly が必要です）";
+            return;
+        }
+
+        if (!_vm.IsEditSessionActive)
+        {
+            OutputBox.Text = "編集セッションが期限切れです。再ログインしてください。";
+            return;
+        }
+
+        if (_policy.EditableGroupOuDns.Count == 0)
+        {
+            OutputBox.Text = "EditableGroupOuDns が未設定のため更新できません。appsettings.json を確認してください。";
+            return;
+        }
+
+        if (_selectedGroup is null) return;
+
+        if (_groupAddStaging.Count == 0 && _groupRemoveStaging.Count == 0)
+        {
+            OutputBox.Text = "変更予定がありません。追加または削除するユーザーを指定してください。";
+            return;
+        }
+
+        if (!_logPathWritable)
+        {
+            var proceed = MessageBox.Show(
+                $"監査ログディレクトリへの書き込みができません。\n({Path.GetDirectoryName(_policy.LogPath)})\n\n更新を実行すると監査ログ（write-audit.jsonl）が記録されません。\n続行しますか？",
+                "監査ログ警告", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (proceed != MessageBoxResult.Yes) return;
+        }
+
+        var reAuthDlg = new ReAuthDialog(_vm.CurrentEditorUser) { Owner = this };
+        if (reAuthDlg.ShowDialog() != true) return;
+
+        var reAuthUser = reAuthDlg.DomainUser!;
+        var reAuthPassword = reAuthDlg.Password!;
+
+        try
+        {
+            Mouse.OverrideCursor = Cursors.Wait;
+            var authResult = _authService.TryAuthenticate(reAuthUser, reAuthPassword, _policy);
+
+            if (!authResult.AuthSucceeded)
+            {
+                OutputBox.Text = "再認証に失敗しました。ユーザー名またはパスワードを確認してください。";
+                _authAuditLogger.Log("ReAuthFailed", reAuthUser, success: false, authResult.ErrorMessage ?? string.Empty);
+                return;
+            }
+
+            if (!authResult.IsDomainAdmin)
+            {
+                OutputBox.Text = $"再認証したユーザー（{authResult.ResolvedUser}）は Domain Admins のメンバーではありません。";
+                _authAuditLogger.Log("ReAuthDenied", authResult.ResolvedUser, success: false, "Domain Admins 非メンバー");
+                return;
+            }
+
+            if (!string.Equals(authResult.ResolvedUser, _vm.CurrentEditorUser, StringComparison.OrdinalIgnoreCase))
+            {
+                OutputBox.Text = "再認証ユーザーと編集セッションユーザーが一致しません。ログアウトして再度ログインしてください。";
+                _authAuditLogger.Log("ReAuthUserMismatch", authResult.ResolvedUser, success: false,
+                    $"session={_vm.CurrentEditorUser} reauth={authResult.ResolvedUser}");
+                return;
+            }
+
+            Mouse.OverrideCursor = null;
+
+            var ouMatched = _policy.EditableGroupOuDns.Any(ou => IsUnderOu(_selectedGroup.DistinguishedName, ou));
+            if (!ouMatched)
+            {
+                OutputBox.Text = "対象グループが EditableGroupOuDns の許可OU外のため更新できません。";
+                LogGroupWriteFailure(_selectedGroup.Name, _selectedGroup.DistinguishedName, authResult.ResolvedUser,
+                    "許可OU外", false);
+                return;
+            }
+
+            var isProtectedByDn = _policy.ProtectedGroupDns.Any(dn => string.Equals(dn, _selectedGroup.DistinguishedName, StringComparison.OrdinalIgnoreCase));
+            var isProtectedByName = _policy.ProtectedGroupNames.Any(n => string.Equals(n, _selectedGroup.Name, StringComparison.OrdinalIgnoreCase));
+            if (isProtectedByDn || isProtectedByName)
+            {
+                OutputBox.Text = "対象グループは ProtectedGroupDns / ProtectedGroupNames により保護されているため更新できません。";
+                LogGroupWriteFailure(_selectedGroup.Name, _selectedGroup.DistinguishedName, authResult.ResolvedUser,
+                    "保護グループ", false);
+                return;
+            }
+
+            var addDisplayTexts = _groupAddStaging.Select(u => $"追加: {u.Sam}（{u.DisplayName}）").ToList();
+            var removeDisplayTexts = _groupRemoveStaging.Select(u => $"削除: {u.Sam}（{u.DisplayName}）").ToList();
+
+            var confirmDlg = new ConfirmGroupMemberUpdateDialog(
+                _selectedGroup.Name, _selectedGroup.DistinguishedName,
+                authResult.ResolvedUser, Executor, Environment.MachineName,
+                addDisplayTexts, removeDisplayTexts) { Owner = this };
+            if (confirmDlg.ShowDialog() != true) return;
+
+            Mouse.OverrideCursor = Cursors.Wait;
+
+            AdGroupDetail? currentDetail;
+            try
+            {
+                currentDetail = _ad.GetGroupDetail(_selectedGroup.DistinguishedName);
+            }
+            catch (Exception ex)
+            {
+                OutputBox.Text = "更新前のグループ情報取得に失敗しました。ネットワーク接続を確認してください。";
+                LogGroupWriteFailure(_selectedGroup.Name, _selectedGroup.DistinguishedName, authResult.ResolvedUser,
+                    FormatErrorForLog(ex), false);
+                return;
+            }
+
+            if (currentDetail is null)
+            {
+                OutputBox.Text = "更新対象グループがADに見つかりません。更新を中止しました。";
+                LogGroupWriteFailure(_selectedGroup.Name, _selectedGroup.DistinguishedName, authResult.ResolvedUser,
+                    "対象グループがADに存在しない", false);
+                return;
+            }
+
+            var currentMemberSams = new HashSet<string>(currentDetail.UserMembers.Select(u => u.SamAccountName), StringComparer.OrdinalIgnoreCase);
+
+            foreach (var staged in _groupAddStaging)
+            {
+                if (currentMemberSams.Contains(staged.Sam))
+                {
+                    OutputBox.Text = $"「{staged.Sam}」は既にグループメンバーです（AD現在値）。再度「差分確認」から実行してください。";
+                    LogGroupWriteFailure(_selectedGroup.Name, _selectedGroup.DistinguishedName, authResult.ResolvedUser,
+                        $"整合性エラー: {staged.Sam} は既にメンバー", true);
+                    return;
+                }
+            }
+
+            foreach (var staged in _groupRemoveStaging)
+            {
+                if (!currentMemberSams.Contains(staged.Sam))
+                {
+                    OutputBox.Text = $"「{staged.Sam}」はグループメンバーではありません（AD現在値）。再度「差分確認」から実行してください。";
+                    LogGroupWriteFailure(_selectedGroup.Name, _selectedGroup.DistinguishedName, authResult.ResolvedUser,
+                        $"整合性エラー: {staged.Sam} はメンバーでない", true);
+                    return;
+                }
+            }
+
+            var addDns = _groupAddStaging.Select(u => u.Dn).ToList();
+            var removeDns = _groupRemoveStaging.Select(u => u.Dn).ToList();
+
+            UpdateResult writeResult;
+            try
+            {
+                writeResult = _groupWriteService.UpdateGroupMembers(
+                    _selectedGroup.DistinguishedName, addDns, removeDns, reAuthUser, reAuthPassword);
+            }
+            catch (Exception ex)
+            {
+                OutputBox.Text = "更新処理中にエラーが発生しました。監査ログを確認してください。";
+                LogGroupWriteFailure(_selectedGroup.Name, _selectedGroup.DistinguishedName, authResult.ResolvedUser,
+                    FormatErrorForLog(ex), true);
+                return;
+            }
+
+            if (!writeResult.Success)
+            {
+                OutputBox.Text = $"更新に失敗しました。\n{writeResult.ErrorMessage}\n詳細は監査ログを確認してください。";
+                LogGroupWriteFailure(_selectedGroup.Name, _selectedGroup.DistinguishedName, authResult.ResolvedUser,
+                    writeResult.ErrorMessage ?? "不明なエラー", true);
+                return;
+            }
+
+            var changes = new List<FieldChange>();
+            changes.AddRange(_groupAddStaging.Select(u => new FieldChange($"追加: {u.Sam}（{u.DisplayName}）", string.Empty, u.Dn) { LdapAttribute = "member" }));
+            changes.AddRange(_groupRemoveStaging.Select(u => new FieldChange($"削除: {u.Sam}（{u.DisplayName}）", u.Dn, string.Empty) { LdapAttribute = "member" }));
+
+            var auditEntry = new WriteAuditEntry
+            {
+                ServiceMode = _policy.ServiceMode,
+                Executor = Executor,
+                MachineName = Environment.MachineName,
+                EditorUser = authResult.ResolvedUser,
+                TargetType = "Group",
+                TargetName = _selectedGroup.Name,
+                OperationName = "UpdateGroupMembers",
+                TargetSamAccountName = _selectedGroup.Name,
+                TargetDisplayName = _selectedGroup.Name,
+                TargetDn = _selectedGroup.DistinguishedName,
+                Changes = changes,
+                Success = true,
+                AllowedTargetOuMatched = true,
+                ExcludedAccountMatched = false
+            };
+            var auditSaved = _writeAuditLogger.Log(auditEntry);
+            _authAuditLogger.Log("WriteExecuted", authResult.ResolvedUser, success: true,
+                $"target={_selectedGroup.Name} targetType=Group adds={addDns.Count} removes={removeDns.Count}");
+
+            if (!auditSaved)
+                _authAuditLogger.Log("WriteAuditSaveFailed", authResult.ResolvedUser, success: false,
+                    $"target={_selectedGroup.Name} write-audit.jsonl への保存失敗");
+
+            ClearGroupStaging();
+            _vm.SetGroupPendingReady(false);
+
+            AdGroupDetail? verifiedDetail = null;
+            try { verifiedDetail = _ad.GetGroupDetail(_selectedGroup.DistinguishedName); } catch { }
+
+            if (verifiedDetail is not null)
+            {
+                _selectedGroupDetail = verifiedDetail;
+                GroupUserMemberGrid.ItemsSource = verifiedDetail.UserMembers;
+                GroupDetailBox.Text = FormatGroupDetail(verifiedDetail);
+                GroupOtherMembersBox.Text = FormatGroupOtherMembers(verifiedDetail);
+            }
+
+            OutputBox.Text = BuildGroupSuccessOutput(_selectedGroup.Name, _selectedGroup.DistinguishedName,
+                changes, verifiedDetail, auditSaved);
+        }
+        finally
+        {
+            Mouse.OverrideCursor = null;
+        }
+    }
+
+    private void EvaluateGroupEditability()
+    {
+        if (_selectedGroup is null) { ApplyGroupEditability(false, "グループ未選択"); return; }
+        if (!_vm.IsReadOnlyMode) { ApplyGroupEditability(false, "DirectoryReadOnly モードが必要です"); return; }
+        if (!_vm.IsEditSessionActive) { ApplyGroupEditability(false, "編集セッション未開始（ログインしてください）"); return; }
+        if (_policy.EditableGroupOuDns.Count == 0) { ApplyGroupEditability(false, "EditableGroupOuDns 未設定のため更新不可"); return; }
+        if (!_policy.EditableGroupOuDns.Any(ou => IsUnderOu(_selectedGroup.DistinguishedName, ou))) { ApplyGroupEditability(false, "対象グループが許可OU外"); return; }
+        if (_policy.ProtectedGroupDns.Any(dn => string.Equals(dn, _selectedGroup.DistinguishedName, StringComparison.OrdinalIgnoreCase))) { ApplyGroupEditability(false, "保護グループのため編集不可"); return; }
+        if (_policy.ProtectedGroupNames.Any(n => string.Equals(n, _selectedGroup.Name, StringComparison.OrdinalIgnoreCase))) { ApplyGroupEditability(false, "保護グループ名のため編集不可"); return; }
+        ApplyGroupEditability(true, string.Empty);
+    }
+
+    private void ApplyGroupEditability(bool canEdit, string reason)
+    {
+        _vm.GroupCanEdit = canEdit;
+        _vm.GroupEditBlockedReason = reason;
+    }
+
+    private void ResetGroupPending()
+    {
+        _vm.SetGroupPendingReady(false);
+    }
+
+    private void RefreshGroupStagingLists()
+    {
+        GroupAddStagingList.ItemsSource = null;
+        GroupAddStagingList.ItemsSource = _groupAddStaging.Select(u => $"{u.Sam}（{u.DisplayName}）").ToList();
+        GroupRemoveStagingList.ItemsSource = null;
+        GroupRemoveStagingList.ItemsSource = _groupRemoveStaging.Select(u => $"{u.Sam}（{u.DisplayName}）").ToList();
+    }
+
+    private void ClearGroupResults()
+    {
+        GroupSearchResultGrid.ItemsSource = Array.Empty<AdGroup>();
+        ClearGroupDetail();
+        ClearGroupStaging();
+    }
+
+    private void ClearGroupDetail()
+    {
+        GroupUserMemberGrid.ItemsSource = Array.Empty<AdUser>();
+        GroupDetailBox.Text = string.Empty;
+        GroupOtherMembersBox.Text = string.Empty;
+        _vm.GroupCanEdit = false;
+        _vm.GroupEditBlockedReason = "グループ未選択";
+    }
+
+    private void ClearGroupStaging()
+    {
+        _groupAddStaging.Clear();
+        _groupRemoveStaging.Clear();
+        RefreshGroupStagingLists();
+        _vm.SetGroupPendingReady(false);
+    }
+
+    private static string FormatGroupDetail(AdGroupDetail detail)
+    {
+        var lines = new List<string>
+        {
+            $"Name: {detail.Name}",
+            $"DistinguishedName: {detail.DistinguishedName}",
+        };
+        if (!string.IsNullOrWhiteSpace(detail.Description))
+            lines.Add($"Description: {detail.Description}");
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    private static string FormatGroupOtherMembers(AdGroupDetail detail)
+    {
+        var lines = new List<string>();
+        if (detail.ComputerMemberNames.Count > 0)
+            lines.Add($"コンピュータメンバー ({detail.ComputerMemberNames.Count}台): {string.Join(", ", detail.ComputerMemberNames)}");
+        if (detail.GroupMemberNames.Count > 0)
+            lines.Add($"ネストグループ ({detail.GroupMemberNames.Count}件): {string.Join(", ", detail.GroupMemberNames)}");
+        if (detail.MemberOfNames.Count > 0)
+            lines.Add($"所属グループ/memberOf ({detail.MemberOfNames.Count}件): {string.Join(", ", detail.MemberOfNames)}");
+        return lines.Count == 0 ? "(コンピュータ・ネストグループ・memberOf なし)" : string.Join(Environment.NewLine, lines);
+    }
+
+    private static string BuildGroupSuccessOutput(string groupName, string groupDn, IReadOnlyList<FieldChange> changes,
+        AdGroupDetail? verifiedDetail, bool auditSaved)
+    {
+        var lines = new List<string>
+        {
+            $"更新成功: {groupName}",
+            string.Empty,
+            $"対象DN: {groupDn}",
+            string.Empty,
+            "変更内容:"
+        };
+
+        foreach (var change in changes)
+            lines.Add($"  - {change.Field}");
+
+        if (verifiedDetail is not null)
+        {
+            lines.Add(string.Empty);
+            lines.Add($"AD再取得: ユーザーメンバー {verifiedDetail.UserMembers.Count}名 / コンピュータ {verifiedDetail.ComputerMemberNames.Count}台 / ネストグループ {verifiedDetail.GroupMemberNames.Count}件");
+        }
+        else
+        {
+            lines.Add(string.Empty);
+            lines.Add("※ 更新後のAD再取得に失敗しました。ADUCで手動確認してください。");
+        }
+
+        lines.Add(string.Empty);
+        lines.Add(auditSaved
+            ? "監査ログ: write-audit.jsonl に保存済み（operationName: UpdateGroupMembers, targetType: Group）"
+            : "監査ログ: ⚠ write-audit.jsonl への保存に失敗しました。管理者に連絡してください。");
+
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    private void LogGroupWriteFailure(string groupName, string groupDn, string editorUser, string error, bool ouMatched)
+    {
+        _writeAuditLogger.Log(new WriteAuditEntry
+        {
+            ServiceMode = _policy.ServiceMode,
+            Executor = Executor,
+            MachineName = Environment.MachineName,
+            EditorUser = editorUser,
+            TargetType = "Group",
+            TargetName = groupName,
+            OperationName = "UpdateGroupMembers",
+            TargetSamAccountName = groupName,
+            TargetDisplayName = groupName,
+            TargetDn = groupDn,
+            Changes = Array.Empty<FieldChange>(),
+            Success = false,
+            Error = error,
+            AllowedTargetOuMatched = ouMatched,
+            ExcludedAccountMatched = false
+        });
     }
 
     private void EvaluateEditability()
@@ -646,12 +1167,6 @@ public partial class MainWindow : Window
         SearchResultGrid.ItemsSource = Array.Empty<AdUser>();
         UserDetailBox.Text = string.Empty;
         GroupListBox.Text = string.Empty;
-    }
-
-    private void ClearGroupResults()
-    {
-        GroupSearchResultGrid.ItemsSource = Array.Empty<AdGroup>();
-        GroupMemberGrid.ItemsSource = Array.Empty<AdUser>();
     }
 
     private string FormatUserDetails(AdUser user)
