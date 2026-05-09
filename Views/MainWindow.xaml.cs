@@ -40,6 +40,11 @@ public partial class MainWindow : Window
     private readonly List<StagedUser> _groupAddStaging = new();
     private readonly List<StagedUser> _groupRemoveStaging = new();
 
+    // オペレーション支援
+    private AdUser? _opSelectedUser;
+    private readonly List<string> _opGroupAddPlanned = new();
+    private readonly List<string> _opGroupRemovePlanned = new();
+
     private static readonly string Executor =
         $"{Environment.UserDomainName}\\{Environment.UserName}";
 
@@ -1732,5 +1737,229 @@ public partial class MainWindow : Window
     {
         var desc = criteria.HasDescription switch { true => "あり", false => "なし", _ => "指定なし" };
         return $"keyword={criteria.Keyword}; os={criteria.OperatingSystem}; description={desc}; includeDisabled={criteria.IncludeDisabled}";
+    }
+
+    // ─── オペレーション支援 ──────────────────────────────────────────────────
+
+    private void OpSearch_Click(object sender, RoutedEventArgs e)
+    {
+        var keyword = OpSearchBox.Text.Trim();
+        if (string.IsNullOrWhiteSpace(keyword))
+        {
+            OpSearchResultGrid.ItemsSource = null;
+            return;
+        }
+
+        try
+        {
+            var results = _ad.SearchUsers(new AdUserSearchCriteria { Keyword = keyword });
+            OpSearchResultGrid.ItemsSource = results.ToList();
+            _auditLogger.Log("OpUserSearch", keyword, results.Count, true);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"ユーザー検索に失敗しました。\n{ex.Message}", "検索エラー", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    private void OpSearchResultGrid_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (OpSearchResultGrid.SelectedItem is not AdUser selected) return;
+
+        try
+        {
+            var user = _ad.GetUser(selected.SamAccountName) ?? selected;
+            _opSelectedUser = user;
+
+            OpCurrentSamBox.Text = user.SamAccountName;
+            OpCurrentDisplayNameBox.Text = user.DisplayName;
+            OpCurrentMailBox.Text = user.Mail;
+            OpCurrentSurnameBox.Text = user.Surname;
+            OpCurrentGivenNameBox.Text = user.GivenName;
+
+            OpNewDisplayNameBox.Text = user.DisplayName;
+            OpNewSurnameBox.Text = user.Surname;
+            OpNewGivenNameBox.Text = user.GivenName;
+            OpNewMailBox.Text = user.Mail;
+
+            var groups = _ad.GetUserGroups(user.SamAccountName);
+            OpCurrentGroupsBox.Text = string.Join(Environment.NewLine, groups.OrderBy(g => g));
+
+            _opGroupAddPlanned.Clear();
+            _opGroupRemovePlanned.Clear();
+            OpGroupAddList.ItemsSource = null;
+            OpGroupRemoveList.ItemsSource = null;
+            OpSummaryBox.Text = string.Empty;
+
+            _auditLogger.Log("OpUserDetail", user.SamAccountName, 1, true);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"ユーザー詳細の取得に失敗しました。\n{ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    private void OpAddToGroupAdds_Click(object sender, RoutedEventArgs e)
+    {
+        var name = OpGroupAddInputBox.Text.Trim();
+        if (string.IsNullOrWhiteSpace(name)) return;
+        if (_opGroupAddPlanned.Any(g => string.Equals(g, name, StringComparison.OrdinalIgnoreCase)))
+        {
+            MessageBox.Show($"「{name}」はすでに追加予定に登録されています。", "重複", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+        if (_opGroupRemovePlanned.Any(g => string.Equals(g, name, StringComparison.OrdinalIgnoreCase)))
+        {
+            MessageBox.Show($"「{name}」は削除予定に登録されています。同じグループを追加予定と削除予定の両方に登録できません。", "矛盾", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+        _opGroupAddPlanned.Add(name);
+        OpGroupAddList.ItemsSource = null;
+        OpGroupAddList.ItemsSource = _opGroupAddPlanned.ToList();
+        OpGroupAddInputBox.Clear();
+    }
+
+    private void OpAddToGroupRemoves_Click(object sender, RoutedEventArgs e)
+    {
+        var name = OpGroupRemoveInputBox.Text.Trim();
+        if (string.IsNullOrWhiteSpace(name)) return;
+        if (_opGroupRemovePlanned.Any(g => string.Equals(g, name, StringComparison.OrdinalIgnoreCase)))
+        {
+            MessageBox.Show($"「{name}」はすでに削除予定に登録されています。", "重複", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+        if (_opGroupAddPlanned.Any(g => string.Equals(g, name, StringComparison.OrdinalIgnoreCase)))
+        {
+            MessageBox.Show($"「{name}」は追加予定に登録されています。同じグループを追加予定と削除予定の両方に登録できません。", "矛盾", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+        _opGroupRemovePlanned.Add(name);
+        OpGroupRemoveList.ItemsSource = null;
+        OpGroupRemoveList.ItemsSource = _opGroupRemovePlanned.ToList();
+        OpGroupRemoveInputBox.Clear();
+    }
+
+    private void OpRemoveFromGroupAdds_Click(object sender, RoutedEventArgs e)
+    {
+        var idx = OpGroupAddList.SelectedIndex;
+        if (idx < 0 || idx >= _opGroupAddPlanned.Count) return;
+        _opGroupAddPlanned.RemoveAt(idx);
+        OpGroupAddList.ItemsSource = null;
+        OpGroupAddList.ItemsSource = _opGroupAddPlanned.ToList();
+    }
+
+    private void OpRemoveFromGroupRemoves_Click(object sender, RoutedEventArgs e)
+    {
+        var idx = OpGroupRemoveList.SelectedIndex;
+        if (idx < 0 || idx >= _opGroupRemovePlanned.Count) return;
+        _opGroupRemovePlanned.RemoveAt(idx);
+        OpGroupRemoveList.ItemsSource = null;
+        OpGroupRemoveList.ItemsSource = _opGroupRemovePlanned.ToList();
+    }
+
+    private void OpGenerateSummary_Click(object sender, RoutedEventArgs e)
+    {
+        if (_opSelectedUser is null)
+        {
+            MessageBox.Show("対象ユーザーを選択してください。", "未選択", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var summary = BuildOperationSummary();
+        OpSummaryBox.Text = summary;
+
+        var attrChanges = CountOpAttrChanges();
+        _auditLogger.LogOperationPlan(Executor, _opSelectedUser.SamAccountName, attrChanges, _opGroupAddPlanned.Count, _opGroupRemovePlanned.Count);
+    }
+
+    private void OpCopySummary_Click(object sender, RoutedEventArgs e)
+    {
+        var text = OpSummaryBox.Text;
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            MessageBox.Show("コピーするサマリーがありません。先に「変更予定サマリー生成」を実行してください。", "未生成", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+        Clipboard.SetText(text);
+    }
+
+    private int CountOpAttrChanges()
+    {
+        if (_opSelectedUser is null) return 0;
+        int count = 0;
+        var newDn = OpNewDisplayNameBox.Text.Trim();
+        var newSn = OpNewSurnameBox.Text.Trim();
+        var newGn = OpNewGivenNameBox.Text.Trim();
+        var newMail = OpNewMailBox.Text.Trim();
+        if (!string.IsNullOrEmpty(newDn) && newDn != _opSelectedUser.DisplayName) count++;
+        if (!string.IsNullOrEmpty(newSn) && newSn != _opSelectedUser.Surname) count++;
+        if (!string.IsNullOrEmpty(newGn) && newGn != _opSelectedUser.GivenName) count++;
+        if (!string.IsNullOrEmpty(newMail) && newMail != _opSelectedUser.Mail) count++;
+        return count;
+    }
+
+    private string BuildOperationSummary()
+    {
+        if (_opSelectedUser is null) return "(対象ユーザーが未選択です)";
+
+        var sb = new StringBuilder();
+        sb.AppendLine("対象ユーザー:");
+        sb.AppendLine($"  sAMAccountName : {_opSelectedUser.SamAccountName}");
+        sb.AppendLine($"  表示名（現在）  : {_opSelectedUser.DisplayName}");
+        sb.AppendLine();
+
+        var newDn = OpNewDisplayNameBox.Text.Trim();
+        var newSn = OpNewSurnameBox.Text.Trim();
+        var newGn = OpNewGivenNameBox.Text.Trim();
+        var newMail = OpNewMailBox.Text.Trim();
+
+        var attrLines = new List<string>();
+        if (!string.IsNullOrEmpty(newDn) && newDn != _opSelectedUser.DisplayName)
+            attrLines.Add($"  表示名         : {_opSelectedUser.DisplayName} → {newDn}");
+        if (!string.IsNullOrEmpty(newSn) && newSn != _opSelectedUser.Surname)
+            attrLines.Add($"  姓             : {_opSelectedUser.Surname} → {newSn}");
+        if (!string.IsNullOrEmpty(newGn) && newGn != _opSelectedUser.GivenName)
+            attrLines.Add($"  名             : {_opSelectedUser.GivenName} → {newGn}");
+        if (!string.IsNullOrEmpty(newMail) && newMail != _opSelectedUser.Mail)
+            attrLines.Add($"  メールアドレス : {_opSelectedUser.Mail} → {newMail}");
+
+        if (attrLines.Count > 0)
+        {
+            sb.AppendLine("属性変更予定:");
+            foreach (var line in attrLines) sb.AppendLine(line);
+        }
+        else
+        {
+            sb.AppendLine("属性変更予定: なし");
+        }
+        sb.AppendLine();
+
+        sb.AppendLine("グループ変更予定:");
+        if (_opGroupAddPlanned.Count > 0)
+        {
+            sb.AppendLine("  追加:");
+            foreach (var g in _opGroupAddPlanned) sb.AppendLine($"  + {g}");
+        }
+        if (_opGroupRemovePlanned.Count > 0)
+        {
+            sb.AppendLine("  削除:");
+            foreach (var g in _opGroupRemovePlanned) sb.AppendLine($"  - {g}");
+        }
+        if (_opGroupAddPlanned.Count == 0 && _opGroupRemovePlanned.Count == 0)
+            sb.AppendLine("  なし");
+        sb.AppendLine();
+
+        sb.AppendLine("確認事項:");
+        sb.AppendLine($"  [{(OpCheck1.IsChecked == true ? "x" : " ")}] 対象ユーザーに誤りがない");
+        sb.AppendLine($"  [{(OpCheck2.IsChecked == true ? "x" : " ")}] 変更後の属性（表示名・姓・名）に誤りがない");
+        sb.AppendLine($"  [{(OpCheck3.IsChecked == true ? "x" : " ")}] メールアドレスに誤りがない");
+        sb.AppendLine($"  [{(OpCheck4.IsChecked == true ? "x" : " ")}] 追加グループに誤りがない");
+        sb.AppendLine($"  [{(OpCheck5.IsChecked == true ? "x" : " ")}] 削除グループに誤りがない");
+        sb.AppendLine($"  [{(OpCheck6.IsChecked == true ? "x" : " ")}] 関係部署の確認が済んでいる");
+
+        sb.AppendLine();
+        sb.AppendLine("※ 実際の更新は各タブ（ユーザー編集・グループ編集）から実行してください。");
+
+        return sb.ToString().TrimEnd();
     }
 }

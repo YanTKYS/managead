@@ -337,6 +337,154 @@
                     </Grid>
                 </Grid>
             </TabItem>
+
+            <!-- オペレーション支援タブ -->
+            <TabItem Header="オペレーション支援">
+                <Grid Margin="8">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="110"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Search bar -->
+                    <WrapPanel Margin="0,0,0,6" VerticalAlignment="Center">
+                        <TextBlock Text="ユーザー所属変更支援" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                        <TextBox x:Name="OpSearchBox" Width="240" Margin="0,0,6,0"/>
+                        <Button Content="検索" Width="80" Click="OpSearch_Click"/>
+                        <TextBlock Text="※ 変更予定作成のみ。AD更新はユーザー編集・グループ編集タブから実行してください。"
+                                   VerticalAlignment="Center" Foreground="DarkOrange" FontSize="11" Margin="12,0,0,0"/>
+                    </WrapPanel>
+
+                    <!-- Search results -->
+                    <DataGrid x:Name="OpSearchResultGrid" Grid.Row="1" AutoGenerateColumns="False" SelectionMode="Single"
+                              SelectionChanged="OpSearchResultGrid_SelectionChanged">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="SamAccountName" Binding="{Binding SamAccountName}" Width="2*"/>
+                            <DataGridTextColumn Header="DisplayName" Binding="{Binding DisplayName}" Width="2*"/>
+                            <DataGridTextColumn Header="Mail" Binding="{Binding Mail}" Width="3*"/>
+                            <DataGridTextColumn Header="Department" Binding="{Binding Department}" Width="2*"/>
+                            <DataGridCheckBoxColumn Header="Enabled" Binding="{Binding Enabled}" Width="Auto"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <!-- Main area: left (current info) | splitter | right (change plan) -->
+                    <Grid Grid.Row="2" Margin="0,8,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="330"/>
+                            <ColumnDefinition Width="4"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <GridSplitter Grid.Column="1" HorizontalAlignment="Stretch" Background="#CCCCCC"/>
+
+                        <!-- Left: current info -->
+                        <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
+                            <StackPanel Margin="0,0,6,0">
+                                <GroupBox Header="対象ユーザー（現在の情報）" Margin="0,0,0,6">
+                                    <Grid Margin="4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="90"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        <TextBlock Text="ユーザー名" VerticalAlignment="Center" FontSize="11"/>
+                                        <TextBox x:Name="OpCurrentSamBox" Grid.Column="1" IsReadOnly="True" Background="#F4F4F4" Foreground="DimGray" FontSize="11"/>
+                                        <TextBlock Text="表示名" Grid.Row="1" VerticalAlignment="Center" Margin="0,3,0,0" FontSize="11"/>
+                                        <TextBox x:Name="OpCurrentDisplayNameBox" Grid.Row="1" Grid.Column="1" Margin="0,3,0,0" IsReadOnly="True" Background="#F4F4F4" Foreground="DimGray" FontSize="11"/>
+                                        <TextBlock Text="メール" Grid.Row="2" VerticalAlignment="Center" Margin="0,3,0,0" FontSize="11"/>
+                                        <TextBox x:Name="OpCurrentMailBox" Grid.Row="2" Grid.Column="1" Margin="0,3,0,0" IsReadOnly="True" Background="#F4F4F4" Foreground="DimGray" FontSize="11"/>
+                                        <TextBlock Text="姓" Grid.Row="3" VerticalAlignment="Center" Margin="0,3,0,0" FontSize="11"/>
+                                        <TextBox x:Name="OpCurrentSurnameBox" Grid.Row="3" Grid.Column="1" Margin="0,3,0,0" IsReadOnly="True" Background="#F4F4F4" Foreground="DimGray" FontSize="11"/>
+                                        <TextBlock Text="名" Grid.Row="4" VerticalAlignment="Center" Margin="0,3,0,0" FontSize="11"/>
+                                        <TextBox x:Name="OpCurrentGivenNameBox" Grid.Row="4" Grid.Column="1" Margin="0,3,0,0" IsReadOnly="True" Background="#F4F4F4" Foreground="DimGray" FontSize="11"/>
+                                    </Grid>
+                                </GroupBox>
+                                <GroupBox Header="所属グループ（現在）">
+                                    <TextBox x:Name="OpCurrentGroupsBox" Height="170" IsReadOnly="True" AcceptsReturn="True"
+                                             VerticalScrollBarVisibility="Auto" FontSize="11" Background="#F4F4F4" Foreground="DimGray"/>
+                                </GroupBox>
+                            </StackPanel>
+                        </ScrollViewer>
+
+                        <!-- Right: change plan -->
+                        <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto">
+                            <StackPanel Margin="6,0,0,0">
+                                <GroupBox Header="変更予定入力（属性）" Margin="0,0,0,6">
+                                    <Grid Margin="4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="90"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        <TextBlock Text="表示名" VerticalAlignment="Center" FontSize="11"/>
+                                        <TextBox x:Name="OpNewDisplayNameBox" Grid.Column="1" FontSize="11"/>
+                                        <TextBlock Text="姓" Grid.Row="1" VerticalAlignment="Center" Margin="0,3,0,0" FontSize="11"/>
+                                        <TextBox x:Name="OpNewSurnameBox" Grid.Row="1" Grid.Column="1" Margin="0,3,0,0" FontSize="11"/>
+                                        <TextBlock Text="名" Grid.Row="2" VerticalAlignment="Center" Margin="0,3,0,0" FontSize="11"/>
+                                        <TextBox x:Name="OpNewGivenNameBox" Grid.Row="2" Grid.Column="1" Margin="0,3,0,0" FontSize="11"/>
+                                        <TextBlock Text="メールアドレス" Grid.Row="3" VerticalAlignment="Center" Margin="0,3,0,0" FontSize="11"/>
+                                        <TextBox x:Name="OpNewMailBox" Grid.Row="3" Grid.Column="1" Margin="0,3,0,0" FontSize="11"/>
+                                    </Grid>
+                                </GroupBox>
+
+                                <GroupBox Header="グループ変更予定" Margin="0,0,0,6">
+                                    <StackPanel Margin="4">
+                                        <TextBlock Text="追加予定" FontWeight="Bold" FontSize="11" Foreground="DarkGreen" Margin="0,0,0,2"/>
+                                        <WrapPanel Margin="0,0,0,2">
+                                            <TextBox x:Name="OpGroupAddInputBox" Width="200" FontSize="11" Margin="0,0,4,0" ToolTip="追加予定グループ名を入力"/>
+                                            <Button Content="追加予定へ" FontSize="11" Padding="6,2" Click="OpAddToGroupAdds_Click"/>
+                                        </WrapPanel>
+                                        <Border BorderBrush="DarkGreen" BorderThickness="1" Margin="0,0,0,2">
+                                            <ListBox x:Name="OpGroupAddList" Height="60" FontSize="11" BorderThickness="0"/>
+                                        </Border>
+                                        <Button Content="選択を追加予定から削除" HorizontalAlignment="Left" FontSize="11" Padding="6,2" Margin="0,0,0,8" Click="OpRemoveFromGroupAdds_Click"/>
+
+                                        <TextBlock Text="削除予定" FontWeight="Bold" FontSize="11" Foreground="DarkRed" Margin="0,0,0,2"/>
+                                        <WrapPanel Margin="0,0,0,2">
+                                            <TextBox x:Name="OpGroupRemoveInputBox" Width="200" FontSize="11" Margin="0,0,4,0" ToolTip="削除予定グループ名を入力"/>
+                                            <Button Content="削除予定へ" FontSize="11" Padding="6,2" Click="OpAddToGroupRemoves_Click"/>
+                                        </WrapPanel>
+                                        <Border BorderBrush="DarkRed" BorderThickness="1" Margin="0,0,0,2">
+                                            <ListBox x:Name="OpGroupRemoveList" Height="60" FontSize="11" BorderThickness="0"/>
+                                        </Border>
+                                        <Button Content="選択を削除予定から削除" HorizontalAlignment="Left" FontSize="11" Padding="6,2" Click="OpRemoveFromGroupRemoves_Click"/>
+                                    </StackPanel>
+                                </GroupBox>
+
+                                <GroupBox Header="確認チェックリスト" Margin="0,0,0,6">
+                                    <StackPanel Margin="4">
+                                        <CheckBox x:Name="OpCheck1" Content="対象ユーザーに誤りがない" FontSize="11" Margin="0,2,0,2"/>
+                                        <CheckBox x:Name="OpCheck2" Content="変更後の属性（表示名・姓・名）に誤りがない" FontSize="11" Margin="0,2,0,2"/>
+                                        <CheckBox x:Name="OpCheck3" Content="メールアドレスに誤りがない" FontSize="11" Margin="0,2,0,2"/>
+                                        <CheckBox x:Name="OpCheck4" Content="追加グループに誤りがない" FontSize="11" Margin="0,2,0,2"/>
+                                        <CheckBox x:Name="OpCheck5" Content="削除グループに誤りがない" FontSize="11" Margin="0,2,0,2"/>
+                                        <CheckBox x:Name="OpCheck6" Content="関係部署の確認が済んでいる" FontSize="11" Margin="0,2,0,2"/>
+                                    </StackPanel>
+                                </GroupBox>
+
+                                <WrapPanel Margin="0,0,0,4">
+                                    <Button Content="変更予定サマリー生成" Width="160" Margin="0,0,8,0" Click="OpGenerateSummary_Click"/>
+                                    <Button Content="クリップボードにコピー" Width="160" Click="OpCopySummary_Click"/>
+                                </WrapPanel>
+                                <TextBox x:Name="OpSummaryBox" Height="200" IsReadOnly="True" AcceptsReturn="True"
+                                         VerticalScrollBarVisibility="Auto" FontFamily="Consolas" FontSize="11" Background="#F9F9F9"/>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Grid>
+                </Grid>
+            </TabItem>
         </TabControl>
 
         <!-- Row 6: Output GroupBox -->

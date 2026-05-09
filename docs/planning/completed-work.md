@@ -157,3 +157,21 @@
 - docs の構成を整理（operation / design / planning / release サブディレクトリへ移動）。
 - `config-samples/` に appsettings サンプルを集約。
 - `docs/planning/completed-work.md` を追加。
+
+---
+
+## v0.7.0 完了
+
+- 「オペレーション支援」タブを追加（ユーザー所属変更支援）。
+- ユーザー検索・選択 → 現在の属性・所属グループを表示。
+- 変更予定入力（表示名・姓・名・メールアドレス）。
+- グループ追加予定・削除予定リストの積み上げ（同一グループの追加/削除同時ステージングを禁止）。
+- 変更予定サマリーを Consolas フォントのテキストとして生成（対象ユーザー・属性変更予定・グループ変更予定・確認事項を含む）。
+- サマリーをクリップボードにコピー（決裁書・作業メモ・チケット貼り付け用）。
+- 確認チェックリスト（6項目・画面上のみ・永続保存なし）。
+- AD更新は直接実行しない設計（ユーザー編集・グループ編集タブへの誘導のみ）。
+- 参照ログ（`audit.jsonl`）に `OperationPlanCreated` として記録（write-audit.jsonl には記録しない）。
+- `AppPolicy` に `EnableOperationSupport` / `OperationChecklistItems` を追加。
+- `ReferenceAuditLogger` に `LogOperationPlan` メソッドを追加。
+- 禁止操作（意図的に未実装）: 複数操作の一括実行・ユーザー新規作成・無効化・退職処理・OU移動・パスワードリセット・承認ワークフロー・チェックリストの永続保存。
+- docs を v0.7.0 向けに更新（backlog / roadmap / release-note / completed-work）。
