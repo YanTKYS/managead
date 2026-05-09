@@ -31,6 +31,8 @@
 }
 ```
 
+> **AllowedComputerOuDns の設定について**: `AllowedComputerOuDns` が空の場合は `AllowedTargetOuDns` にフォールバックしますが、コンピュータ編集では `AllowedComputerOuDns` を明示的に設定することを推奨します。ユーザー用 OU とコンピュータ用 OU を分けて管理することで、意図しない OU へのアクセスを防止できます。両方が空の場合、コンピュータの description 更新は実行できません（セーフガード）。
+
 ### テスト用コンピュータ
 
 AD 上に以下のテスト用コンピュータを用意する（または既存の検証用端末を使用）:
