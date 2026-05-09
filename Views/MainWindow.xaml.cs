@@ -1761,7 +1761,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"ユーザー検索に失敗しました。\n{ex.Message}", "検索エラー", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show("ユーザー検索に失敗しました。ネットワーク接続またはAD設定を確認してください。", "検索エラー", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -1798,7 +1798,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"ユーザー詳細の取得に失敗しました。\n{ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show("ユーザー詳細の取得に失敗しました。ネットワーク接続を確認してください。", "エラー", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -1949,7 +1949,8 @@ public partial class MainWindow : Window
         {
             _lastGpoResults = Array.Empty<GpoSimulationResult>();
             GpoResultGrid.ItemsSource = null;
-            OutputBox.Text = $"GPOシミュレーションに失敗しました。ネットワーク接続またはAD設定を確認してください。\n{ex.Message}";
+            OutputBox.Text = "GPOシミュレーションに失敗しました。ネットワーク接続またはAD設定を確認してください。";
+            _auditLogger.Log("GpoSimulationError", targetDesc, 0, false, FormatErrorForLog(ex));
             _auditLogger.LogGpoSimulation(Executor, kind != 1 ? userSam : string.Empty, kind != 0 ? computerName : string.Empty, simType, 0);
         }
         finally
@@ -2144,7 +2145,8 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            LogWarningText.Text = $"読み込みに失敗しました: {ex.Message}";
+            LogWarningText.Text = "読み込みに失敗しました。ファイルのアクセス権限またはパスを確認してください。";
+            _ = ex;
         }
     }
 
@@ -2160,9 +2162,9 @@ public partial class MainWindow : Window
         {
             System.Diagnostics.Process.Start("explorer.exe", dir);
         }
-        catch (Exception ex)
+        catch
         {
-            LogWarningText.Text = $"フォルダを開けませんでした: {ex.Message}";
+            LogWarningText.Text = "エクスプローラーを起動できませんでした。";
         }
     }
 
@@ -2251,9 +2253,9 @@ public partial class MainWindow : Window
             File.WriteAllText(dlg.FileName, sb.ToString(), new UTF8Encoding(true));
             OutputBox.Text = $"CSVを出力しました: {dlg.FileName}";
         }
-        catch (Exception ex)
+        catch
         {
-            OutputBox.Text = $"CSV出力に失敗しました: {ex.Message}";
+            OutputBox.Text = "CSV出力に失敗しました。保存先のアクセス権限またはパスを確認してください。";
         }
     }
 }

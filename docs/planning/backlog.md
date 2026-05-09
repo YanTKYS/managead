@@ -6,7 +6,7 @@
 
 ## v0.9.x 完了条件（v1.0.0 着手前に確認）
 
-以下をすべて実AD環境で確認してから次のフェーズに進んでください（`docs/operation/validation-log-viewer.md` 参照）。
+v0.9.0 / v0.9.1 の実AD環境検証を完了してから次のフェーズに進んでください（`docs/operation/validation-log-viewer.md` 参照）。
 
 - [ ] ログ確認タブが表示される
 - [ ] 参照ログ（audit.jsonl）を選択して読み込み・表示できる

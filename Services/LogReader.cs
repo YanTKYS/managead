@@ -12,15 +12,23 @@ public static class LogReader
         if (!File.Exists(filePath))
             return Array.Empty<LogEntry>();
 
-        var allLines = File.ReadAllLines(filePath);
-        var lines = allLines.Length <= maxRows ? allLines : allLines[^maxRows..];
+        // 循環バッファで末尾 maxRows 行だけ保持する（巨大ログでも全行メモリ展開しない）
+        var buffer = new string[maxRows];
+        int written = 0;
 
-        var result = new List<LogEntry>(lines.Length);
-        foreach (var line in lines)
+        foreach (var line in File.ReadLines(filePath))
         {
             if (string.IsNullOrWhiteSpace(line)) continue;
-            result.Add(ParseLine(line));
+            buffer[written % maxRows] = line;
+            written++;
         }
+
+        var count = Math.Min(written, maxRows);
+        var start = written <= maxRows ? 0 : written % maxRows;
+        var result = new List<LogEntry>(count);
+        for (var i = 0; i < count; i++)
+            result.Add(ParseLine(buffer[(start + i) % maxRows]));
+
         return result;
     }
 

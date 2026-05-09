@@ -223,3 +223,23 @@
 - docs を v0.9.0 向けに更新（backlog / roadmap / release-note / completed-work / README / docs/README）。
 - `docs/operation/validation-log-viewer.md` を追加（取り扱い注意の注記・全14検証項目）。
 - `docs/operation/test-record-v0.9.0.md` を追加（検証結果記録様式）。
+
+---
+
+## v0.9.1 完了
+
+- `WriteAuditLogger` の `AppVersion` を "0.9.1" に更新（TODO コメントは維持）。
+- `LogReader.ReadLog` を循環バッファ方式に改善（`File.ReadLines` で逐次読み込み → 全行メモリ展開を回避）。
+- `MainWindow.xaml`: GPOシミュレーションタブのヘッダーに「（簡易）」を追加。OUリンクからの推定・非考慮項目を注意文に明記。
+- `MainWindow.xaml`: ログ確認タブの「ログ選択」GroupBox 内に取り扱い注意文を追加（AD属性・DN等内部情報の注意喚起）。
+- `MainWindow.xaml.cs`: オペレーション支援タブのユーザー検索・詳細取得エラーで `ex.Message` を UI に直接表示していた箇所を利用者向け文言に修正。
+- `MainWindow.xaml.cs`: GPOシミュレーション実行失敗時に `ex.Message` を UI に露出していた箇所を修正（エラー内容は参照ログへ記録）。
+- `MainWindow.xaml.cs`: ログ確認タブの読み込み失敗・フォルダ表示失敗・CSV出力失敗のエラーメッセージを利用者向けに整理。
+- `config-samples/appsettings.InMemory.sample.json`: `EditableAttributes` を `mail / displayName / sn / givenName` に修正、`MaxLogDisplayRows` を追加。
+- `config-samples/appsettings.DirectoryReadOnly.sample.json`: 同上。
+- `config-samples/appsettings.UserAttributeEdit.sample.json`: `MaxLogDisplayRows` を追加。
+- `config-samples/appsettings.ComputerDescriptionEdit.sample.json`: `MaxLogDisplayRows` を追加。
+- `config-samples/appsettings.GroupMembershipEdit.sample.json`: `MaxLogDisplayRows` を追加。
+- `docs/operation/validation-readonly.md`: config 例の `EditableAttributes` を現行版（v0.4.2 以降）に修正、バージョン番号の固有記述を除去。
+- README.md を v0.9.1 向けに更新。
+- v0.9.1 では新しい AD 更新操作は追加していない。
