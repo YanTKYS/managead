@@ -59,7 +59,7 @@ public partial class MainWindow : Window
         _computerWriteService = isReadOnly ? new DirectoryServicesAdComputerAttributeWriteService() : null;
         _groupWriteService = isReadOnly ? new DirectoryServicesAdGroupMemberWriteService() : null;
         _useCase = new UserAttributeCompareUseCase(_ad);
-        _auditLogger = new ReferenceAuditLogger(_policy.LogPath);
+        _auditLogger = new ReferenceAuditLogger(_policy.LogPath, Executor, Environment.MachineName);
         _authAuditLogger = new AuthAuditLogger(_policy.LogPath);
         _writeAuditLogger = new WriteAuditLogger(_policy.LogPath);
         _logPathWritable = TryCheckLogPathWritable(_policy.LogPath);
@@ -2088,5 +2088,172 @@ public partial class MainWindow : Window
         sb.AppendLine("※ 実際の更新は各タブ（ユーザー編集・グループ編集）から実行してください。");
 
         return sb.ToString().TrimEnd();
+    }
+
+    // ─── ログ確認タブ ─────────────────────────────────────────────────────────
+
+    private IReadOnlyList<LogEntry> _loadedLogEntries = Array.Empty<LogEntry>();
+    private IReadOnlyList<LogEntry> _filteredLogEntries = Array.Empty<LogEntry>();
+
+    private string GetLogFilePath(int kindIndex)
+    {
+        var dir = Path.GetDirectoryName(_policy.LogPath) ?? string.Empty;
+        return kindIndex switch
+        {
+            1 => Path.Combine(dir, "auth.jsonl"),
+            2 => Path.Combine(dir, "write-audit.jsonl"),
+            _ => _policy.LogPath
+        };
+    }
+
+    private void LogLoad_Click(object sender, RoutedEventArgs e)
+    {
+        var path = GetLogFilePath(LogKindComboBox.SelectedIndex);
+        LogWarningText.Text = string.Empty;
+
+        if (!File.Exists(path))
+        {
+            LogWarningText.Text = $"ファイルが存在しません: {path}";
+            _loadedLogEntries = Array.Empty<LogEntry>();
+            _filteredLogEntries = Array.Empty<LogEntry>();
+            LogGrid.ItemsSource = null;
+            LogStatusText.Text = "0 件";
+            return;
+        }
+
+        try
+        {
+            var entries = LogReader.ReadLog(path, _policy.MaxLogDisplayRows);
+            _loadedLogEntries = entries;
+            _filteredLogEntries = entries;
+            LogGrid.ItemsSource = _filteredLogEntries;
+            LogDetailBox.Text = string.Empty;
+            LogStartDatePicker.SelectedDate = null;
+            LogEndDatePicker.SelectedDate = null;
+            LogSuccessFilterComboBox.SelectedIndex = 0;
+            LogActionFilterBox.Text = string.Empty;
+            LogTargetFilterBox.Text = string.Empty;
+
+            var parseErrors = entries.Count(x => x.IsParseError);
+            LogStatusText.Text = parseErrors > 0
+                ? $"{entries.Count} 件（解析エラー {parseErrors} 件）"
+                : $"{entries.Count} 件";
+
+            if (entries.Count >= _policy.MaxLogDisplayRows)
+                LogWarningText.Text = $"※ 最新 {_policy.MaxLogDisplayRows} 件のみ表示しています。";
+        }
+        catch (Exception ex)
+        {
+            LogWarningText.Text = $"読み込みに失敗しました: {ex.Message}";
+        }
+    }
+
+    private void LogOpenFolder_Click(object sender, RoutedEventArgs e)
+    {
+        var dir = Path.GetDirectoryName(_policy.LogPath);
+        if (string.IsNullOrWhiteSpace(dir) || !Directory.Exists(dir))
+        {
+            LogWarningText.Text = $"ログフォルダが見つかりません: {dir}";
+            return;
+        }
+        try
+        {
+            System.Diagnostics.Process.Start("explorer.exe", dir);
+        }
+        catch (Exception ex)
+        {
+            LogWarningText.Text = $"フォルダを開けませんでした: {ex.Message}";
+        }
+    }
+
+    private void LogFilter_Click(object sender, RoutedEventArgs e)
+    {
+        var start = LogStartDatePicker.SelectedDate;
+        var end = LogEndDatePicker.SelectedDate.HasValue
+            ? LogEndDatePicker.SelectedDate.Value.AddDays(1)
+            : (DateTime?)null;
+        var successIdx = LogSuccessFilterComboBox.SelectedIndex;
+        var actionKw = LogActionFilterBox.Text.Trim();
+        var targetKw = LogTargetFilterBox.Text.Trim();
+
+        var filtered = _loadedLogEntries.Where(x =>
+        {
+            if (start.HasValue && x.Timestamp.HasValue && x.Timestamp.Value.LocalDateTime < start.Value) return false;
+            if (end.HasValue && x.Timestamp.HasValue && x.Timestamp.Value.LocalDateTime >= end.Value) return false;
+            if (successIdx == 1 && x.Success != true) return false;
+            if (successIdx == 2 && x.Success != false) return false;
+            if (!string.IsNullOrEmpty(actionKw) && !x.Action.Contains(actionKw, StringComparison.OrdinalIgnoreCase)) return false;
+            if (!string.IsNullOrEmpty(targetKw) && !x.Target.Contains(targetKw, StringComparison.OrdinalIgnoreCase)) return false;
+            return true;
+        }).ToList();
+
+        _filteredLogEntries = filtered;
+        LogGrid.ItemsSource = _filteredLogEntries;
+        LogStatusText.Text = $"{filtered.Count} 件（フィルター適用中）";
+        LogDetailBox.Text = string.Empty;
+    }
+
+    private void LogFilterClear_Click(object sender, RoutedEventArgs e)
+    {
+        LogStartDatePicker.SelectedDate = null;
+        LogEndDatePicker.SelectedDate = null;
+        LogSuccessFilterComboBox.SelectedIndex = 0;
+        LogActionFilterBox.Text = string.Empty;
+        LogTargetFilterBox.Text = string.Empty;
+        _filteredLogEntries = _loadedLogEntries;
+        LogGrid.ItemsSource = _filteredLogEntries;
+        LogStatusText.Text = $"{_loadedLogEntries.Count} 件";
+        LogDetailBox.Text = string.Empty;
+    }
+
+    private void LogGrid_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (LogGrid.SelectedItem is not LogEntry entry) return;
+        LogDetailBox.Text = LogReader.FormatAndMaskJson(entry.RawJson);
+    }
+
+    private void LogCopyDetail_Click(object sender, RoutedEventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(LogDetailBox.Text)) return;
+        Clipboard.SetText(LogDetailBox.Text);
+    }
+
+    private void LogExportCsv_Click(object sender, RoutedEventArgs e)
+    {
+        if (_filteredLogEntries.Count == 0)
+        {
+            OutputBox.Text = "エクスポートするログがありません。先に読み込みを行ってください。";
+            return;
+        }
+
+        var dlg = new SaveFileDialog
+        {
+            Filter = "CSVファイル (*.csv)|*.csv",
+            FileName = $"log-export-{DateTime.Now:yyyyMMdd-HHmmss}.csv"
+        };
+        if (dlg.ShowDialog() != true) return;
+
+        try
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("日時,操作,対象,実行者・編集者,成否,備考,種別");
+            foreach (var r in _filteredLogEntries)
+            {
+                sb.AppendLine(string.Join(",",
+                    CsvEscape(r.TimestampDisplay),
+                    CsvEscape(r.Action),
+                    CsvEscape(r.Target),
+                    CsvEscape(r.ExecutorDisplay),
+                    CsvEscape(r.SuccessDisplay),
+                    CsvEscape(r.DetailSummary),
+                    CsvEscape(r.TargetType)));
+            }
+            File.WriteAllText(dlg.FileName, sb.ToString(), new UTF8Encoding(true));
+            OutputBox.Text = $"CSVを出力しました: {dlg.FileName}";
+        }
+        catch (Exception ex)
+        {
+            OutputBox.Text = $"CSV出力に失敗しました: {ex.Message}";
+        }
     }
 }

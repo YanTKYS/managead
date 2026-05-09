@@ -7,14 +7,18 @@ namespace ManageAdTool.Services;
 public class ReferenceAuditLogger
 {
     private readonly string _path;
+    private readonly string _executor;
+    private readonly string _machineName;
     private readonly JsonSerializerOptions _jsonOptions = new()
     {
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
     };
 
-    public ReferenceAuditLogger(string path)
+    public ReferenceAuditLogger(string path, string executor = "", string machineName = "")
     {
         _path = path;
+        _executor = executor;
+        _machineName = machineName;
     }
 
     public void Log(string action, string target, int resultCount, bool success, string message = "")
@@ -28,6 +32,8 @@ public class ReferenceAuditLogger
             {
                 timestamp = DateTimeOffset.Now,
                 action,
+                executor = _executor,
+                machineName = _machineName,
                 target,
                 resultCount,
                 success,

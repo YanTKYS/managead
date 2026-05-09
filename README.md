@@ -1,13 +1,13 @@
 # ManageAdTool
 
-閉域ネットワーク向けの Active Directory 参照・限定編集支援ツール（v0.8.0）です。
+閉域ネットワーク向けの Active Directory 参照・限定編集支援ツール（v0.9.0）です。
 
 > **重要**: 本ツールは「すべての AD 管理操作ができるツール」ではありません。  
 > ユーザー属性（mail / displayName / sn / givenName）・コンピュータ description・グループメンバー追加削除（ユーザーのみ）のみ更新可能です。
 
 ---
 
-## できること（v0.8.0）
+## できること（v0.9.0）
 
 ### 参照
 - AD ユーザー検索・詳細表示・所属グループ確認
@@ -32,6 +32,13 @@
 - 結果のクリップボードコピーと CSV 出力ができる
 - **GPO編集は行わない**: GPOリンク変更・セキュリティフィルタ変更・WMIフィルタ変更は実装していない
 - **簡易実装の制約**: セキュリティフィルタ・WMIフィルタ・継承ブロック・ループバック処理・サイトリンクは考慮しない。GPMC の RSOP（ポリシーの結果セット）や `gpresult /R` の代替にはならない
+
+### ログ確認
+- 参照ログ（audit.jsonl）・認証ログ（auth.jsonl）・書き込みログ（write-audit.jsonl）を画面上で閲覧できる
+- 日付範囲・成否・操作キーワード・対象キーワードでフィルタリングできる
+- 行選択で整形済み JSON を表示し、クリップボードコピーできる（パスワードフィールドはマスク）
+- フィルター結果の CSV 出力と、ログフォルダを開くボタンを提供する
+- **AD更新は行わない**: ログ確認タブはすべて読み取り専用
 
 ### 主な制限
 - ユーザー名（sAMAccountName）は参照専用（更新不可）
@@ -84,6 +91,7 @@
 | `ProtectedGroupNames` | 編集保護グループ名（Domain Admins 等を必ず登録） | `[]` |
 | `ProtectedGroupDns` | 編集保護グループの DN | `[]` |
 | `MaxSearchResults` | 検索上限件数 | `200` |
+| `MaxLogDisplayRows` | ログ確認タブの最大表示行数（末尾から取得） | `1000` |
 | `EditorAuthMode` | `"DomainAdmins"` で認証 UI 有効化 | `"None"` |
 | `AdminGroupDn` | Domain Admins グループの DN | `""` |
 | `EditSessionMinutes` | 編集セッションタイムアウト（分） | `15` |
@@ -110,6 +118,7 @@
 | `docs/operation/validation-group-edit.md` | グループメンバー編集の検証手順 |
 | `docs/operation/validation-operation-support.md` | オペレーション支援機能の検証手順 |
 | `docs/operation/validation-gpo-simulation.md` | GPOシミュレーション機能の検証手順 |
+| `docs/operation/validation-log-viewer.md` | ログ確認機能の検証手順 |
 | `docs/design/design-account-expiration.md` | アカウント有効期限の設計メモ |
 | `docs/planning/roadmap.md` | 今後の方向性 |
 | `docs/planning/backlog.md` | 今後やること・検討事項 |

@@ -24,4 +24,5 @@ public class AppPolicy
     public List<string> ProtectedGroupDns { get; set; } = new();
     public bool EnableOperationSupport { get; set; } = true;
     public List<string> OperationChecklistItems { get; set; } = new();
+    public int MaxLogDisplayRows { get; set; } = 1000;
 }
