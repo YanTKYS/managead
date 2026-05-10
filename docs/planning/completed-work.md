@@ -291,3 +291,15 @@
 - **ドキュメント更新**: 自動テストは AD 接続を伴わない単体テストであり、実 AD 検証は引き続き validation docs に従うことを明記。今後のテスト拡張候補を backlog に追加。
 - **`WriteAuditLogger.AppVersion`** を "0.9.3" に更新。
 - v0.9.3 では新しい AD 更新操作は追加していない。
+
+---
+
+## v0.9.4 完了
+
+- **利用者向け操作説明書追加**: `docs/operation/user-manual.md` を追加し、起動、ServiceMode 確認、ユーザー・コンピュータ・グループの検索/詳細表示、限定編集、GPOシミュレーション、オペレーション支援、ログ確認、CSV出力、注意事項を整理。
+- **管理者向け設定手順追加**: `docs/operation/admin-manual.md` を追加し、配置先例、`appsettings.json`、config-samples、OU 制限、保護/除外設定、Domain Admins 認証、ログ、検証用 OU から始める運用手順を整理。
+- **トラブルシューティング追加**: `docs/operation/troubleshooting.md` を追加し、起動不可、検索不可、認証失敗、編集不可、更新不可、ログ、CSV、GPOシミュレーション、self-contained 版の確認点を整理。
+- **operation 配下の案内整理**: `docs/operation/README.md` を更新し、操作・運用手順、検証手順、検証結果記録へのリンクを整理。
+- **README / docs ガイド更新**: `README.md` と `docs/README.md` から利用者向け操作説明書、管理者向け設定手順、トラブルシューティングへたどれるよう更新。
+- **planning / release docs 更新**: `roadmap.md`、`backlog.md`、`release-note.md` を v0.9.4 の運用準備に合わせて更新。
+- v0.9.4 では実装コード、AD 操作ロジック、新しい AD 更新機能、build.yml トリガーは変更していない。
