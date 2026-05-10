@@ -243,3 +243,13 @@
 - `docs/operation/validation-readonly.md`: config 例の `EditableAttributes` を現行版（v0.4.2 以降）に修正、バージョン番号の固有記述を除去。
 - README.md を v0.9.1 向けに更新。
 - v0.9.1 では新しい AD 更新操作は追加していない。
+
+### v0.9.1 コードレビュー対応（追加修正）
+
+- `AppPolicyProvider` を全面整理：`ReadInt` / `ReadString` / `ReadBool` / `ReadStringList` / `ReadStringListOrDefault` ヘルパーを追加。
+  - `ReadInt` に `ValueKind == JsonValueKind.Number` チェックを追加（文字列値等をフォールバックに落とす）。
+  - `ReadInt` に `minValue` 引数を追加（`MaxSearchResults` / `EditSessionMinutes` / `MaxLogDisplayRows` に `minValue: 1` を指定）。
+  - `ReadBool` に `fallback` 引数を追加（`GetBoolean()` 直接呼び出しによる例外を回避）。
+  - `AllowedComputerOuDns` / `ExcludedComputerNames` / `EditableComputerAttributes` / `EditableGroupOuDns` / `ProtectedGroupNames` / `ProtectedGroupDns` / `EnableOperationSupport` / `OperationChecklistItems` / `MaxLogDisplayRows` を読み込むよう追加（これまで未読込だった）。
+- `LogReader.ReadLog` に `maxRows <= 0` の防御ガードを追加。
+- `EnableOperationSupport` / `OperationChecklistItems` は設定から読み込むが UI には未反映。README とバックログに「v1.0.0 検討」として明記した。

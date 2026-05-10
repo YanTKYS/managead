@@ -51,9 +51,13 @@ v1.0.0 は機能追加より**既存機能の安定化・実運用準備**を主
   - セッション内メモリキャッシュ（TTL: 30〜120秒）
 - `accountExpires` 更新設計継続（`docs/design/design-account-expiration.md` 参照）
 
+### オペレーション支援の設定反映（v1.0.0 候補）
+- `EnableOperationSupport: false` でタブを非表示にする制御を追加する
+- `OperationChecklistItems` からチェック項目 UI およびサマリーを生成する
+- 現状これらの設定値は `appsettings.json` から読み込まれるが UI には反映されない
+
 ### 編集機能の拡張（v1.0.0 後に検討）
 - ユーザー更新対象属性の追加（要件定義次第）
-- オペレーション支援の拡張（`OperationChecklistItems` の UI 反映）
 
 ---
 
