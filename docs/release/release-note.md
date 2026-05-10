@@ -4,6 +4,16 @@
 
 ---
 
+## v0.9.3
+### Title
+ManageAdTool v0.9.3（v1.0.0前品質保証・AD接続なし単体テスト追加）
+
+### Note
+- **AD 接続を伴わない単体テストを追加**: `ManageAdTool.Tests` で設定読み込み、編集ポリシー、更新可否判定、ログ読み込み、監査ログ形式、ChangeSet 生成、InMemory サービス、書き込みサービスの AD 接続前バリデーションを検証する。
+- **実 AD 更新テストは追加していない**: 実 AD 参照・実 AD 更新・WPF UI 自動操作は自動テスト対象外。実 AD 検証は引き続き `docs/operation/validation-*.md` に従う。
+- **新しい AD 更新操作は追加していない**: v0.9.3 は v1.0.0 前の安定化・回帰防止が目的。
+- **書き込み監査ログのバージョン**: `write-audit.jsonl` の `appVersion` フィールドが "0.9.3" になった。
+
 ## v0.9.2
 ### Title
 ManageAdTool v0.9.2（設定・ドキュメント整合整理）

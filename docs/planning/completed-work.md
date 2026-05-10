@@ -279,3 +279,15 @@
 - **全 config-samples** に `EnableOperationSupport` / `OperationChecklistItems` とその注記（`_*_note` キー）を追加。設定の意味と挙動を config-sample から直接確認できるようにした。
 - **`docs/planning/backlog.md`**: 完了済みの「`EnableOperationSupport` タブ表示制御」を除去し、残作業「`OperationChecklistItems` のチェックリスト UI への反映」のみを記載。
 - v0.9.2 では新しい AD 更新操作は追加していない。
+---
+
+## v0.9.3 完了
+
+- **`ManageAdTool.Tests` を追加**: xUnit による AD 接続なし単体テストプロジェクトを追加し、既存プロジェクトを参照する構成にした。
+- **AppPolicyProvider テスト**: 主要設定、数値上限、OU/グループ保護設定、`EnableOperationSupport`、不正型・0以下のフォールバックを検証。
+- **UserEditPolicyService テスト**: ユーザー未選択、除外ユーザー、許可 OU 外、`EditableAttributes` 不足、`DirectoryReadOnly` のセッション状態、`EvaluateWrite` の更新可否条件、条件充足時のみ編集・更新可を検証。
+- **LogReader / 監査ロガー テスト**: 存在しないファイル、壊れた JSON 行、`maxRows` 上限、`maxRows <= 0`、password キーマスク、認証ログの password 非出力、書き込みログの `targetType` / `operationName` / `ldapAttribute`、参照ログの `executor` / `machineName`、書き込み失敗時の `false` を検証。
+- **ChangeSet / InMemoryAdService / 書き込みサービス事前バリデーション テスト**: ユーザー・コンピュータ差分生成、LDAP 属性名、検索、グループメンバー取得、GPO ダミー結果、実 AD 接続前の許可外属性・空文字 description 拒否を検証。
+- **ドキュメント更新**: 自動テストは AD 接続を伴わない単体テストであり、実 AD 検証は引き続き validation docs に従うことを明記。今後のテスト拡張候補を backlog に追加。
+- **`WriteAuditLogger.AppVersion`** を "0.9.3" に更新。
+- v0.9.3 では新しい AD 更新操作は追加していない。
