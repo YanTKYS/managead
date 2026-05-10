@@ -26,8 +26,12 @@ public class AppPolicyProviderTests
             "ExcludedSamAccountNames": ["svc.noedit"],
             "EditableAttributes": ["mail", "displayName", "sn", "givenName"],
             "AllowedComputerOuDns": ["OU=Computers,DC=example,DC=local"],
+            "ExcludedComputerNames": ["PC-LOCKED"],
+            "EditableComputerAttributes": ["description"],
             "EditableGroupOuDns": ["OU=Groups,DC=example,DC=local"],
-            "ProtectedGroupNames": ["Domain Admins"]
+            "ProtectedGroupNames": ["Domain Admins"],
+            "ProtectedGroupDns": ["CN=Domain Admins,CN=Users,DC=example,DC=local"],
+            "OperationChecklistItems": ["承認確認", "作業記録"]
           }
         }
         """);
@@ -48,8 +52,12 @@ public class AppPolicyProviderTests
         Assert.Equal(new[] { "svc.noedit" }, policy.ExcludedSamAccountNames);
         Assert.Equal(new[] { "mail", "displayName", "sn", "givenName" }, policy.EditableAttributes);
         Assert.Equal(new[] { "OU=Computers,DC=example,DC=local" }, policy.AllowedComputerOuDns);
+        Assert.Equal(new[] { "PC-LOCKED" }, policy.ExcludedComputerNames);
+        Assert.Equal(new[] { "description" }, policy.EditableComputerAttributes);
         Assert.Equal(new[] { "OU=Groups,DC=example,DC=local" }, policy.EditableGroupOuDns);
         Assert.Equal(new[] { "Domain Admins" }, policy.ProtectedGroupNames);
+        Assert.Equal(new[] { "CN=Domain Admins,CN=Users,DC=example,DC=local" }, policy.ProtectedGroupDns);
+        Assert.Equal(new[] { "承認確認", "作業記録" }, policy.OperationChecklistItems);
     }
 
     [Fact]
