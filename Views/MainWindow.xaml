@@ -339,7 +339,7 @@
             </TabItem>
 
             <!-- オペレーション支援タブ -->
-            <TabItem Header="オペレーション支援">
+            <TabItem x:Name="OperationSupportTab" Header="オペレーション支援">
                 <Grid Margin="8">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>

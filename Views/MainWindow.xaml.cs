@@ -69,6 +69,8 @@ public partial class MainWindow : Window
         _sessionTimer.Start();
         InitializeComponent();
         DataContext = _vm;
+        if (!_policy.EnableOperationSupport)
+            OperationSupportTab.Visibility = Visibility.Collapsed;
         ApplyEditability(false, _vm.IsReadOnlyMode ? _vm.ReadOnlyModeLabel : "ユーザー未選択");
         if (!_logPathWritable)
             OutputBox.Text = $"警告: 監査ログディレクトリへの書き込みができません（{Path.GetDirectoryName(_policy.LogPath)}）。\n監査ログは記録されません。参照機能は引き続き使用できます。";
