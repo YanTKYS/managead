@@ -4,6 +4,38 @@
 
 ---
 
+## v0.9.5
+### Title
+ManageAdTool v0.9.5（リリースパッケージ・配布物の最終整理）
+
+### Note
+- **リリースパッケージ構成を整理**: ZIP 展開後に `ManageAdTool-vX.Y.Z/` 配下へ実行ファイル、`appsettings.json`、`README.md`、`config-samples/`、`docs/` が揃う構成にした。
+- **self-contained ZIP の配布を想定**: 閉域端末で .NET Desktop Runtime を別途インストールせずに起動できる配布物を前提に整理した。
+- **README / docs / config-samples を同梱**: 利用者向け操作説明書、管理者向け設定手順、トラブルシューティング、validation docs、設定サンプルを ZIP に含めるよう整理した。
+- **配布用 appsettings.json を安全側初期値に整理**: `ServiceMode: "InMemory"`、OU 許可リスト空、`EditorAuthMode: "None"` を初期値とし、本番 OU や組織固有の管理者グループ DN を含めない構成にした。
+- **新しい AD 更新操作は追加していない**: v0.9.5 は配布物整理のみで、AD 操作ロジックや build.yml トリガーは変更していない。
+
+## v0.9.4
+### Title
+ManageAdTool v0.9.4（操作説明書・運用手順整備）
+
+### Note
+- **操作説明書を追加**: 情報システム担当者向けに、検索、詳細表示、限定編集、GPOシミュレーション、オペレーション支援、ログ確認、CSV出力の手順を整理。
+- **管理者向け設定手順を追加**: 配置、appsettings.json、config-samples、OU 制限、保護・除外設定、ログ、Domain Admins 認証、検証用 OU から始める運用を整理。
+- **トラブルシューティングを追加**: 起動不可、検索不可、認証失敗、編集不可、更新不可、ログ、CSV、GPOシミュレーションの切り分けを整理。
+- **v1.0.0前の運用準備を強化**: operation 配下の案内、roadmap、backlog を v0.9.4 の位置づけに合わせて更新。
+- **新しい AD 更新操作は追加していない**: v0.9.4 はドキュメント整備のみで、AD 操作ロジックや build.yml トリガーは変更していない。
+
+## v0.9.3
+### Title
+ManageAdTool v0.9.3（v1.0.0前品質保証・AD接続なし単体テスト追加）
+
+### Note
+- **AD 接続を伴わない単体テストを追加**: `ManageAdTool.Tests` で設定読み込み、編集ポリシー、更新可否判定、ログ読み込み、監査ログ形式、ChangeSet 生成、InMemory サービス、書き込みサービスの AD 接続前バリデーションを検証する。
+- **実 AD 更新テストは追加していない**: 実 AD 参照・実 AD 更新・WPF UI 自動操作は自動テスト対象外。実 AD 検証は引き続き `docs/operation/validation-*.md` に従う。
+- **新しい AD 更新操作は追加していない**: v0.9.3 は v1.0.0 前の安定化・回帰防止が目的。
+- **書き込み監査ログのバージョン**: `write-audit.jsonl` の `appVersion` フィールドが "0.9.3" になった。
+
 ## v0.9.2
 ### Title
 ManageAdTool v0.9.2（設定・ドキュメント整合整理）

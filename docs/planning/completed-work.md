@@ -279,3 +279,39 @@
 - **全 config-samples** に `EnableOperationSupport` / `OperationChecklistItems` とその注記（`_*_note` キー）を追加。設定の意味と挙動を config-sample から直接確認できるようにした。
 - **`docs/planning/backlog.md`**: 完了済みの「`EnableOperationSupport` タブ表示制御」を除去し、残作業「`OperationChecklistItems` のチェックリスト UI への反映」のみを記載。
 - v0.9.2 では新しい AD 更新操作は追加していない。
+---
+
+## v0.9.3 完了
+
+- **`ManageAdTool.Tests` を追加**: xUnit による AD 接続なし単体テストプロジェクトを追加し、既存プロジェクトを参照する構成にした。
+- **AppPolicyProvider テスト**: 主要設定、数値上限、OU/グループ保護設定、`EnableOperationSupport`、不正型・0以下のフォールバックを検証。
+- **UserEditPolicyService テスト**: ユーザー未選択、除外ユーザー、許可 OU 外、`EditableAttributes` 不足、`DirectoryReadOnly` のセッション状態、`EvaluateWrite` の更新可否条件、条件充足時のみ編集・更新可を検証。
+- **LogReader / 監査ロガー テスト**: 存在しないファイル、壊れた JSON 行、`maxRows` 上限、`maxRows <= 0`、password キーマスク、認証ログの password 非出力、書き込みログの `targetType` / `operationName` / `ldapAttribute`、参照ログの `executor` / `machineName`、書き込み失敗時の `false` を検証。
+- **ChangeSet / InMemoryAdService / 書き込みサービス事前バリデーション テスト**: ユーザー・コンピュータ差分生成、LDAP 属性名、検索、グループメンバー取得、GPO ダミー結果、実 AD 接続前の許可外属性・空文字 description 拒否を検証。
+- **ドキュメント更新**: 自動テストは AD 接続を伴わない単体テストであり、実 AD 検証は引き続き validation docs に従うことを明記。今後のテスト拡張候補を backlog に追加。
+- **`WriteAuditLogger.AppVersion`** を "0.9.3" に更新。
+- v0.9.3 では新しい AD 更新操作は追加していない。
+
+---
+
+## v0.9.4 完了
+
+- **利用者向け操作説明書追加**: `docs/operation/user-manual.md` を追加し、起動、ServiceMode 確認、ユーザー・コンピュータ・グループの検索/詳細表示、限定編集、GPOシミュレーション、オペレーション支援、ログ確認、CSV出力、注意事項を整理。
+- **管理者向け設定手順追加**: `docs/operation/admin-manual.md` を追加し、配置先例、`appsettings.json`、config-samples、OU 制限、保護/除外設定、Domain Admins 認証、ログ、検証用 OU から始める運用手順を整理。
+- **トラブルシューティング追加**: `docs/operation/troubleshooting.md` を追加し、起動不可、検索不可、認証失敗、編集不可、更新不可、ログ、CSV、GPOシミュレーション、self-contained 版の確認点を整理。
+- **operation 配下の案内整理**: `docs/operation/README.md` を更新し、操作・運用手順、検証手順、検証結果記録へのリンクを整理。
+- **README / docs ガイド更新**: `README.md` と `docs/README.md` から利用者向け操作説明書、管理者向け設定手順、トラブルシューティングへたどれるよう更新。
+- **planning / release docs 更新**: `roadmap.md`、`backlog.md`、`release-note.md` を v0.9.4 の運用準備に合わせて更新。
+- v0.9.4 では実装コード、AD 操作ロジック、新しい AD 更新機能、build.yml トリガーは変更していない。
+
+---
+
+## v0.9.5 完了
+
+- **リリース ZIP 構成整理**: `release-build.yml` を更新し、`ManageAdTool-vX.Y.Z/` 配下に `ManageAdTool.exe`、`appsettings.json`、`README.md`、`config-samples/`、`docs/` を含める構成に整理。
+- **README / docs / config-samples 同梱確認**: release workflow に必須パス検証を追加し、主要 docs、operation manuals、validation docs、planning docs、release note、用途別 config-samples が含まれることを確認するようにした。
+- **appsettings.json 安全側初期値整理**: 配布用 `appsettings.json` を `ServiceMode: "InMemory"`、OU 許可リスト空、`EditorAuthMode: "None"`、安全な `LogPath` / `MaxSearchResults` / `MaxLogDisplayRows` に整理。
+- **config-samples 整理**: 用途別サンプルに `_sample_note` を追加し、example.local のサンプル DN とコピー後編集が前提であることを明確化。
+- **deploy.md 更新**: GitHub Releases からの ZIP 取得、閉域端末への持ち込み、展開、appsettings 編集、InMemory 起動確認、DirectoryReadOnly 参照確認、検証用 OU からの編集開始、ログ権限確認を整理。
+- **admin-manual.md 配布手順補強**: 配布 ZIP 推奨構成、配布後の環境別 `appsettings.json` 編集、config-samples のコピー運用、編集機能利用時の `EditorAuthMode: "DomainAdmins"` 原則を追記。
+- v0.9.5 では AD 操作ロジック、UI 機能、新しい AD 更新機能、build.yml トリガーは変更していない。
