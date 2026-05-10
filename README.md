@@ -1,13 +1,13 @@
 # ManageAdTool
 
-閉域ネットワーク向けの Active Directory 参照・限定編集支援ツール（v0.9.2）です。
+閉域ネットワーク向けの Active Directory 参照・限定編集支援ツール（v0.9.4）です。
 
 > **重要**: 本ツールは「すべての AD 管理操作ができるツール」ではありません。  
 > ユーザー属性（mail / displayName / sn / givenName）・コンピュータ description・グループメンバー追加削除（ユーザーのみ）のみ更新可能です。
 
 ---
 
-## できること（v0.9.2）
+## できること（v0.9.4）
 
 ### 参照
 - AD ユーザー検索・詳細表示・所属グループ確認
@@ -114,16 +114,40 @@
 
 ---
 
+## 操作・運用資料
+
+- 詳細な操作手順は `docs/operation/user-manual.md` を参照してください。
+- 管理者向け設定手順は `docs/operation/admin-manual.md` を参照してください。
+- トラブル時は `docs/operation/troubleshooting.md` を参照してください。
+
+---
+
+## 自動テスト
+
+- `ManageAdTool.Tests` は v1.0.0 前の回帰防止を目的とした、AD 接続を伴わない単体テストです。
+- テスト対象は設定読み込み、編集可否判定、ログ読み込み、ChangeSet 生成、`InMemoryAdService` のダミーデータ操作に限定しています。実 AD 参照・実 AD 更新・WPF UI 自動操作は行いません。
+- 実 AD 環境での検証は、引き続き `docs/operation/validation-*.md` の手順に従って、検証用 OU 限定で実施してください。
+
+```bash
+dotnet test ManageAdTool.Tests/ManageAdTool.Tests.csproj
+```
+
+---
+
 ## ドキュメント
 
 | ファイル | 内容 |
 |---|---|
 | `docs/operation/deploy.md` | 配布・閉域端末への持ち込み手順 |
+| `docs/operation/user-manual.md` | 利用者向け操作説明書 |
+| `docs/operation/admin-manual.md` | 管理者向け設定・運用手順 |
+| `docs/operation/troubleshooting.md` | トラブルシューティング |
 | `docs/operation/validation-readonly.md` | 参照機能の検証手順 |
 | `docs/operation/validation-auth.md` | 認証機能の検証手順 |
 | `docs/operation/validation-user-edit.md` | ユーザー属性編集の検証手順 |
 | `docs/operation/validation-computer-edit.md` | コンピュータ description 編集の検証手順 |
 | `docs/operation/validation-group-edit.md` | グループメンバー編集の検証手順 |
+| `docs/operation/validation-group-member-edit.md` | グループメンバー編集の補足検証手順 |
 | `docs/operation/validation-operation-support.md` | オペレーション支援機能の検証手順 |
 | `docs/operation/validation-gpo-simulation.md` | GPOシミュレーション機能の検証手順 |
 | `docs/operation/validation-log-viewer.md` | ログ確認機能の検証手順 |
