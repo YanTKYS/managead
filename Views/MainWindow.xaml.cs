@@ -1759,7 +1759,7 @@ public partial class MainWindow : Window
             OpSearchResultGrid.ItemsSource = results.ToList();
             _auditLogger.Log("OpUserSearch", keyword, results.Count, true);
         }
-        catch (Exception ex)
+        catch
         {
             MessageBox.Show("ユーザー検索に失敗しました。ネットワーク接続またはAD設定を確認してください。", "検索エラー", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
@@ -1796,7 +1796,7 @@ public partial class MainWindow : Window
 
             _auditLogger.Log("OpUserDetail", user.SamAccountName, 1, true);
         }
-        catch (Exception ex)
+        catch
         {
             MessageBox.Show("ユーザー詳細の取得に失敗しました。ネットワーク接続を確認してください。", "エラー", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
@@ -2143,10 +2143,9 @@ public partial class MainWindow : Window
             if (entries.Count >= _policy.MaxLogDisplayRows)
                 LogWarningText.Text = $"※ 最新 {_policy.MaxLogDisplayRows} 件のみ表示しています。";
         }
-        catch (Exception ex)
+        catch
         {
             LogWarningText.Text = "読み込みに失敗しました。ファイルのアクセス権限またはパスを確認してください。";
-            _ = ex;
         }
     }
 
