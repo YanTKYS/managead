@@ -102,6 +102,8 @@
 | `AdminGroupDn` | Domain Admins グループの DN | `""` |
 | `EditSessionMinutes` | 編集セッションタイムアウト（分） | `15` |
 | `LogPath` | 監査ログ出力先（audit.jsonl / auth.jsonl / write-audit.jsonl） | `""` |
+| `EnableOperationSupport` | 設定は読み込まれるが現バージョンではタブ表示に未反映（v1.0.0 検討） | `true` |
+| `OperationChecklistItems` | 設定は読み込まれるがチェックリスト UI に未反映（v1.0.0 検討） | `[]` |
 
 ---
 

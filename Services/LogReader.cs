@@ -11,6 +11,8 @@ public static class LogReader
     {
         if (!File.Exists(filePath))
             return Array.Empty<LogEntry>();
+        if (maxRows <= 0)
+            return Array.Empty<LogEntry>();
 
         // 循環バッファで末尾 maxRows 行だけ保持する（巨大ログでも全行メモリ展開しない）
         var buffer = new string[maxRows];
