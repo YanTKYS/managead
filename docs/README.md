@@ -4,6 +4,14 @@ ManageAdTool のドキュメント一覧です。
 
 ---
 
+## 自動テスト
+
+`ManageAdTool.Tests` は AD 接続を伴わない単体テストです。設定読み込み、編集ポリシー、ログ読み込み、ChangeSet 生成、InMemory サービスの主要ロジックを対象とし、実 AD 参照・実 AD 更新・WPF UI 自動操作は含めません。
+
+実 AD 環境での動作確認は自動テストでは代替せず、引き続き `operation/validation-*.md` の検証手順に従って実施してください。
+
+---
+
 ## operation/ — 配布・検証・テスト記録
 
 | ファイル | 内容 |
