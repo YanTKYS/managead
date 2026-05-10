@@ -37,9 +37,10 @@
       "administrator",
       "krbtgt"
     ],
-    "EditableAttributes": ["mail", "department", "title"],
+    "EditableAttributes": ["mail", "displayName", "sn", "givenName"],
     "LogPath": "C:\\ProgramData\\ManageAdTool\\logs\\audit.jsonl",
-    "MaxSearchResults": 200
+    "MaxSearchResults": 200,
+    "MaxLogDisplayRows": 1000
   }
 }
 ```

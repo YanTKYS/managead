@@ -4,6 +4,18 @@
 
 ---
 
+## v0.9.2
+### Title
+ManageAdTool v0.9.2（設定・ドキュメント整合整理）
+
+### Note
+- **新しい AD 更新操作は追加していない**: v0.9.2 は整合性・品質向上が目的。
+- **`EditableAttributes` デフォルト修正**: v0.4.2 で編集対象属性を変更した際にコード上のデフォルト値が更新されていなかった問題を修正。`appsettings.json` が存在しない場合も正しい属性（mail / displayName / sn / givenName）が適用される。
+- **設定説明の整備**: 全 config-samples に `EnableOperationSupport` / `OperationChecklistItems` の設定例と挙動注記を追加。設定ファイルのみ見れば動作が分かるようにした。
+- **`EnableOperationSupport` の説明更新**: README に `false` にするとオペレーション支援タブが非表示になることを明記。
+- **ドキュメント修正**: `validation-auth.md` の設定例が旧属性（department / title）のままだった問題を修正。`deploy.md` の属性名記述も現行版（displayName / sn / givenName）に更新。
+- **書き込み監査ログのバージョン**: `write-audit.jsonl` の `appVersion` フィールドが "0.9.2" になった。
+
 ## v0.9.1
 ### Title
 ManageAdTool v1.0.0前安定化（ログ読み取り改善・UI整理・設定サンプル修正）

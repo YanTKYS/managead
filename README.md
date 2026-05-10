@@ -1,13 +1,13 @@
 # ManageAdTool
 
-閉域ネットワーク向けの Active Directory 参照・限定編集支援ツール（v0.9.1）です。
+閉域ネットワーク向けの Active Directory 参照・限定編集支援ツール（v0.9.2）です。
 
 > **重要**: 本ツールは「すべての AD 管理操作ができるツール」ではありません。  
 > ユーザー属性（mail / displayName / sn / givenName）・コンピュータ description・グループメンバー追加削除（ユーザーのみ）のみ更新可能です。
 
 ---
 
-## できること（v0.9.1）
+## できること（v0.9.2）
 
 ### 参照
 - AD ユーザー検索・詳細表示・所属グループ確認
@@ -102,8 +102,8 @@
 | `AdminGroupDn` | Domain Admins グループの DN | `""` |
 | `EditSessionMinutes` | 編集セッションタイムアウト（分） | `15` |
 | `LogPath` | 監査ログ出力先（audit.jsonl / auth.jsonl / write-audit.jsonl） | `""` |
-| `EnableOperationSupport` | 設定は読み込まれるが現バージョンではタブ表示に未反映（v1.0.0 検討） | `true` |
-| `OperationChecklistItems` | 設定は読み込まれるがチェックリスト UI に未反映（v1.0.0 検討） | `[]` |
+| `EnableOperationSupport` | `false` にするとオペレーション支援タブを非表示にします | `true` |
+| `OperationChecklistItems` | 設定から読み込まれますが、チェックリスト UI とサマリーには反映されません（v1.0.0 検討） | `[]` |
 
 ---
 
