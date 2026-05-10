@@ -48,7 +48,7 @@
 ## v0.4.x 利用時の追加注意事項
 
 v0.4.0 以降では Domain Admins セッション + AllowedTargetOuDns 設定により  
-mail / department / title の限定編集が可能になります。以下の点に注意してください。
+mail / displayName / sn / givenName の限定編集が可能になります。以下の点に注意してください。
 
 ### LogPath の書き込み権限
 - アプリ起動ユーザーに `LogPath` のディレクトリへの書き込み権限が必要です

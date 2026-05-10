@@ -244,7 +244,7 @@
 - README.md を v0.9.1 向けに更新。
 - v0.9.1 では新しい AD 更新操作は追加していない。
 
-### v0.9.1 コードレビュー対応（追加修正）
+### v0.9.1 コードレビュー対応 / EnableOperationSupport タブ制御
 
 - `AppPolicyProvider` を全面整理：`ReadInt` / `ReadString` / `ReadBool` / `ReadStringList` / `ReadStringListOrDefault` ヘルパーを追加。
   - `ReadInt` に `ValueKind == JsonValueKind.Number` チェックを追加（文字列値等をフォールバックに落とす）。
@@ -252,4 +252,30 @@
   - `ReadBool` に `fallback` 引数を追加（`GetBoolean()` 直接呼び出しによる例外を回避）。
   - `AllowedComputerOuDns` / `ExcludedComputerNames` / `EditableComputerAttributes` / `EditableGroupOuDns` / `ProtectedGroupNames` / `ProtectedGroupDns` / `EnableOperationSupport` / `OperationChecklistItems` / `MaxLogDisplayRows` を読み込むよう追加（これまで未読込だった）。
 - `LogReader.ReadLog` に `maxRows <= 0` の防御ガードを追加。
-- `EnableOperationSupport` / `OperationChecklistItems` は設定から読み込むが UI には未反映。README とバックログに「v1.0.0 検討」として明記した。
+- `MainWindow.xaml` にオペレーション支援タブの `x:Name="OperationSupportTab"` を追加。
+- `MainWindow.xaml.cs` のコンストラクターに `EnableOperationSupport: false` 時にタブを非表示にする処理を追加。
+
+---
+
+## v0.9.2 完了
+
+- `AppPolicyProvider` を全面整理：`ReadInt` / `ReadString` / `ReadBool` / `ReadStringList` / `ReadStringListOrDefault` ヘルパーを追加。
+  - `ReadInt` に `ValueKind == JsonValueKind.Number` チェックを追加（文字列値等をフォールバックに落とす）。
+  - `ReadInt` に `minValue` 引数を追加（`MaxSearchResults` / `EditSessionMinutes` / `MaxLogDisplayRows` に `minValue: 1` を指定）。
+  - `ReadBool` に `fallback` 引数を追加（`GetBoolean()` 直接呼び出しによる例外を回避）。
+  - `AllowedComputerOuDns` / `ExcludedComputerNames` / `EditableComputerAttributes` / `EditableGroupOuDns` / `ProtectedGroupNames` / `ProtectedGroupDns` / `EnableOperationSupport` / `OperationChecklistItems` / `MaxLogDisplayRows` を読み込むよう追加（これまで未読込だった）。
+- `LogReader.ReadLog` に `maxRows <= 0` の防御ガードを追加。
+- `EnableOperationSupport` / `OperationChecklistItems` は設定から読み込む。`EnableOperationSupport` は v0.9.1 でタブ表示制御に反映。`OperationChecklistItems` は引き続き v1.0.0 検討。
+
+---
+
+## v0.9.2 完了
+
+- **`AppPolicy.EditableAttributes` デフォルト値修正**: v0.4.2 で属性が変更されたにもかかわらず、デフォルト値が `["mail", "department", "title"]` のままだった問題を修正。`["mail", "displayName", "sn", "givenName"]` に更新。`appsettings.json` が存在しない場合の動作も正しくなる。
+- **`WriteAuditLogger.AppVersion`** を "0.9.2" に更新。
+- **`docs/operation/validation-auth.md`**: config 例の `EditableAttributes` を `["mail", "displayName", "sn", "givenName"]` に修正（v0.4.2 以降の実態に合わせて）。`MaxLogDisplayRows: 1000` を追加。
+- **`docs/operation/deploy.md`**: "mail / department / title" の記述を "mail / displayName / sn / givenName" に修正。
+- **`README.md`**: バージョンを v0.9.2 に更新。`EnableOperationSupport` 説明を「`false` にするとオペレーション支援タブを非表示にします」に更新（UI未反映の注記を除去）。`OperationChecklistItems` 説明を「チェックリスト UI とサマリーには反映されない」に更新。
+- **全 config-samples** に `EnableOperationSupport` / `OperationChecklistItems` とその注記（`_*_note` キー）を追加。設定の意味と挙動を config-sample から直接確認できるようにした。
+- **`docs/planning/backlog.md`**: 完了済みの「`EnableOperationSupport` タブ表示制御」を除去し、残作業「`OperationChecklistItems` のチェックリスト UI への反映」のみを記載。
+- v0.9.2 では新しい AD 更新操作は追加していない。

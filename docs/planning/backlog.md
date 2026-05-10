@@ -52,9 +52,8 @@ v1.0.0 は機能追加より**既存機能の安定化・実運用準備**を主
 - `accountExpires` 更新設計継続（`docs/design/design-account-expiration.md` 参照）
 
 ### オペレーション支援の設定反映（v1.0.0 候補）
-- `EnableOperationSupport: false` でタブを非表示にする制御を追加する
-- `OperationChecklistItems` からチェック項目 UI およびサマリーを生成する
-- 現状これらの設定値は `appsettings.json` から読み込まれるが UI には反映されない
+- `OperationChecklistItems` からチェック項目 UI およびサマリーを生成する（設定は読み込まれるが現バージョンではチェックリストに反映されない）
+- ※ `EnableOperationSupport` によるタブ表示制御は v0.9.1 で実装済み
 
 ### 編集機能の拡張（v1.0.0 後に検討）
 - ユーザー更新対象属性の追加（要件定義次第）

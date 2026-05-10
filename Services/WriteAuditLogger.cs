@@ -8,7 +8,7 @@ namespace ManageAdTool.Services;
 public class WriteAuditLogger
 {
     // TODO: アセンブリバージョン（Assembly.GetExecutingAssembly().GetName().Version）から取得する方式に移行する
-    private const string AppVersion = "0.9.1";
+    private const string AppVersion = "0.9.2";
     private readonly string _path;
     private readonly JsonSerializerOptions _jsonOptions = new()
     {
