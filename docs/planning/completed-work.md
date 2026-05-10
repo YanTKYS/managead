@@ -303,3 +303,15 @@
 - **README / docs ガイド更新**: `README.md` と `docs/README.md` から利用者向け操作説明書、管理者向け設定手順、トラブルシューティングへたどれるよう更新。
 - **planning / release docs 更新**: `roadmap.md`、`backlog.md`、`release-note.md` を v0.9.4 の運用準備に合わせて更新。
 - v0.9.4 では実装コード、AD 操作ロジック、新しい AD 更新機能、build.yml トリガーは変更していない。
+
+---
+
+## v0.9.5 完了
+
+- **リリース ZIP 構成整理**: `release-build.yml` を更新し、`ManageAdTool-vX.Y.Z/` 配下に `ManageAdTool.exe`、`appsettings.json`、`README.md`、`config-samples/`、`docs/` を含める構成に整理。
+- **README / docs / config-samples 同梱確認**: release workflow に必須パス検証を追加し、主要 docs、operation manuals、validation docs、planning docs、release note、用途別 config-samples が含まれることを確認するようにした。
+- **appsettings.json 安全側初期値整理**: 配布用 `appsettings.json` を `ServiceMode: "InMemory"`、OU 許可リスト空、`EditorAuthMode: "None"`、安全な `LogPath` / `MaxSearchResults` / `MaxLogDisplayRows` に整理。
+- **config-samples 整理**: 用途別サンプルに `_sample_note` を追加し、example.local のサンプル DN とコピー後編集が前提であることを明確化。
+- **deploy.md 更新**: GitHub Releases からの ZIP 取得、閉域端末への持ち込み、展開、appsettings 編集、InMemory 起動確認、DirectoryReadOnly 参照確認、検証用 OU からの編集開始、ログ権限確認を整理。
+- **admin-manual.md 配布手順補強**: 配布 ZIP 推奨構成、配布後の環境別 `appsettings.json` 編集、config-samples のコピー運用、編集機能利用時の `EditorAuthMode: "DomainAdmins"` 原則を追記。
+- v0.9.5 では AD 操作ロジック、UI 機能、新しい AD 更新機能、build.yml トリガーは変更していない。

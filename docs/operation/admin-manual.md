@@ -1,8 +1,8 @@
-# ManageAdTool 管理者向け設定・運用手順（v0.9.4）
+# ManageAdTool 管理者向け設定・運用手順（v0.9.5）
 
 対象読者: ManageAdTool の配布・設定・保守を行う管理者
 
-> **重要**: 本書は設定・運用手順を整理するものです。v0.9.4 では新しい AD 更新機能や AD 操作ロジックの変更はありません。
+> **重要**: 本書は設定・運用手順を整理するものです。v0.9.5 ではリリースパッケージ・配布物を整理しています。新しい AD 更新機能や AD 操作ロジックの変更はありません。
 
 ---
 
@@ -10,29 +10,42 @@
 
 閉域端末または管理用端末に、配布 ZIP を展開して利用します。
 
+配布 ZIP の推奨構成:
+
+```text
+ManageAdTool-vX.Y.Z\
+  ManageAdTool.exe
+  appsettings.json
+  README.md
+  config-samples\
+  docs\
+```
+
 配置例:
 
 ```text
-C:\Tools\ManageAdTool\
+C:\Tools\ManageAdTool\ManageAdTool-v0.9.5\
   ManageAdTool.exe
   appsettings.json
+  README.md
   config-samples\
   docs\
 ```
 
 運用上の注意:
 
-- `appsettings.json` は環境別に管理してください。
+- 配布用 `appsettings.json` は安全側初期値です。配布後に環境別に編集してください。
 - ログ出力先は書き込み権限があり、情報管理できるパスを指定してください。
 - 利用者がサンプル設定を誤って本番設定として使わないよう、配布前に確認してください。
+- 実 AD 接続用設定は、`config-samples/` から用途に合うサンプルをコピーして `appsettings.json` として編集する運用にしてください。
 
 ---
 
 ## 2. appsettings.json の基本構成
 
-`appsettings.json` の `AppPolicy` セクションで ServiceMode、対象 OU、除外対象、ログ出力先、認証設定などを指定します。
+`appsettings.json` の `AppPolicy` セクションで ServiceMode、対象 OU、除外対象、ログ出力先、認証設定などを指定します。配布直後の `appsettings.json` は `ServiceMode: "InMemory"`、OU 許可リスト空、`EditorAuthMode: "None"` の安全側初期値です。
 
-代表的な構成例:
+DirectoryReadOnly / 限定編集を有効にする場合の代表的な構成例:
 
 ```json
 {
@@ -70,7 +83,7 @@ C:\Tools\ManageAdTool\
 | `appsettings.ComputerDescriptionEdit.sample.json` | コンピュータ description 編集を検証用 OU に限定して有効化する例。 |
 | `appsettings.GroupMembershipEdit.sample.json` | グループメンバー追加・削除を検証用 OU に限定して有効化する例。 |
 
-運用開始時は、サンプルをそのまま使わず、必ず自組織の DN、ログパス、除外対象、保護グループを確認してください。
+運用開始時は、サンプルをそのまま使わず、必ず自組織の DN、ログパス、除外対象、保護グループを確認してください。用途に合うサンプルをコピーして `appsettings.json` にリネームし、検証用 OU から段階的に設定してください。
 
 ---
 
@@ -129,8 +142,8 @@ C:\Tools\ManageAdTool\
 
 編集時の認証モードです。
 
-- `DomainAdmins` で Domain Admins 認証 UI を有効化します。
-- `None` の場合、認証 UI を使わない運用になります。実運用では安全性を考慮して設定してください。
+- 編集機能を使う場合は、`DomainAdmins` を原則とします。Domain Admins 認証 UI を有効化し、セッション期限付きで限定更新を実行します。
+- `None` はデモ・参照中心の運用または検証用途向けです。実 AD 更新を行う運用では、安全性を考慮して `DomainAdmins` を使用してください。
 
 ### AdminGroupDn
 

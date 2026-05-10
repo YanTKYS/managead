@@ -1,13 +1,14 @@
 # ManageAdTool
 
-閉域ネットワーク向けの Active Directory 参照・限定編集支援ツール（v0.9.4）です。
+閉域ネットワーク向けの Active Directory 参照・限定編集支援ツール（v0.9.5）です。
 
 > **重要**: 本ツールは「すべての AD 管理操作ができるツール」ではありません。  
 > ユーザー属性（mail / displayName / sn / givenName）・コンピュータ description・グループメンバー追加削除（ユーザーのみ）のみ更新可能です。
+> v0.9.5 は v1.0.0 前のリリースパッケージ・配布物整理版です。新しい AD 更新操作は追加していません。
 
 ---
 
-## できること（v0.9.4）
+## できること（v0.9.5）
 
 ### 参照
 - AD ユーザー検索・詳細表示・所属グループ確認
@@ -62,6 +63,23 @@
 
 ---
 
+## リリースZIPの構成
+
+リリース ZIP は self-contained 形式を想定しており、利用端末への .NET Desktop Runtime の別途インストールは不要です。展開後は次の構成を想定しています。
+
+```text
+ManageAdTool-vX.Y.Z/
+  ManageAdTool.exe
+  appsettings.json
+  README.md
+  config-samples/
+  docs/
+```
+
+配布用 `appsettings.json` は `ServiceMode: "InMemory"`、OU 許可リスト空、`EditorAuthMode: "None"` の安全側初期値です。実 AD 参照・限定編集を行う場合は、`config-samples/` から用途に合うサンプルをコピーし、検証用 OU から設定してください。
+
+---
+
 ## 基本的な使い方
 
 1. `config-samples/` から利用モードに応じたサンプルをコピーして `appsettings.json` を作成する
@@ -79,10 +97,10 @@
 | ファイル | 用途 |
 |---|---|
 | `appsettings.InMemory.sample.json` | デモ・動作確認用（実AD接続なし） |
-| `appsettings.DirectoryReadOnly.sample.json` | 実AD参照のみ（更新なし） |
-| `appsettings.UserAttributeEdit.sample.json` | ユーザー属性編集を有効化 |
-| `appsettings.ComputerDescriptionEdit.sample.json` | コンピュータ description 編集を有効化 |
-| `appsettings.GroupMembershipEdit.sample.json` | グループメンバー編集を有効化 |
+| `appsettings.DirectoryReadOnly.sample.json` | 実AD参照確認用（DN は example.local のサンプル） |
+| `appsettings.UserAttributeEdit.sample.json` | ユーザー属性編集を検証用 OU から有効化する例 |
+| `appsettings.ComputerDescriptionEdit.sample.json` | コンピュータ description 編集を検証用 OU から有効化する例 |
+| `appsettings.GroupMembershipEdit.sample.json` | ユーザー限定のグループメンバー編集を検証用 OU から有効化する例 |
 
 ### 主な設定項目
 
@@ -101,7 +119,7 @@
 | `EditorAuthMode` | `"DomainAdmins"` で認証 UI 有効化 | `"None"` |
 | `AdminGroupDn` | Domain Admins グループの DN | `""` |
 | `EditSessionMinutes` | 編集セッションタイムアウト（分） | `15` |
-| `LogPath` | 監査ログ出力先（audit.jsonl / auth.jsonl / write-audit.jsonl） | `""` |
+| `LogPath` | 監査ログ出力先（audit.jsonl / auth.jsonl / write-audit.jsonl） | `C:\ProgramData\ManageAdTool\logs\audit.jsonl` |
 | `EnableOperationSupport` | `false` にするとオペレーション支援タブを非表示にします | `true` |
 | `OperationChecklistItems` | 設定から読み込まれますが、チェックリスト UI とサマリーには反映されません（v1.0.0 検討） | `[]` |
 

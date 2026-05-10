@@ -41,7 +41,8 @@ jobs:
 
           "title=$title" >> $env:GITHUB_OUTPUT
           "normalized_version=$normalizedVersion" >> $env:GITHUB_OUTPUT
-          "archive_name=ManageAD-$version.zip" >> $env:GITHUB_OUTPUT
+          "package_dir=ManageAdTool-$version" >> $env:GITHUB_OUTPUT
+          "archive_name=ManageAdTool-$version.zip" >> $env:GITHUB_OUTPUT
           "note<<EOF" >> $env:GITHUB_OUTPUT
           $note >> $env:GITHUB_OUTPUT
           "EOF" >> $env:GITHUB_OUTPUT
@@ -55,24 +56,62 @@ jobs:
       - name: Prepare clean release package directory
         shell: pwsh
         run: |
-          Remove-Item artifacts/package -Recurse -Force -ErrorAction SilentlyContinue
-          New-Item -ItemType Directory -Path artifacts/package -Force | Out-Null
+          Remove-Item artifacts -Recurse -Force -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Path "artifacts/package/${{ steps.notes.outputs.package_dir }}" -Force | Out-Null
 
       - name: Publish self-contained Release
-        run: dotnet publish ManageAdTool.csproj -c Release -r ${{ env.RUNTIME_IDENTIFIER }} --self-contained true -p:Version=${{ steps.notes.outputs.normalized_version }} -o artifacts/package --no-restore
+        run: dotnet publish ManageAdTool.csproj -c Release -r ${{ env.RUNTIME_IDENTIFIER }} --self-contained true -p:Version=${{ steps.notes.outputs.normalized_version }} -o "artifacts/package/${{ steps.notes.outputs.package_dir }}" --no-restore
 
       - name: Add release docs and sample configs
         shell: pwsh
         run: |
-          Copy-Item docs/operation/deploy.md artifacts/package/deploy.md -Force
-          Copy-Item docs/operation/validation-readonly.md artifacts/package/validation-readonly.md -Force
-          Copy-Item config-samples/appsettings.InMemory.sample.json artifacts/package/ -Force
-          Copy-Item config-samples/appsettings.DirectoryReadOnly.sample.json artifacts/package/ -Force
+          $packageRoot = "artifacts/package/${{ steps.notes.outputs.package_dir }}"
+          Copy-Item README.md $packageRoot/README.md -Force
+          Copy-Item appsettings.json $packageRoot/appsettings.json -Force
+          Copy-Item config-samples $packageRoot/config-samples -Recurse -Force
+          Copy-Item docs $packageRoot/docs -Recurse -Force
+
+      - name: Verify release package contents
+        shell: pwsh
+        run: |
+          $packageRoot = "artifacts/package/${{ steps.notes.outputs.package_dir }}"
+          $requiredPaths = @(
+            "ManageAdTool.exe",
+            "appsettings.json",
+            "README.md",
+            "config-samples",
+            "docs",
+            "docs/README.md",
+            "docs/operation/user-manual.md",
+            "docs/operation/admin-manual.md",
+            "docs/operation/troubleshooting.md",
+            "docs/operation/validation-readonly.md",
+            "docs/operation/validation-auth.md",
+            "docs/operation/validation-user-edit.md",
+            "docs/operation/validation-computer-edit.md",
+            "docs/operation/validation-group-edit.md",
+            "docs/operation/validation-gpo-simulation.md",
+            "docs/operation/validation-operation-support.md",
+            "docs/operation/validation-log-viewer.md",
+            "docs/planning/roadmap.md",
+            "docs/planning/backlog.md",
+            "docs/planning/completed-work.md",
+            "docs/release/release-note.md",
+            "config-samples/appsettings.InMemory.sample.json",
+            "config-samples/appsettings.DirectoryReadOnly.sample.json",
+            "config-samples/appsettings.UserAttributeEdit.sample.json",
+            "config-samples/appsettings.ComputerDescriptionEdit.sample.json",
+            "config-samples/appsettings.GroupMembershipEdit.sample.json"
+          )
+          foreach ($relativePath in $requiredPaths) {
+            $fullPath = Join-Path $packageRoot $relativePath
+            if (-not (Test-Path $fullPath)) { throw "Release package missing required path: $relativePath" }
+          }
 
       - name: Create ZIP artifact
         shell: pwsh
         run: |
-          Compress-Archive -Path artifacts/package/* -DestinationPath artifacts/${{ steps.notes.outputs.archive_name }} -Force
+          Compress-Archive -Path "artifacts/package/${{ steps.notes.outputs.package_dir }}" -DestinationPath artifacts/${{ steps.notes.outputs.archive_name }} -Force
 
       - name: Upload ZIP Artifact
         uses: actions/upload-artifact@v6
