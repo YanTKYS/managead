@@ -25,3 +25,6 @@ jobs:
 
       - name: Build (Release)
         run: dotnet build ManageAdTool.csproj -c Release --no-restore
+
+      - name: Test
+        run: dotnet test ManageAdTool.Tests/ManageAdTool.Tests.csproj -c Release
