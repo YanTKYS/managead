@@ -11,7 +11,7 @@ namespace ManageAdTool.Views;
 
 public partial class MainWindow : Window
 {
-    private readonly AppPolicy _policy = AppPolicyProvider.Load();
+    private readonly AppPolicy _policy;
     private readonly IAdService _ad;
     private readonly IAdUserAttributeWriteService? _writeService;
     private readonly IAdComputerAttributeWriteService? _computerWriteService;
@@ -51,8 +51,13 @@ public partial class MainWindow : Window
     private static readonly string Executor =
         $"{Environment.UserDomainName}\\{Environment.UserName}";
 
-    public MainWindow()
+    public MainWindow() : this(AppPolicyProvider.Load())
     {
+    }
+
+    public MainWindow(AppPolicy policy)
+    {
+        _policy = policy;
         var isReadOnly = string.Equals(_policy.ServiceMode, "DirectoryReadOnly", StringComparison.OrdinalIgnoreCase);
         _ad = isReadOnly ? new DirectoryServicesAdReadService(_policy) : new InMemoryAdService();
         _writeService = isReadOnly ? new DirectoryServicesAdUserAttributeWriteService() : null;
@@ -1166,7 +1171,6 @@ public partial class MainWindow : Window
         => new()
         {
             Keyword = SearchBox.Text.Trim(),
-            Department = DepartmentFilterBox.Text.Trim(),
             HasMail = MailFilterBox.SelectedIndex switch { 1 => true, 2 => false, _ => null },
             IncludeDisabled = IncludeDisabledUsersBox.IsChecked == true
         };
@@ -1209,14 +1213,14 @@ public partial class MainWindow : Window
         {
             string.Join(",", new[]
             {
-                "SamAccountName", "DisplayName", "Surname", "GivenName", "Name", "Mail", "Department", "Title",
+                "SamAccountName", "DisplayName", "Surname", "GivenName", "Name", "Mail", "Title",
                 "Enabled", "UserAccountControl", "LastLogonTimestamp", "AccountExpires", "DistinguishedName"
             }.Select(CsvEscape))
         };
 
         lines.AddRange(users.Select(user => string.Join(",", new[]
         {
-            user.SamAccountName, user.DisplayName, user.Surname, user.GivenName, user.Name, user.Mail, user.Department, user.Title,
+            user.SamAccountName, user.DisplayName, user.Surname, user.GivenName, user.Name, user.Mail, user.Title,
             FormatBool(user.Enabled), FormatNullable(user.UserAccountControl),
             FormatDateTime(user.LastLogonAt), FormatDateTime(user.AccountExpiresAt), user.DistinguishedName
         }.Select(CsvEscape))));
@@ -1235,7 +1239,7 @@ public partial class MainWindow : Window
     private static string FormatCriteria(AdUserSearchCriteria criteria)
     {
         var mail = criteria.HasMail switch { true => "あり", false => "なし", _ => "指定なし" };
-        return $"keyword={criteria.Keyword}; department={criteria.Department}; mail={mail}; includeDisabled={criteria.IncludeDisabled}";
+        return $"keyword={criteria.Keyword}; mail={mail}; includeDisabled={criteria.IncludeDisabled}";
     }
 
     private static string FormatDateTime(DateTimeOffset? value)
