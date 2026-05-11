@@ -17,8 +17,6 @@
         <WrapPanel Margin="0,0,0,8" VerticalAlignment="Center">
             <TextBlock Text="検索語" VerticalAlignment="Center" Margin="0,0,4,0"/>
             <TextBox x:Name="SearchBox" Width="220" Margin="0,0,8,0"/>
-            <TextBlock Text="部署" VerticalAlignment="Center" Margin="0,0,4,0"/>
-            <TextBox x:Name="DepartmentFilterBox" Width="160" Margin="0,0,8,0"/>
             <TextBlock Text="Mail" VerticalAlignment="Center" Margin="0,0,4,0"/>
             <ComboBox x:Name="MailFilterBox" Width="120" SelectedIndex="0" Margin="0,0,8,0">
                 <ComboBoxItem Content="指定なし"/>
@@ -36,7 +34,6 @@
                 <DataGridTextColumn Header="SamAccountName" Binding="{Binding SamAccountName}" Width="2*"/>
                 <DataGridTextColumn Header="DisplayName" Binding="{Binding DisplayName}" Width="2*"/>
                 <DataGridTextColumn Header="Mail" Binding="{Binding Mail}" Width="3*"/>
-                <DataGridTextColumn Header="Department" Binding="{Binding Department}" Width="2*"/>
                 <DataGridTextColumn Header="Title" Binding="{Binding Title}" Width="2*"/>
                 <DataGridCheckBoxColumn Header="Enabled" Binding="{Binding Enabled}" Width="Auto"/>
             </DataGrid.Columns>
@@ -64,7 +61,7 @@
             <GroupBox.Header>
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="属性表示・変更予定確認 / 限定更新"/>
-                    <TextBlock Text="【更新対象: メールアドレス / 表示名 / 姓 / 名】【ユーザー名は参照のみ（v0.4.2 更新対象外）】【Domain Admins セッション必須】"
+                    <TextBlock Text="【更新対象: メールアドレス / 表示名 / 姓 / 名】【ユーザー名は参照のみ】【Domain Admins セッション必須】"
                                Foreground="DarkOrange" FontSize="11" Margin="8,0,0,0" VerticalAlignment="Center"/>
                 </StackPanel>
             </GroupBox.Header>
@@ -88,7 +85,7 @@
                 <TextBlock Text="ユーザー名 ※参照のみ（高リスク）" Grid.Row="4" VerticalAlignment="Center" Margin="0,4,0,0" Foreground="Gray"/>
                 <TextBox x:Name="SamAccountNameReadBox" Grid.Row="4" Grid.Column="1" Margin="0,4,0,0"
                          IsReadOnly="True" Background="#F4F4F4" Foreground="DimGray"
-                         ToolTip="ユーザー名（sAMAccountName）は参照のみです。v0.4.2では更新できません。"/>
+                         ToolTip="ユーザー名（sAMAccountName）は参照のみです。"/>
             </Grid>
         </GroupBox>
 
@@ -173,7 +170,6 @@
                                     <DataGridTextColumn Header="SamAccountName" Binding="{Binding SamAccountName}" Width="2*"/>
                                     <DataGridTextColumn Header="DisplayName" Binding="{Binding DisplayName}" Width="2*"/>
                                     <DataGridTextColumn Header="Mail" Binding="{Binding Mail}" Width="3*"/>
-                                    <DataGridTextColumn Header="Department" Binding="{Binding Department}" Width="2*"/>
                                     <DataGridCheckBoxColumn Header="Enabled" Binding="{Binding Enabled}" Width="Auto"/>
                                 </DataGrid.Columns>
                             </DataGrid>
@@ -363,7 +359,6 @@
                             <DataGridTextColumn Header="SamAccountName" Binding="{Binding SamAccountName}" Width="2*"/>
                             <DataGridTextColumn Header="DisplayName" Binding="{Binding DisplayName}" Width="2*"/>
                             <DataGridTextColumn Header="Mail" Binding="{Binding Mail}" Width="3*"/>
-                            <DataGridTextColumn Header="Department" Binding="{Binding Department}" Width="2*"/>
                             <DataGridCheckBoxColumn Header="Enabled" Binding="{Binding Enabled}" Width="Auto"/>
                         </DataGrid.Columns>
                     </DataGrid>

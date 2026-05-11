@@ -54,7 +54,9 @@
 
 ---
 
-## ServiceMode
+## 起動時の ServiceMode 選択
+
+`ServiceMode` は `appsettings.json` へ記入せず、起動時の選択ダイアログで今回の起動モードを選びます。
 
 | 値 | 説明 |
 |---|---|
@@ -65,7 +67,7 @@
 
 ## リリースZIPの構成
 
-リリース ZIP は self-contained 形式を想定しており、利用端末への .NET Desktop Runtime の別途インストールは不要です。展開後は次の構成を想定しています。
+リリース ZIP は self-contained の単一 exe 形式を想定しており、利用端末への .NET Desktop Runtime の別途インストールは不要です。ルート直下に大量の DLL が並ばないよう、展開後は次の構成を想定しています。
 
 ```text
 ManageAdTool-vX.Y.Z/
@@ -76,16 +78,16 @@ ManageAdTool-vX.Y.Z/
   docs/
 ```
 
-配布用 `appsettings.json` は `ServiceMode: "InMemory"`、OU 許可リスト空、`EditorAuthMode: "None"` の安全側初期値です。実 AD 参照・限定編集を行う場合は、`config-samples/` から用途に合うサンプルをコピーし、検証用 OU から設定してください。
+配布用 `appsettings.json` は OU 許可リスト空、`EditorAuthMode: "None"` の安全側初期値です。実 AD 参照・限定編集を行う場合は、`config-samples/` から用途に合うサンプルをコピーし、検証用 OU から設定してください。起動モードは起動時ダイアログで選択します。
 
 ---
 
 ## 基本的な使い方
 
-1. `config-samples/` から利用モードに応じたサンプルをコピーして `appsettings.json` を作成する
+1. `config-samples/` から用途に応じたサンプルをコピーして `appsettings.json` を作成する
 2. OU DN・除外ユーザー名・ログ出力先を環境に合わせて編集する
 3. `ManageAdTool.exe` を起動する
-4. まず `InMemory` モードで画面動作を確認し、次に `DirectoryReadOnly` で実 AD 接続を検証する
+4. 起動時ダイアログで、まず `InMemory` モードを選択して画面動作を確認し、次に `DirectoryReadOnly` で実 AD 接続を検証する
 
 > **利用方針**: 必ず **検証用 OU 限定** で動作確認を完了してから、本番 OU を設定に追加してください。  
 > `AllowedTargetOuDns` / `AllowedComputerOuDns` / `EditableGroupOuDns` が空の場合、対応する更新機能が無効化されます（セーフガード）。
@@ -106,7 +108,6 @@ ManageAdTool-vX.Y.Z/
 
 | フィールド | 説明 | デフォルト |
 |---|---|---|
-| `ServiceMode` | `"InMemory"` / `"DirectoryReadOnly"` | `"InMemory"` |
 | `AllowedTargetOuDns` | ユーザー参照・更新対象 OU | `[]` |
 | `ExcludedSamAccountNames` | 除外ユーザーアカウント | `[]` |
 | `AllowedComputerOuDns` | コンピュータ更新対象 OU | `[]` |
