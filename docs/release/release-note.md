@@ -6,15 +6,16 @@
 
 ## v0.9.6
 ### Title
-ManageAdTool v0.9.6（初回打鍵テスト反映・起動モード選択改善）
+ManageAdTool v0.9.6（打鍵テスト反映・起動遷移修正）
 
 ### Note
-- **初回打鍵テスト結果を記録**: DirectoryReadOnly 起動、SamAccountName / DisplayName でのユーザー検索、属性表示、所属グループ表示、コンピュータ参照は成功として `docs/operation/test-record-v0.9.6.md` に記録した。
+- **打鍵テスト結果を記録**: 初回報告の DirectoryReadOnly 起動、SamAccountName / DisplayName でのユーザー検索、属性表示、所属グループ表示、コンピュータ参照成功に加え、2回目報告の配布フォルダ整理と ServiceMode 選択画面表示成功を `docs/operation/test-record-v0.9.6.md` に記録した。
 - **グループ参照の追加確認項目を明確化**: グループ検索は確認できた一方、ユーザーメンバー表示は未確定のため、v0.9.6 打鍵テストで重点確認する項目として整理した。
-- **起動時 ServiceMode 選択に変更**: `ServiceMode` を `appsettings.json` へ記入せず、起動時ダイアログで `InMemory` / `DirectoryReadOnly` を選択する運用に変更した。
+- **起動時 ServiceMode 選択と遷移を修正**: `ServiceMode` を `appsettings.json` へ記入せず、起動時ダイアログで `InMemory` / `DirectoryReadOnly` を選択する運用に変更した。選択ダイアログを閉じた時点でアプリが終了しないよう ShutdownMode を調整し、メイン画面へ遷移するよう修正した。
 - **ユーザー検索画面を簡素化**: 検索入力欄の「部署」と、検索結果などの `Department` 列を削除した。属性表示エリアの「v0.4.2 更新対象外」表記も削除した。
-- **リリースパッケージの見通しを改善**: self-contained 単一 exe publish に変更し、リリースパッケージ直下に DLL が残る場合は検証で失敗させるようにした。
-- **新しい AD 更新操作は追加していない**: v0.9.6 は初回打鍵テストのフィードバック反映と検証記録の整理が目的。
+- **リリースパッケージの見通しを改善**: self-contained 単一 exe publish に変更し、リリースパッケージ直下に DLL が残る場合は検証で失敗させるようにした。2回目報告でフォルダ直下が必要ファイル中心になったことを確認した。
+- **起動時の見える化を追加**: ServiceMode 選択、メイン画面生成、表示成功、起動失敗を `startup.log` に記録し、起動失敗時はログパス付きのエラーダイアログを表示するようにした。
+- **新しい AD 更新操作は追加していない**: v0.9.6 は打鍵テストのフィードバック反映と検証記録の整理が目的。
 
 ## v0.9.5
 ### Title
