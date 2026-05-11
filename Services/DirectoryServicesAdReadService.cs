@@ -243,16 +243,18 @@ public class DirectoryServicesAdReadService : IAdService
 
             string groupName;
             string groupDescription;
+            int? primaryGroupToken;
             IReadOnlyList<string> memberOfNames;
 
             using (var root = new DirectoryEntry($"LDAP://{groupDn}"))
             using (var ds = new DirectorySearcher(root) { Filter = "(objectClass=group)", SearchScope = SearchScope.Base })
             {
-                ds.PropertiesToLoad.AddRange(new[] { "cn", "description", "memberOf" });
+                ds.PropertiesToLoad.AddRange(new[] { "cn", "description", "memberOf", "primaryGroupToken" });
                 var r = ds.FindOne();
                 if (r is null) return null;
                 groupName = GetProperty(r, "cn", groupNameOrDn);
                 groupDescription = GetProperty(r, "description", string.Empty);
+                primaryGroupToken = GetNullableInt(r, "primaryGroupToken");
                 memberOfNames = r.Properties.Contains("memberOf")
                     ? r.Properties["memberOf"].Cast<string>()
                         .Select(dn => dn.Split(',')[0].Replace("CN=", string.Empty, StringComparison.OrdinalIgnoreCase))
@@ -307,6 +309,15 @@ public class DirectoryServicesAdReadService : IAdService
                 gds.PropertiesToLoad.AddRange(new[] { "cn" });
                 foreach (SearchResult r in gds.FindAll())
                     groupNames.Add(GetProperty(r, "cn", string.Empty));
+            }
+
+            if (primaryGroupToken.HasValue)
+            {
+                var existingSams = new HashSet<string>(userMembers.Select(u => u.SamAccountName), StringComparer.OrdinalIgnoreCase);
+                foreach (var primaryMember in SearchUsersByPrimaryGroupId(primaryGroupToken.Value))
+                {
+                    if (existingSams.Add(primaryMember.SamAccountName)) userMembers.Add(primaryMember);
+                }
             }
 
             return new AdGroupDetail
@@ -532,14 +543,74 @@ public class DirectoryServicesAdReadService : IAdService
         return $"(&{string.Concat(filters)})";
     }
 
+    private IReadOnlyList<AdUser> SearchUsersByPrimaryGroupId(int primaryGroupId)
+    {
+        var list = new List<AdUser>();
+        var defaultBase = GetDefaultNamingContext();
+        using var root = new DirectoryEntry($"LDAP://{defaultBase}");
+        using var ds = new DirectorySearcher(root)
+        {
+            Filter = $"(&(objectClass=user)(!(objectClass=computer))(primaryGroupID={primaryGroupId}))",
+            PageSize = 200,
+            SizeLimit = _policy.MaxSearchResults
+        };
+        AddSearchUserProperties(ds);
+        foreach (SearchResult r in ds.FindAll())
+        {
+            var user = DirectoryServicesUserMapper.MapUser(r);
+            if (!IsExcluded(user.SamAccountName)) list.Add(user);
+        }
+        return list;
+    }
+
+    private static int? GetNullableInt(SearchResult r, string prop)
+    {
+        if (!r.Properties.Contains(prop) || r.Properties[prop].Count == 0) return null;
+        var value = r.Properties[prop][0];
+        if (value is int i) return i;
+        return int.TryParse(value?.ToString(), out var parsed) ? parsed : null;
+    }
+
     private static IReadOnlyList<string> ReadGroupMemberDns(string groupDn)
     {
-        using var group = new DirectoryEntry($"LDAP://{groupDn}");
-        group.RefreshCache(new[] { "member" });
-        if (!group.Properties.Contains("member")) return Array.Empty<string>();
-        return group.Properties["member"]
-            .Cast<object>()
-            .Select(x => x?.ToString() ?? string.Empty)
+        var members = new List<string>();
+        const int pageSize = 1500;
+        var start = 0;
+
+        while (true)
+        {
+            using var root = new DirectoryEntry($"LDAP://{groupDn}");
+            using var ds = new DirectorySearcher(root)
+            {
+                Filter = "(objectClass=group)",
+                SearchScope = SearchScope.Base,
+                PageSize = 1
+            };
+
+            var requested = $"member;range={start}-{start + pageSize - 1}";
+            ds.PropertiesToLoad.Add(requested);
+            var result = ds.FindOne();
+            if (result is null) break;
+
+            var rangePropertyName = result.Properties.PropertyNames
+                .Cast<string>()
+                .FirstOrDefault(name => name.StartsWith("member;range=", StringComparison.OrdinalIgnoreCase));
+
+            if (rangePropertyName is null)
+            {
+                if (result.Properties.Contains("member"))
+                {
+                    members.AddRange(result.Properties["member"].Cast<object>().Select(x => x?.ToString() ?? string.Empty));
+                }
+                break;
+            }
+
+            members.AddRange(result.Properties[rangePropertyName].Cast<object>().Select(x => x?.ToString() ?? string.Empty));
+            if (rangePropertyName.EndsWith("-*", StringComparison.Ordinal)) break;
+            start += pageSize;
+        }
+
+        return members
             .Where(x => !string.IsNullOrWhiteSpace(x))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();

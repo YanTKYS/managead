@@ -5,38 +5,12 @@
     <Grid Margin="12">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="180"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Row 0: Search bar -->
-        <WrapPanel Margin="0,0,0,8" VerticalAlignment="Center">
-            <TextBlock Text="検索語" VerticalAlignment="Center" Margin="0,0,4,0"/>
-            <TextBox x:Name="SearchBox" Width="220" Margin="0,0,8,0"/>
-            <CheckBox x:Name="IncludeDisabledUsersBox" Content="無効ユーザーも表示" VerticalAlignment="Center" Margin="0,0,8,0"/>
-            <Button Content="検索" Width="100" Margin="0,0,8,0" Click="Search_Click"/>
-            <Button Content="検索結果CSV出力" Width="140" Click="ExportSearchResults_Click"/>
-        </WrapPanel>
-
-        <!-- Row 1: Search result DataGrid -->
-        <DataGrid x:Name="SearchResultGrid" Grid.Row="1" AutoGenerateColumns="False" SelectionMode="Single" IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False" SelectionChanged="SearchResultGrid_SelectionChanged">
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="SamAccountName" Binding="{Binding SamAccountName}" Width="2*"/>
-                <DataGridTextColumn Header="DisplayName" Binding="{Binding DisplayName}" Width="2*"/>
-                <DataGridTextColumn Header="Mail" Binding="{Binding Mail}" Width="3*"/>
-                <DataGridCheckBoxColumn Header="Enabled" Binding="{Binding Enabled}" Width="Auto"/>
-            </DataGrid.Columns>
-        </DataGrid>
-
-        <!-- Row 2: Edit blocked reason -->
-        <TextBlock x:Name="EditBlockedReasonText" Grid.Row="2" Foreground="DarkRed" FontWeight="Bold" Margin="0,8,0,4" Text="{Binding EditBlockedReason}"/>
-
-        <!-- Row 3: Editor login (Domain Admins) -->
-        <GroupBox Grid.Row="3" Header="編集者ログイン（Domain Admins 判定）" Margin="0,0,0,8">
+        <!-- Row 0: Editor login (Domain Admins) -->
+        <GroupBox Grid.Row="0" Header="編集者ログイン（Domain Admins 判定）" Margin="0,0,0,8">
             <WrapPanel Margin="4">
                 <TextBlock Text="ユーザー (domain\user)" VerticalAlignment="Center" Margin="0,0,4,0"/>
                 <TextBox x:Name="EditorUserBox" Width="200" Margin="0,0,8,0" IsEnabled="{Binding CanLoginInput}"/>
@@ -49,66 +23,96 @@
             </WrapPanel>
         </GroupBox>
 
-        <!-- Row 4: Attribute edit GroupBox -->
-        <GroupBox Grid.Row="4" Margin="0,0,0,8">
-            <GroupBox.Header>
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="属性表示・変更予定確認 / 限定更新"/>
-                    <TextBlock Text="【更新対象: メールアドレス / 表示名 / 姓 / 名】【ユーザー名は参照のみ】【Domain Admins セッション必須】"
-                               Foreground="DarkOrange" FontSize="11" Margin="8,0,0,0" VerticalAlignment="Center"/>
-                </StackPanel>
-            </GroupBox.Header>
-            <Grid Margin="8">
-                <Grid.ColumnDefinitions><ColumnDefinition Width="180"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
-                <TextBlock Text="メールアドレス (mail)" VerticalAlignment="Center"/>
-                <TextBox x:Name="EditMailBox" Grid.Column="1" IsEnabled="{Binding EditControlsEnabled}" TextChanged="EditInput_TextChanged"/>
-                <TextBlock Text="表示名 (displayName)" Grid.Row="1" VerticalAlignment="Center" Margin="0,4,0,0"/>
-                <TextBox x:Name="EditDisplayNameBox" Grid.Row="1" Grid.Column="1" Margin="0,4,0,0" IsEnabled="{Binding EditControlsEnabled}" TextChanged="EditInput_TextChanged"/>
-                <TextBlock Text="姓 (sn)" Grid.Row="2" VerticalAlignment="Center" Margin="0,4,0,0"/>
-                <TextBox x:Name="EditSurnameBox" Grid.Row="2" Grid.Column="1" Margin="0,4,0,0" IsEnabled="{Binding EditControlsEnabled}" TextChanged="EditInput_TextChanged"/>
-                <TextBlock Text="名 (givenName)" Grid.Row="3" VerticalAlignment="Center" Margin="0,4,0,0"/>
-                <TextBox x:Name="EditGivenNameBox" Grid.Row="3" Grid.Column="1" Margin="0,4,0,0" IsEnabled="{Binding EditControlsEnabled}" TextChanged="EditInput_TextChanged"/>
-                <TextBlock Text="ユーザー名 ※参照のみ（高リスク）" Grid.Row="4" VerticalAlignment="Center" Margin="0,4,0,0" Foreground="Gray"/>
-                <TextBox x:Name="SamAccountNameReadBox" Grid.Row="4" Grid.Column="1" Margin="0,4,0,0"
-                         IsReadOnly="True" Background="#F4F4F4" Foreground="DimGray"
-                         ToolTip="ユーザー名（sAMAccountName）は参照のみです。"/>
-            </Grid>
-        </GroupBox>
-
-        <!-- Row 5: Tab control -->
-        <TabControl Grid.Row="5" Margin="0,0,0,8">
+        <!-- Row 1: Main tab control -->
+        <TabControl Grid.Row="1" Margin="0,0,0,8">
             <TabItem Header="ユーザー詳細">
-                <StackPanel Margin="8">
-                    <TextBlock Text="ユーザー詳細（表示のみ）" FontWeight="Bold"/>
-                    <TextBox x:Name="UserDetailBox" Height="120" IsReadOnly="True" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Margin="0,4,0,8" TextWrapping="Wrap"/>
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                        <TextBlock Text="所属グループ（表示のみ・名前順）" FontWeight="Bold" VerticalAlignment="Center"/>
-                        <Button Content="グループをコピー" Width="120" Margin="12,0,0,0" Click="CopyGroups_Click"/>
-                    </StackPanel>
-                    <TextBox x:Name="GroupListBox" Height="90" IsReadOnly="True" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Margin="0,0,0,8"/>
-                    <StackPanel Margin="0,0,0,8">
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                            <Button x:Name="PreviewButton" Content="差分確認" Width="100" Margin="0,0,8,0" Click="Preview_Click" IsEnabled="{Binding EditControlsEnabled}"/>
-                            <Button x:Name="ExecuteButton" Content="限定更新実行" Width="130" Click="Execute_Click"
-                                    IsEnabled="{Binding IsWriteButtonEnabled}"
-                                    Background="#CC3333" Foreground="White" FontWeight="Bold" Margin="0,0,8,0"/>
-                            <Button x:Name="CopyRevertMemoButton" Content="戻し用メモをコピー" Width="150"
-                                    Click="CopyRevertMemo_Click" IsEnabled="False" Margin="0,0,0,0"
-                                    ToolTip="更新成功後に変更前の値をクリップボードにコピーします"/>
+                <Grid Margin="8">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="150"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <!-- User search bar -->
+                    <WrapPanel Margin="0,0,0,8" VerticalAlignment="Center">
+                        <TextBlock Text="検索語" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                        <TextBox x:Name="SearchBox" Width="220" Margin="0,0,8,0"/>
+                        <CheckBox x:Name="IncludeDisabledUsersBox" Content="無効ユーザーも表示" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <Button Content="検索" Width="100" Margin="0,0,8,0" Click="Search_Click"/>
+                        <Button Content="検索結果CSV出力" Width="140" Click="ExportSearchResults_Click"/>
+                    </WrapPanel>
+
+                    <!-- User search result -->
+                    <DataGrid x:Name="SearchResultGrid" Grid.Row="1" AutoGenerateColumns="False" SelectionMode="Single" IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False" SelectionChanged="SearchResultGrid_SelectionChanged">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="SamAccountName" Binding="{Binding SamAccountName}" Width="2*"/>
+                            <DataGridTextColumn Header="DisplayName" Binding="{Binding DisplayName}" Width="2*"/>
+                            <DataGridTextColumn Header="Mail" Binding="{Binding Mail}" Width="3*"/>
+                            <DataGridCheckBoxColumn Header="Enabled" Binding="{Binding Enabled}" Width="Auto"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <TextBlock x:Name="EditBlockedReasonText" Grid.Row="2" Foreground="DarkRed" FontWeight="Bold" Margin="0,8,0,4" Text="{Binding EditBlockedReason}"/>
+                    <!-- Attribute edit GroupBox -->
+                    <GroupBox Grid.Row="3" Margin="0,0,0,8">
+                        <GroupBox.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="属性表示・変更予定確認 / 限定更新"/>
+                                <TextBlock Text="【更新対象: メールアドレス / 表示名 / 姓 / 名】【ユーザー名は参照のみ】【Domain Admins セッション必須】"
+                                           Foreground="DarkOrange" FontSize="11" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </GroupBox.Header>
+                        <Grid Margin="8">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="180"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Text="メールアドレス (mail)" VerticalAlignment="Center"/>
+                            <TextBox x:Name="EditMailBox" Grid.Column="1" IsEnabled="{Binding EditControlsEnabled}" TextChanged="EditInput_TextChanged"/>
+                            <TextBlock Text="表示名 (displayName)" Grid.Row="1" VerticalAlignment="Center" Margin="0,4,0,0"/>
+                            <TextBox x:Name="EditDisplayNameBox" Grid.Row="1" Grid.Column="1" Margin="0,4,0,0" IsEnabled="{Binding EditControlsEnabled}" TextChanged="EditInput_TextChanged"/>
+                            <TextBlock Text="姓 (sn)" Grid.Row="2" VerticalAlignment="Center" Margin="0,4,0,0"/>
+                            <TextBox x:Name="EditSurnameBox" Grid.Row="2" Grid.Column="1" Margin="0,4,0,0" IsEnabled="{Binding EditControlsEnabled}" TextChanged="EditInput_TextChanged"/>
+                            <TextBlock Text="名 (givenName)" Grid.Row="3" VerticalAlignment="Center" Margin="0,4,0,0"/>
+                            <TextBox x:Name="EditGivenNameBox" Grid.Row="3" Grid.Column="1" Margin="0,4,0,0" IsEnabled="{Binding EditControlsEnabled}" TextChanged="EditInput_TextChanged"/>
+                            <TextBlock Text="ユーザー名 ※参照のみ（高リスク）" Grid.Row="4" VerticalAlignment="Center" Margin="0,4,0,0" Foreground="Gray"/>
+                            <TextBox x:Name="SamAccountNameReadBox" Grid.Row="4" Grid.Column="1" Margin="0,4,0,0"
+                                     IsReadOnly="True" Background="#F4F4F4" Foreground="DimGray"
+                                     ToolTip="ユーザー名（sAMAccountName）は参照のみです。"/>
+                        </Grid>
+                    </GroupBox>
+                    <ScrollViewer Grid.Row="4" VerticalScrollBarVisibility="Auto">
+                        <StackPanel Margin="0,0,0,8">
+                            <TextBlock Text="ユーザー詳細（表示のみ）" FontWeight="Bold"/>
+                            <TextBox x:Name="UserDetailBox" Height="120" IsReadOnly="True" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Margin="0,4,0,8" TextWrapping="Wrap"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                <TextBlock Text="所属グループ（表示のみ・名前順）" FontWeight="Bold" VerticalAlignment="Center"/>
+                                <Button Content="グループをコピー" Width="120" Margin="12,0,0,0" Click="CopyGroups_Click"/>
+                            </StackPanel>
+                            <TextBox x:Name="GroupListBox" Height="90" IsReadOnly="True" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Margin="0,0,0,8"/>
+                            <StackPanel Margin="0,0,0,8">
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                    <Button x:Name="PreviewButton" Content="差分確認" Width="100" Margin="0,0,8,0" Click="Preview_Click" IsEnabled="{Binding EditControlsEnabled}"/>
+                                    <Button x:Name="ExecuteButton" Content="限定更新実行" Width="130" Click="Execute_Click"
+                                            IsEnabled="{Binding IsWriteButtonEnabled}"
+                                            Background="#CC3333" Foreground="White" FontWeight="Bold" Margin="0,0,8,0"/>
+                                    <Button x:Name="CopyRevertMemoButton" Content="戻し用メモをコピー" Width="150"
+                                            Click="CopyRevertMemo_Click" IsEnabled="False" Margin="0,0,0,0"
+                                            ToolTip="更新成功後に変更前の値をクリップボードにコピーします"/>
+                                </StackPanel>
+                                <TextBlock Text="{Binding WriteButtonDisabledReason}"
+                                           Foreground="DarkRed" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,2"/>
+                                <TextBlock Text="※ 更新対象: メールアドレス / 表示名 / 姓 / 名（LDAPattr: mail / displayName / sn / givenName）。ユーザー名は参照のみ。空文字更新は禁止。実行前に再認証と確認が必要です。"
+                                           Foreground="Gray" FontSize="11" TextWrapping="Wrap"/>
+                            </StackPanel>
                         </StackPanel>
-                        <TextBlock Text="{Binding WriteButtonDisabledReason}"
-                                   Foreground="DarkRed" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,2"/>
-                        <TextBlock Text="※ 更新対象: メールアドレス / 表示名 / 姓 / 名（LDAPattr: mail / displayName / sn / givenName）。ユーザー名は参照のみ。空文字更新は禁止。実行前に再認証と確認が必要です。"
-                                   Foreground="Gray" FontSize="11" TextWrapping="Wrap"/>
-                    </StackPanel>
-                </StackPanel>
+                    </ScrollViewer>
+                </Grid>
             </TabItem>
             <TabItem Header="グループ参照・メンバー編集">
                 <Grid Margin="8">
@@ -639,12 +643,16 @@
             </TabItem>
         </TabControl>
 
-        <!-- Row 6: Output GroupBox -->
-        <GroupBox Grid.Row="6" Header="処理結果欄">
-            <StackPanel>
-                <Button Content="結果をコピー" Width="100" HorizontalAlignment="Left" Margin="0,0,0,4" Click="CopyOutput_Click"/>
-                <TextBox x:Name="OutputBox" Height="130" AcceptsReturn="True" IsReadOnly="True" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap"/>
-            </StackPanel>
+        <!-- Row 2: Output GroupBox -->
+        <GroupBox Grid.Row="2" Header="処理結果欄">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Button Content="結果をコピー" Width="100" Margin="0,0,8,0" VerticalAlignment="Top" Click="CopyOutput_Click"/>
+                <TextBox x:Name="OutputBox" Grid.Column="1" Height="110" AcceptsReturn="True" IsReadOnly="True" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap"/>
+            </Grid>
         </GroupBox>
     </Grid>
 </Window>
