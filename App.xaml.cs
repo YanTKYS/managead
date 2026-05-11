@@ -22,7 +22,7 @@ public partial class App : Application
             policy = AppPolicyProvider.Load();
             AppendStartupLog(policy.LogPath, "Startup begin: showing ServiceMode selection dialog.");
 
-            var modeDialog = new ServiceModeSelectionDialog(policy.ServiceMode);
+            var modeDialog = new ServiceModeSelectionDialog(policy.ServiceMode, policy.EditorAuthMode, policy.AdminGroupDn);
             if (modeDialog.ShowDialog() != true)
             {
                 AppendStartupLog(policy.LogPath, "Startup canceled at ServiceMode selection dialog.");

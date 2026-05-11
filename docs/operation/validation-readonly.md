@@ -44,7 +44,7 @@
 ## 3. 起動と検証観点
 1. アプリを起動する
 2. 検証対象ユーザーを検索する（SamAccountName / DisplayName / 氏名 / Mail）
-3. Mail有無、無効ユーザー表示の検索条件で結果が絞り込まれることを確認する
+3. 無効ユーザー表示の検索条件で結果が絞り込まれることを確認する
 4. ユーザー詳細（DistinguishedName / Enabled / userAccountControl / lastLogonTimestamp / accountExpires）が表示されることを確認する
 5. 所属グループが名前順で表示され、グループコピーができることを確認する
 6. グループ検索とグループメンバー一覧表示ができることを確認する
@@ -56,7 +56,7 @@
 ## 4. 判定基準
 - 実ADの参照（検索・詳細表示・所属グループ表示）が成功する
 - 拡張詳細項目（userAccountControl / lastLogonTimestamp / accountExpires）が表示される
-- 検索条件（Mail有無 / 無効ユーザー表示）が反映される
+- 検索条件（無効ユーザー表示）が反映される
 - グループ検索とグループメンバー一覧表示が成功する
 - 検索結果CSV出力と所属グループコピーが成功する
 - 参照ログが設定された `LogPath` に追記される
