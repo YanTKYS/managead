@@ -90,7 +90,7 @@ public class DirectoryServicesAdReadService : IAdService
         try
         {
             var list = new List<AdGroup>();
-            foreach (var baseDn in GetSearchBases())
+            foreach (var baseDn in GetGroupSearchBases())
             {
                 using var root = new DirectoryEntry($"LDAP://{baseDn}");
                 using var ds = new DirectorySearcher(root)
@@ -571,6 +571,9 @@ public class DirectoryServicesAdReadService : IAdService
         => _policy.ExcludedComputerNames.Any(x => string.Equals(x, name, StringComparison.OrdinalIgnoreCase));
 
     private IEnumerable<string> GetSearchBases() => _policy.AllowedTargetOuDns.Count > 0 ? _policy.AllowedTargetOuDns : new[] { GetDefaultNamingContext() };
+
+    private IEnumerable<string> GetGroupSearchBases()
+        => new[] { GetDefaultNamingContext() };
 
     private bool IsExcluded(string sam) => _policy.ExcludedSamAccountNames.Any(x => string.Equals(x, sam, StringComparison.OrdinalIgnoreCase));
 

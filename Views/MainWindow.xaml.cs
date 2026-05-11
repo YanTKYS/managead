@@ -11,7 +11,7 @@ namespace ManageAdTool.Views;
 
 public partial class MainWindow : Window
 {
-    private readonly AppPolicy _policy = AppPolicyProvider.Load();
+    private readonly AppPolicy _policy;
     private readonly IAdService _ad;
     private readonly IAdUserAttributeWriteService? _writeService;
     private readonly IAdComputerAttributeWriteService? _computerWriteService;
@@ -51,8 +51,13 @@ public partial class MainWindow : Window
     private static readonly string Executor =
         $"{Environment.UserDomainName}\\{Environment.UserName}";
 
-    public MainWindow()
+    public MainWindow() : this(AppPolicyProvider.Load())
     {
+    }
+
+    public MainWindow(AppPolicy policy)
+    {
+        _policy = policy;
         var isReadOnly = string.Equals(_policy.ServiceMode, "DirectoryReadOnly", StringComparison.OrdinalIgnoreCase);
         _ad = isReadOnly ? new DirectoryServicesAdReadService(_policy) : new InMemoryAdService();
         _writeService = isReadOnly ? new DirectoryServicesAdUserAttributeWriteService() : null;
@@ -1166,8 +1171,6 @@ public partial class MainWindow : Window
         => new()
         {
             Keyword = SearchBox.Text.Trim(),
-            Department = DepartmentFilterBox.Text.Trim(),
-            HasMail = MailFilterBox.SelectedIndex switch { 1 => true, 2 => false, _ => null },
             IncludeDisabled = IncludeDisabledUsersBox.IsChecked == true
         };
 
@@ -1209,14 +1212,14 @@ public partial class MainWindow : Window
         {
             string.Join(",", new[]
             {
-                "SamAccountName", "DisplayName", "Surname", "GivenName", "Name", "Mail", "Department", "Title",
+                "SamAccountName", "DisplayName", "Surname", "GivenName", "Name", "Mail",
                 "Enabled", "UserAccountControl", "LastLogonTimestamp", "AccountExpires", "DistinguishedName"
             }.Select(CsvEscape))
         };
 
         lines.AddRange(users.Select(user => string.Join(",", new[]
         {
-            user.SamAccountName, user.DisplayName, user.Surname, user.GivenName, user.Name, user.Mail, user.Department, user.Title,
+            user.SamAccountName, user.DisplayName, user.Surname, user.GivenName, user.Name, user.Mail,
             FormatBool(user.Enabled), FormatNullable(user.UserAccountControl),
             FormatDateTime(user.LastLogonAt), FormatDateTime(user.AccountExpiresAt), user.DistinguishedName
         }.Select(CsvEscape))));
@@ -1234,8 +1237,7 @@ public partial class MainWindow : Window
 
     private static string FormatCriteria(AdUserSearchCriteria criteria)
     {
-        var mail = criteria.HasMail switch { true => "あり", false => "なし", _ => "指定なし" };
-        return $"keyword={criteria.Keyword}; department={criteria.Department}; mail={mail}; includeDisabled={criteria.IncludeDisabled}";
+        return $"keyword={criteria.Keyword}; includeDisabled={criteria.IncludeDisabled}";
     }
 
     private static string FormatDateTime(DateTimeOffset? value)
@@ -2130,7 +2132,7 @@ public partial class MainWindow : Window
             _loadedLogEntries = entries;
             _filteredLogEntries = entries;
             LogGrid.ItemsSource = _filteredLogEntries;
-            LogDetailBox.Text = string.Empty;
+            SelectFirstLogEntryOrClear();
             LogStartDatePicker.SelectedDate = null;
             LogEndDatePicker.SelectedDate = null;
             LogSuccessFilterComboBox.SelectedIndex = 0;
@@ -2193,7 +2195,7 @@ public partial class MainWindow : Window
         _filteredLogEntries = filtered;
         LogGrid.ItemsSource = _filteredLogEntries;
         LogStatusText.Text = $"{filtered.Count} 件（フィルター適用中）";
-        LogDetailBox.Text = string.Empty;
+        SelectFirstLogEntryOrClear();
     }
 
     private void LogFilterClear_Click(object sender, RoutedEventArgs e)
@@ -2206,12 +2208,30 @@ public partial class MainWindow : Window
         _filteredLogEntries = _loadedLogEntries;
         LogGrid.ItemsSource = _filteredLogEntries;
         LogStatusText.Text = $"{_loadedLogEntries.Count} 件";
-        LogDetailBox.Text = string.Empty;
+        SelectFirstLogEntryOrClear();
+    }
+
+    private void SelectFirstLogEntryOrClear()
+    {
+        if (_filteredLogEntries.Count == 0)
+        {
+            LogGrid.SelectedItem = null;
+            LogDetailBox.Text = string.Empty;
+            return;
+        }
+
+        LogGrid.SelectedIndex = 0;
+        if (_filteredLogEntries[0] is LogEntry entry)
+            LogDetailBox.Text = LogReader.FormatAndMaskJson(entry.RawJson);
     }
 
     private void LogGrid_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
     {
-        if (LogGrid.SelectedItem is not LogEntry entry) return;
+        if (LogGrid.SelectedItem is not LogEntry entry)
+        {
+            LogDetailBox.Text = string.Empty;
+            return;
+        }
         LogDetailBox.Text = LogReader.FormatAndMaskJson(entry.RawJson);
     }
 

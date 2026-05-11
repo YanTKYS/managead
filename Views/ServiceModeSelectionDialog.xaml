@@ -1,0 +1,48 @@
+<Window x:Class="ManageAdTool.Views.ServiceModeSelectionDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="ServiceMode / EditorAuthMode 確認" Height="310" Width="560"
+        WindowStartupLocation="CenterScreen" ResizeMode="NoResize">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0,0,0,12">
+            <TextBlock Text="起動モードを選択してください" FontSize="16" FontWeight="Bold"/>
+            <TextBlock Text="ServiceMode はこの画面で今回の起動モードを決定します。OU・ログ・認証などの設定は appsettings.json から読み込みます。"
+                       TextWrapping="Wrap" Margin="0,6,0,0" Foreground="DimGray"/>
+        </StackPanel>
+
+        <Border Grid.Row="1" BorderBrush="#DDDDDD" BorderThickness="1" Padding="8" Margin="0,0,0,12" Background="#FAFAFA">
+            <StackPanel>
+                <TextBlock Text="認証設定（appsettings.json から読み込み）" FontWeight="SemiBold"/>
+                <TextBlock x:Name="EditorAuthModeText" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                <TextBlock x:Name="AdminGroupText" Margin="0,2,0,0" Foreground="DimGray" TextWrapping="Wrap"/>
+            </StackPanel>
+        </Border>
+
+        <StackPanel Grid.Row="2" Margin="0,0,0,12">
+            <RadioButton x:Name="InMemoryRadio" GroupName="ServiceMode" Margin="0,0,0,10">
+                <StackPanel>
+                    <TextBlock Text="InMemory（画面確認・教育・デモ）" FontWeight="SemiBold"/>
+                    <TextBlock Text="実 AD へ接続せず、サンプルデータで起動します。" Foreground="DimGray" FontSize="12"/>
+                </StackPanel>
+            </RadioButton>
+            <RadioButton x:Name="DirectoryReadOnlyRadio" GroupName="ServiceMode">
+                <StackPanel>
+                    <TextBlock Text="DirectoryReadOnly（実 AD 参照・限定更新）" FontWeight="SemiBold"/>
+                    <TextBlock Text="実 AD を参照します。更新機能は既存の OU 制限・認証・保護設定に従います。" Foreground="DimGray" FontSize="12"/>
+                </StackPanel>
+            </RadioButton>
+        </StackPanel>
+
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="起動" Width="100" Margin="0,0,8,0" IsDefault="True" Click="Start_Click"/>
+            <Button Content="キャンセル" Width="100" IsCancel="True"/>
+        </StackPanel>
+    </Grid>
+</Window>
