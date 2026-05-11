@@ -1974,6 +1974,17 @@ public partial class MainWindow : Window
         OutputBox.Text = "GPOシミュレーション結果をクリップボードにコピーしました";
     }
 
+    private void GpoCopySimpleResults_Click(object sender, RoutedEventArgs e)
+    {
+        if (_lastGpoResults.Count == 0)
+        {
+            OutputBox.Text = "コピーできる結果がありません。先にシミュレーションを実行してください。";
+            return;
+        }
+        Clipboard.SetText(BuildGpoResultsPlainTable(_lastGpoResults));
+        OutputBox.Text = "GPOシミュレーション結果（CSV同等）をクリップボードにコピーしました";
+    }
+
     private void GpoExportCsv_Click(object sender, RoutedEventArgs e)
     {
         if (_lastGpoResults.Count == 0)
@@ -2012,6 +2023,22 @@ public partial class MainWindow : Window
                 sb.AppendLine($"備考      : {r.Remarks}");
         }
         return sb.ToString().TrimEnd();
+    }
+
+    private static string BuildGpoResultsPlainTable(IEnumerable<GpoSimulationResult> results)
+    {
+        var lines = new List<string>
+        {
+            string.Join("\t", new[] { "GPO名", "GPO ID", "適用対象", "リンク先OU", "有効", "強制適用", "備考" })
+        };
+        lines.AddRange(results.Select(r => string.Join("\t", new[]
+        {
+            r.GpoName, r.GpoId, r.AppliesTo, r.LinkedOuDn,
+            r.LinkEnabled ? "はい" : "いいえ",
+            r.Enforced ? "はい" : "いいえ",
+            r.Remarks
+        })));
+        return string.Join(Environment.NewLine, lines);
     }
 
     private static string BuildGpoResultsCsv(IEnumerable<GpoSimulationResult> results)
@@ -2187,8 +2214,13 @@ public partial class MainWindow : Window
             if (end.HasValue && x.Timestamp.HasValue && x.Timestamp.Value.LocalDateTime >= end.Value) return false;
             if (successIdx == 1 && x.Success != true) return false;
             if (successIdx == 2 && x.Success != false) return false;
-            if (!string.IsNullOrEmpty(actionKw) && !x.Action.Contains(actionKw, StringComparison.OrdinalIgnoreCase)) return false;
-            if (!string.IsNullOrEmpty(targetKw) && !x.Target.Contains(targetKw, StringComparison.OrdinalIgnoreCase)) return false;
+            if (!string.IsNullOrEmpty(actionKw) &&
+                !x.Action.Contains(actionKw, StringComparison.OrdinalIgnoreCase) &&
+                !x.Message.Contains(actionKw, StringComparison.OrdinalIgnoreCase) &&
+                !x.RawJson.Contains(actionKw, StringComparison.OrdinalIgnoreCase)) return false;
+            if (!string.IsNullOrEmpty(targetKw) &&
+                !x.Target.Contains(targetKw, StringComparison.OrdinalIgnoreCase) &&
+                !x.RawJson.Contains(targetKw, StringComparison.OrdinalIgnoreCase)) return false;
             return true;
         }).ToList();
 

@@ -1,8 +1,9 @@
 <Window x:Class="ManageAdTool.Views.ServiceModeSelectionDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="ServiceMode / EditorAuthMode 確認" Height="310" Width="560"
-        WindowStartupLocation="CenterScreen" ResizeMode="NoResize">
+        Title="ServiceMode / EditorAuthMode 確認" Height="390" Width="620" MinHeight="360" MinWidth="560"
+        WindowStartupLocation="CenterScreen" ResizeMode="CanResize">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
     <Grid Margin="16">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -45,4 +46,5 @@
             <Button Content="キャンセル" Width="100" IsCancel="True"/>
         </StackPanel>
     </Grid>
+    </ScrollViewer>
 </Window>
