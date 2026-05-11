@@ -8,15 +8,14 @@
 - 実ADへ参照可能なネットワーク疎通があること
 - 検証用ユーザー/OUが事前に用意されていること
 
-## 2. appsettings.json の設定
-`AppPolicy.ServiceMode` を `DirectoryReadOnly` に設定します。  
+## 2. appsettings.json と起動モードの設定
+起動時ダイアログで `DirectoryReadOnly` を選択します。  
 また、`AllowedTargetOuDns` は **検証用OUのみ** に限定してください。
 
 例:
 ```json
 {
   "AppPolicy": {
-    "ServiceMode": "DirectoryReadOnly",
     "AllowedTargetOuDns": [
       "OU=ValidationUsers,OU=ManageAdTool,DC=example,DC=local"
     ],

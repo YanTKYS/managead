@@ -10,9 +10,9 @@ ManageAdTool v0.9.5（リリースパッケージ・配布物の最終整理）
 
 ### Note
 - **リリースパッケージ構成を整理**: ZIP 展開後に `ManageAdTool-vX.Y.Z/` 配下へ実行ファイル、`appsettings.json`、`README.md`、`config-samples/`、`docs/` が揃う構成にした。
-- **self-contained ZIP の配布を想定**: 閉域端末で .NET Desktop Runtime を別途インストールせずに起動できる配布物を前提に整理した。
+- **self-contained 単一 exe ZIP の配布を想定**: 閉域端末で .NET Desktop Runtime を別途インストールせずに起動でき、パッケージ直下に大量の DLL が並ばない配布物を前提に整理した。
 - **README / docs / config-samples を同梱**: 利用者向け操作説明書、管理者向け設定手順、トラブルシューティング、validation docs、設定サンプルを ZIP に含めるよう整理した。
-- **配布用 appsettings.json を安全側初期値に整理**: `ServiceMode: "InMemory"`、OU 許可リスト空、`EditorAuthMode: "None"` を初期値とし、本番 OU や組織固有の管理者グループ DN を含めない構成にした。
+- **起動時 ServiceMode 選択に変更**: `ServiceMode` は `appsettings.json` ではなく起動時ダイアログで選択する構成にした。配布用 `appsettings.json` は OU 許可リスト空、`EditorAuthMode: "None"` を初期値とし、本番 OU や組織固有の管理者グループ DN を含めない構成にした。
 - **新しい AD 更新操作は追加していない**: v0.9.5 は配布物整理のみで、AD 操作ロジックや build.yml トリガーは変更していない。
 
 ## v0.9.4

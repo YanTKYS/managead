@@ -27,7 +27,6 @@
 ```json
 {
   "AppPolicy": {
-    "ServiceMode": "DirectoryReadOnly",
     "EditorAuthMode": "DomainAdmins",
     "AdminGroupDn": "CN=Domain Admins,CN=Users,DC=example,DC=local",
     "AllowNestedAdminGroupMembership": false,

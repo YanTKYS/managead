@@ -27,7 +27,7 @@
 
 確認点:
 
-- `ServiceMode` が `DirectoryReadOnly` になっているか。
+- 起動時ダイアログで `DirectoryReadOnly` を選択しているか。
 - 端末がドメインネットワークに接続されているか。
 - DNS が AD ドメインを解決できるか。
 - 実行ユーザーに参照権限があるか。
