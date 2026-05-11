@@ -90,7 +90,7 @@ public class DirectoryServicesAdReadService : IAdService
         try
         {
             var list = new List<AdGroup>();
-            foreach (var baseDn in GetSearchBases())
+            foreach (var baseDn in GetGroupSearchBases())
             {
                 using var root = new DirectoryEntry($"LDAP://{baseDn}");
                 using var ds = new DirectorySearcher(root)
@@ -260,14 +260,25 @@ public class DirectoryServicesAdReadService : IAdService
                     : Array.Empty<string>();
             }
 
-            var defaultBase = GetDefaultNamingContext();
             var userMembers = new List<AdUser>();
             var computerNames = new List<string>();
             var groupNames = new List<string>();
+            var directMemberDns = ReadGroupMemberDns(groupDn);
 
-            foreach (var searchBase in new[] { defaultBase })
+            foreach (var memberDn in directMemberDns)
             {
-                using var root = new DirectoryEntry($"LDAP://{searchBase}");
+                var member = ReadGroupMember(memberDn);
+                if (member.User is not null) userMembers.Add(member.User);
+                else if (!string.IsNullOrWhiteSpace(member.ComputerName)) computerNames.Add(member.ComputerName);
+                else if (!string.IsNullOrWhiteSpace(member.GroupName)) groupNames.Add(member.GroupName);
+            }
+
+            // member 属性が読めない環境向けのフォールバック。
+            // 直接メンバーを優先し、0件の場合のみ backlink(memberOf) 検索を試す。
+            if (directMemberDns.Count == 0)
+            {
+                var defaultBase = GetDefaultNamingContext();
+                using var root = new DirectoryEntry($"LDAP://{defaultBase}");
 
                 using var uds = new DirectorySearcher(root)
                 {
@@ -521,6 +532,43 @@ public class DirectoryServicesAdReadService : IAdService
         return $"(&{string.Concat(filters)})";
     }
 
+    private static IReadOnlyList<string> ReadGroupMemberDns(string groupDn)
+    {
+        using var group = new DirectoryEntry($"LDAP://{groupDn}");
+        group.RefreshCache(new[] { "member" });
+        if (!group.Properties.Contains("member")) return Array.Empty<string>();
+        return group.Properties["member"]
+            .Cast<object>()
+            .Select(x => x?.ToString() ?? string.Empty)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private static (AdUser? User, string ComputerName, string GroupName) ReadGroupMember(string memberDn)
+    {
+        using var root = new DirectoryEntry($"LDAP://{memberDn}");
+        using var ds = new DirectorySearcher(root) { Filter = "(objectClass=*)", SearchScope = SearchScope.Base };
+        ds.PropertiesToLoad.AddRange(new[]
+        {
+            "objectClass", "samAccountName", "displayName", "name", "sn", "givenName", "mail", "department",
+            "title", "distinguishedName", "lastLogonTimestamp", "accountExpires", "userAccountControl", "cn"
+        });
+
+        var r = ds.FindOne();
+        if (r is null) return (null, string.Empty, string.Empty);
+
+        var classes = r.Properties.Contains("objectClass")
+            ? r.Properties["objectClass"].Cast<object>().Select(x => x.ToString() ?? string.Empty).ToHashSet(StringComparer.OrdinalIgnoreCase)
+            : new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        if (classes.Contains("user") && !classes.Contains("computer")) return (DirectoryServicesUserMapper.MapUser(r), string.Empty, string.Empty);
+        if (classes.Contains("computer")) return (null, GetProperty(r, "name", GetProperty(r, "cn", memberDn)), string.Empty);
+        if (classes.Contains("group")) return (null, string.Empty, GetProperty(r, "cn", GetProperty(r, "name", memberDn)));
+
+        return (null, string.Empty, string.Empty);
+    }
+
     private string ResolveGroupDistinguishedName(string groupName)
     {
         if (groupName.Contains("=", StringComparison.Ordinal) && groupName.Contains(",", StringComparison.Ordinal)) return groupName;
@@ -571,6 +619,9 @@ public class DirectoryServicesAdReadService : IAdService
         => _policy.ExcludedComputerNames.Any(x => string.Equals(x, name, StringComparison.OrdinalIgnoreCase));
 
     private IEnumerable<string> GetSearchBases() => _policy.AllowedTargetOuDns.Count > 0 ? _policy.AllowedTargetOuDns : new[] { GetDefaultNamingContext() };
+
+    private IEnumerable<string> GetGroupSearchBases()
+        => new[] { GetDefaultNamingContext() };
 
     private bool IsExcluded(string sam) => _policy.ExcludedSamAccountNames.Any(x => string.Equals(x, sam, StringComparison.OrdinalIgnoreCase));
 

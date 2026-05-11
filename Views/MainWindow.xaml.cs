@@ -11,7 +11,7 @@ namespace ManageAdTool.Views;
 
 public partial class MainWindow : Window
 {
-    private readonly AppPolicy _policy = AppPolicyProvider.Load();
+    private readonly AppPolicy _policy;
     private readonly IAdService _ad;
     private readonly IAdUserAttributeWriteService? _writeService;
     private readonly IAdComputerAttributeWriteService? _computerWriteService;
@@ -51,8 +51,13 @@ public partial class MainWindow : Window
     private static readonly string Executor =
         $"{Environment.UserDomainName}\\{Environment.UserName}";
 
-    public MainWindow()
+    public MainWindow() : this(AppPolicyProvider.Load())
     {
+    }
+
+    public MainWindow(AppPolicy policy)
+    {
+        _policy = policy;
         var isReadOnly = string.Equals(_policy.ServiceMode, "DirectoryReadOnly", StringComparison.OrdinalIgnoreCase);
         _ad = isReadOnly ? new DirectoryServicesAdReadService(_policy) : new InMemoryAdService();
         _writeService = isReadOnly ? new DirectoryServicesAdUserAttributeWriteService() : null;
@@ -1166,8 +1171,6 @@ public partial class MainWindow : Window
         => new()
         {
             Keyword = SearchBox.Text.Trim(),
-            Department = DepartmentFilterBox.Text.Trim(),
-            HasMail = MailFilterBox.SelectedIndex switch { 1 => true, 2 => false, _ => null },
             IncludeDisabled = IncludeDisabledUsersBox.IsChecked == true
         };
 
@@ -1209,14 +1212,14 @@ public partial class MainWindow : Window
         {
             string.Join(",", new[]
             {
-                "SamAccountName", "DisplayName", "Surname", "GivenName", "Name", "Mail", "Department", "Title",
+                "SamAccountName", "DisplayName", "Surname", "GivenName", "Name", "Mail",
                 "Enabled", "UserAccountControl", "LastLogonTimestamp", "AccountExpires", "DistinguishedName"
             }.Select(CsvEscape))
         };
 
         lines.AddRange(users.Select(user => string.Join(",", new[]
         {
-            user.SamAccountName, user.DisplayName, user.Surname, user.GivenName, user.Name, user.Mail, user.Department, user.Title,
+            user.SamAccountName, user.DisplayName, user.Surname, user.GivenName, user.Name, user.Mail,
             FormatBool(user.Enabled), FormatNullable(user.UserAccountControl),
             FormatDateTime(user.LastLogonAt), FormatDateTime(user.AccountExpiresAt), user.DistinguishedName
         }.Select(CsvEscape))));
@@ -1234,8 +1237,7 @@ public partial class MainWindow : Window
 
     private static string FormatCriteria(AdUserSearchCriteria criteria)
     {
-        var mail = criteria.HasMail switch { true => "あり", false => "なし", _ => "指定なし" };
-        return $"keyword={criteria.Keyword}; department={criteria.Department}; mail={mail}; includeDisabled={criteria.IncludeDisabled}";
+        return $"keyword={criteria.Keyword}; includeDisabled={criteria.IncludeDisabled}";
     }
 
     private static string FormatDateTime(DateTimeOffset? value)
@@ -1972,6 +1974,17 @@ public partial class MainWindow : Window
         OutputBox.Text = "GPOシミュレーション結果をクリップボードにコピーしました";
     }
 
+    private void GpoCopySimpleResults_Click(object sender, RoutedEventArgs e)
+    {
+        if (_lastGpoResults.Count == 0)
+        {
+            OutputBox.Text = "コピーできる結果がありません。先にシミュレーションを実行してください。";
+            return;
+        }
+        Clipboard.SetText(BuildGpoResultsPlainTable(_lastGpoResults));
+        OutputBox.Text = "GPOシミュレーション結果（CSV同等）をクリップボードにコピーしました";
+    }
+
     private void GpoExportCsv_Click(object sender, RoutedEventArgs e)
     {
         if (_lastGpoResults.Count == 0)
@@ -2010,6 +2023,22 @@ public partial class MainWindow : Window
                 sb.AppendLine($"備考      : {r.Remarks}");
         }
         return sb.ToString().TrimEnd();
+    }
+
+    private static string BuildGpoResultsPlainTable(IEnumerable<GpoSimulationResult> results)
+    {
+        var lines = new List<string>
+        {
+            string.Join("\t", new[] { "GPO名", "GPO ID", "適用対象", "リンク先OU", "有効", "強制適用", "備考" })
+        };
+        lines.AddRange(results.Select(r => string.Join("\t", new[]
+        {
+            r.GpoName, r.GpoId, r.AppliesTo, r.LinkedOuDn,
+            r.LinkEnabled ? "はい" : "いいえ",
+            r.Enforced ? "はい" : "いいえ",
+            r.Remarks
+        })));
+        return string.Join(Environment.NewLine, lines);
     }
 
     private static string BuildGpoResultsCsv(IEnumerable<GpoSimulationResult> results)
@@ -2130,7 +2159,7 @@ public partial class MainWindow : Window
             _loadedLogEntries = entries;
             _filteredLogEntries = entries;
             LogGrid.ItemsSource = _filteredLogEntries;
-            LogDetailBox.Text = string.Empty;
+            SelectFirstLogEntryOrClear();
             LogStartDatePicker.SelectedDate = null;
             LogEndDatePicker.SelectedDate = null;
             LogSuccessFilterComboBox.SelectedIndex = 0;
@@ -2185,15 +2214,20 @@ public partial class MainWindow : Window
             if (end.HasValue && x.Timestamp.HasValue && x.Timestamp.Value.LocalDateTime >= end.Value) return false;
             if (successIdx == 1 && x.Success != true) return false;
             if (successIdx == 2 && x.Success != false) return false;
-            if (!string.IsNullOrEmpty(actionKw) && !x.Action.Contains(actionKw, StringComparison.OrdinalIgnoreCase)) return false;
-            if (!string.IsNullOrEmpty(targetKw) && !x.Target.Contains(targetKw, StringComparison.OrdinalIgnoreCase)) return false;
+            if (!string.IsNullOrEmpty(actionKw) &&
+                !x.Action.Contains(actionKw, StringComparison.OrdinalIgnoreCase) &&
+                !x.Message.Contains(actionKw, StringComparison.OrdinalIgnoreCase) &&
+                !x.RawJson.Contains(actionKw, StringComparison.OrdinalIgnoreCase)) return false;
+            if (!string.IsNullOrEmpty(targetKw) &&
+                !x.Target.Contains(targetKw, StringComparison.OrdinalIgnoreCase) &&
+                !x.RawJson.Contains(targetKw, StringComparison.OrdinalIgnoreCase)) return false;
             return true;
         }).ToList();
 
         _filteredLogEntries = filtered;
         LogGrid.ItemsSource = _filteredLogEntries;
         LogStatusText.Text = $"{filtered.Count} 件（フィルター適用中）";
-        LogDetailBox.Text = string.Empty;
+        SelectFirstLogEntryOrClear();
     }
 
     private void LogFilterClear_Click(object sender, RoutedEventArgs e)
@@ -2206,12 +2240,30 @@ public partial class MainWindow : Window
         _filteredLogEntries = _loadedLogEntries;
         LogGrid.ItemsSource = _filteredLogEntries;
         LogStatusText.Text = $"{_loadedLogEntries.Count} 件";
-        LogDetailBox.Text = string.Empty;
+        SelectFirstLogEntryOrClear();
+    }
+
+    private void SelectFirstLogEntryOrClear()
+    {
+        if (_filteredLogEntries.Count == 0)
+        {
+            LogGrid.SelectedItem = null;
+            LogDetailBox.Text = string.Empty;
+            return;
+        }
+
+        LogGrid.SelectedIndex = 0;
+        if (_filteredLogEntries[0] is LogEntry entry)
+            LogDetailBox.Text = LogReader.FormatAndMaskJson(entry.RawJson);
     }
 
     private void LogGrid_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
     {
-        if (LogGrid.SelectedItem is not LogEntry entry) return;
+        if (LogGrid.SelectedItem is not LogEntry entry)
+        {
+            LogDetailBox.Text = string.Empty;
+            return;
+        }
         LogDetailBox.Text = LogReader.FormatAndMaskJson(entry.RawJson);
     }
 

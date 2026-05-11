@@ -8,15 +8,14 @@
 - 実ADへ参照可能なネットワーク疎通があること
 - 検証用ユーザー/OUが事前に用意されていること
 
-## 2. appsettings.json の設定
-`AppPolicy.ServiceMode` を `DirectoryReadOnly` に設定します。  
+## 2. appsettings.json と起動モードの設定
+起動時ダイアログで `DirectoryReadOnly` を選択します。  
 また、`AllowedTargetOuDns` は **検証用OUのみ** に限定してください。
 
 例:
 ```json
 {
   "AppPolicy": {
-    "ServiceMode": "DirectoryReadOnly",
     "AllowedTargetOuDns": [
       "OU=ValidationUsers,OU=ManageAdTool,DC=example,DC=local"
     ],
@@ -45,7 +44,7 @@
 ## 3. 起動と検証観点
 1. アプリを起動する
 2. 検証対象ユーザーを検索する（SamAccountName / DisplayName / 氏名 / Mail）
-3. 部署、Mail有無、無効ユーザー表示の検索条件で結果が絞り込まれることを確認する
+3. 無効ユーザー表示の検索条件で結果が絞り込まれることを確認する
 4. ユーザー詳細（DistinguishedName / Enabled / userAccountControl / lastLogonTimestamp / accountExpires）が表示されることを確認する
 5. 所属グループが名前順で表示され、グループコピーができることを確認する
 6. グループ検索とグループメンバー一覧表示ができることを確認する
@@ -57,7 +56,7 @@
 ## 4. 判定基準
 - 実ADの参照（検索・詳細表示・所属グループ表示）が成功する
 - 拡張詳細項目（userAccountControl / lastLogonTimestamp / accountExpires）が表示される
-- 検索条件（部署 / Mail有無 / 無効ユーザー表示）が反映される
+- 検索条件（無効ユーザー表示）が反映される
 - グループ検索とグループメンバー一覧表示が成功する
 - 検索結果CSV出力と所属グループコピーが成功する
 - 参照ログが設定された `LogPath` に追記される
