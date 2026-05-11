@@ -4,15 +4,27 @@
 
 ---
 
+## v0.9.6
+### Title
+ManageAdTool v0.9.6（初回打鍵テスト反映・起動モード選択改善）
+
+### Note
+- **初回打鍵テスト結果を記録**: DirectoryReadOnly 起動、SamAccountName / DisplayName でのユーザー検索、属性表示、所属グループ表示、コンピュータ参照は成功として `docs/operation/test-record-v0.9.6.md` に記録した。
+- **グループ参照の追加確認項目を明確化**: グループ検索は確認できた一方、ユーザーメンバー表示は未確定のため、v0.9.6 打鍵テストで重点確認する項目として整理した。
+- **起動時 ServiceMode 選択に変更**: `ServiceMode` を `appsettings.json` へ記入せず、起動時ダイアログで `InMemory` / `DirectoryReadOnly` を選択する運用に変更した。
+- **ユーザー検索画面を簡素化**: 検索入力欄の「部署」と、検索結果などの `Department` 列を削除した。属性表示エリアの「v0.4.2 更新対象外」表記も削除した。
+- **リリースパッケージの見通しを改善**: self-contained 単一 exe publish に変更し、リリースパッケージ直下に DLL が残る場合は検証で失敗させるようにした。
+- **新しい AD 更新操作は追加していない**: v0.9.6 は初回打鍵テストのフィードバック反映と検証記録の整理が目的。
+
 ## v0.9.5
 ### Title
 ManageAdTool v0.9.5（リリースパッケージ・配布物の最終整理）
 
 ### Note
 - **リリースパッケージ構成を整理**: ZIP 展開後に `ManageAdTool-vX.Y.Z/` 配下へ実行ファイル、`appsettings.json`、`README.md`、`config-samples/`、`docs/` が揃う構成にした。
-- **self-contained ZIP の配布を想定**: 閉域端末で .NET Desktop Runtime を別途インストールせずに起動できる配布物を前提に整理した。
+- **self-contained 単一 exe ZIP の配布を想定**: 閉域端末で .NET Desktop Runtime を別途インストールせずに起動でき、パッケージ直下に大量の DLL が並ばない配布物を前提に整理した。
 - **README / docs / config-samples を同梱**: 利用者向け操作説明書、管理者向け設定手順、トラブルシューティング、validation docs、設定サンプルを ZIP に含めるよう整理した。
-- **配布用 appsettings.json を安全側初期値に整理**: `ServiceMode: "InMemory"`、OU 許可リスト空、`EditorAuthMode: "None"` を初期値とし、本番 OU や組織固有の管理者グループ DN を含めない構成にした。
+- **起動時 ServiceMode 選択に変更**: `ServiceMode` は `appsettings.json` ではなく起動時ダイアログで選択する構成にした。配布用 `appsettings.json` は OU 許可リスト空、`EditorAuthMode: "None"` を初期値とし、本番 OU や組織固有の管理者グループ DN を含めない構成にした。
 - **新しい AD 更新操作は追加していない**: v0.9.5 は配布物整理のみで、AD 操作ロジックや build.yml トリガーは変更していない。
 
 ## v0.9.4
