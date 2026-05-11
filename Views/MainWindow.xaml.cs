@@ -48,6 +48,11 @@ public partial class MainWindow : Window
     // GPOシミュレーション
     private IReadOnlyList<GpoSimulationResult> _lastGpoResults = Array.Empty<GpoSimulationResult>();
 
+    // 未ログイン確認
+    private IReadOnlyList<AdUser> _lastInactiveUsers = Array.Empty<AdUser>();
+    private IReadOnlyList<AdComputer> _lastInactiveComputers = Array.Empty<AdComputer>();
+    private int _lastInactiveDays = 90;
+
     private static readonly string Executor =
         $"{Environment.UserDomainName}\\{Environment.UserName}";
 
@@ -1903,6 +1908,125 @@ public partial class MainWindow : Window
         if (!string.IsNullOrEmpty(newGn) && newGn != _opSelectedUser.GivenName) count++;
         if (!string.IsNullOrEmpty(newMail) && newMail != _opSelectedUser.Mail) count++;
         return count;
+    }
+
+    // ─── 未ログイン確認 ─────────────────────────────────────────────────────
+
+    private void InactiveSearch_Click(object sender, RoutedEventArgs e)
+    {
+        if (!TryGetInactiveDays(out var days)) return;
+
+        try
+        {
+            Mouse.OverrideCursor = Cursors.Wait;
+            _lastInactiveDays = days;
+            var isComputer = InactiveTargetComboBox.SelectedIndex == 1;
+
+            if (isComputer)
+            {
+                var results = _ad.SearchInactiveComputers(days);
+                _lastInactiveComputers = results;
+                _lastInactiveUsers = Array.Empty<AdUser>();
+                InactiveComputerGrid.ItemsSource = results;
+                InactiveUserGrid.ItemsSource = null;
+                InactiveComputerGrid.Visibility = Visibility.Visible;
+                InactiveUserGrid.Visibility = Visibility.Collapsed;
+                InactiveStatusText.Text = $"{days}日以上ログインしていないコンピュータ: {results.Count}件";
+                OutputBox.Text = InactiveStatusText.Text;
+                _auditLogger.Log("InactiveComputerSearch", $"days={days}", results.Count, true);
+            }
+            else
+            {
+                var results = _ad.SearchInactiveUsers(days);
+                _lastInactiveUsers = results;
+                _lastInactiveComputers = Array.Empty<AdComputer>();
+                InactiveUserGrid.ItemsSource = results;
+                InactiveComputerGrid.ItemsSource = null;
+                InactiveUserGrid.Visibility = Visibility.Visible;
+                InactiveComputerGrid.Visibility = Visibility.Collapsed;
+                InactiveStatusText.Text = $"{days}日以上ログインしていないユーザー: {results.Count}件";
+                OutputBox.Text = InactiveStatusText.Text;
+                _auditLogger.Log("InactiveUserSearch", $"days={days}", results.Count, true);
+            }
+        }
+        catch (Exception ex)
+        {
+            InactiveStatusText.Text = "未ログイン確認に失敗しました。ネットワーク接続またはAD設定を確認してください。";
+            OutputBox.Text = InactiveStatusText.Text;
+            _auditLogger.Log("InactiveSearchError", $"days={days}", 0, false, FormatErrorForLog(ex));
+        }
+        finally
+        {
+            Mouse.OverrideCursor = null;
+        }
+    }
+
+    private void InactiveExportCsv_Click(object sender, RoutedEventArgs e)
+    {
+        var isComputer = InactiveTargetComboBox.SelectedIndex == 1;
+        if (isComputer && _lastInactiveComputers.Count == 0)
+        {
+            OutputBox.Text = "CSV出力できるコンピュータ結果がありません。先に検索してください。";
+            return;
+        }
+        if (!isComputer && _lastInactiveUsers.Count == 0)
+        {
+            OutputBox.Text = "CSV出力できるユーザー結果がありません。先に検索してください。";
+            return;
+        }
+
+        var target = isComputer ? "Computers" : "Users";
+        var dialog = new SaveFileDialog
+        {
+            Title = "未ログイン確認CSV出力",
+            Filter = "CSV files (*.csv)|*.csv|All files (*.*)|*.*",
+            FileName = $"ManageAdTool-Inactive-{target}-{_lastInactiveDays}days-{DateTime.Now:yyyyMMdd-HHmmss}.csv"
+        };
+        if (dialog.ShowDialog(this) != true) return;
+
+        var csv = isComputer
+            ? BuildInactiveComputersCsv(_lastInactiveComputers)
+            : BuildInactiveUsersCsv(_lastInactiveUsers);
+        File.WriteAllText(dialog.FileName, csv, new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
+        OutputBox.Text = $"未ログイン確認CSVを出力しました: {dialog.FileName}";
+        _auditLogger.Log(isComputer ? "InactiveComputerCsvExport" : "InactiveUserCsvExport", dialog.FileName, isComputer ? _lastInactiveComputers.Count : _lastInactiveUsers.Count, true);
+    }
+
+    private bool TryGetInactiveDays(out int days)
+    {
+        if (!int.TryParse(InactiveDaysBox.Text.Trim(), out days) || days <= 0)
+        {
+            OutputBox.Text = "未ログイン日数は 1 以上の整数で入力してください。";
+            InactiveStatusText.Text = OutputBox.Text;
+            return false;
+        }
+        return true;
+    }
+
+    private static string BuildInactiveUsersCsv(IEnumerable<AdUser> users)
+    {
+        var lines = new List<string>
+        {
+            string.Join(",", new[] { "SamAccountName", "DisplayName", "Mail", "LastLogonTimestamp", "Enabled", "DistinguishedName" }.Select(CsvEscape))
+        };
+        lines.AddRange(users.Select(u => string.Join(",", new[]
+        {
+            u.SamAccountName, u.DisplayName, u.Mail, FormatDateTime(u.LastLogonAt), FormatBool(u.Enabled), u.DistinguishedName
+        }.Select(CsvEscape))));
+        return string.Join(Environment.NewLine, lines) + Environment.NewLine;
+    }
+
+    private static string BuildInactiveComputersCsv(IEnumerable<AdComputer> computers)
+    {
+        var lines = new List<string>
+        {
+            string.Join(",", new[] { "Name", "DNSHostName", "OperatingSystem", "LastLogonTimestamp", "Enabled", "DistinguishedName" }.Select(CsvEscape))
+        };
+        lines.AddRange(computers.Select(c => string.Join(",", new[]
+        {
+            c.Name, c.DnsHostName, c.OperatingSystem, FormatDateTime(c.LastLogonAt), FormatBool(c.Enabled), c.DistinguishedName
+        }.Select(CsvEscape))));
+        return string.Join(Environment.NewLine, lines) + Environment.NewLine;
     }
 
     // ─── GPOシミュレーション ─────────────────────────────────────────────────

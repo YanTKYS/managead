@@ -199,6 +199,78 @@ public class DirectoryServicesAdReadService : IAdService
         }
     }
 
+    public IReadOnlyList<AdUser> SearchInactiveUsers(int inactiveDays)
+    {
+        var cutoffFileTime = DateTimeOffset.UtcNow.AddDays(-inactiveDays).ToFileTime();
+
+        try
+        {
+            var list = new List<AdUser>();
+            foreach (var baseDn in GetSearchBases())
+            {
+                using var root = new DirectoryEntry($"LDAP://{baseDn}");
+                using var ds = new DirectorySearcher(root)
+                {
+                    Filter = $"(&(objectClass=user)(!(objectClass=computer))(|(!(lastLogonTimestamp=*))(lastLogonTimestamp<={cutoffFileTime})))",
+                    PageSize = 200,
+                    SizeLimit = _policy.MaxSearchResults
+                };
+                AddSearchUserProperties(ds);
+                foreach (SearchResult r in ds.FindAll())
+                {
+                    var user = DirectoryServicesUserMapper.MapUser(r);
+                    if (IsExcluded(user.SamAccountName)) continue;
+                    list.Add(user);
+                }
+            }
+
+            return list
+                .OrderBy(u => u.LastLogonAt ?? DateTimeOffset.MinValue)
+                .ThenBy(u => u.SamAccountName, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException("未ログインユーザー検索の実行中にエラーが発生しました。", ex);
+        }
+    }
+
+    public IReadOnlyList<AdComputer> SearchInactiveComputers(int inactiveDays)
+    {
+        var cutoffFileTime = DateTimeOffset.UtcNow.AddDays(-inactiveDays).ToFileTime();
+
+        try
+        {
+            var list = new List<AdComputer>();
+            foreach (var baseDn in GetComputerSearchBases())
+            {
+                using var root = new DirectoryEntry($"LDAP://{baseDn}");
+                using var ds = new DirectorySearcher(root)
+                {
+                    Filter = $"(&(objectClass=computer)(|(!(lastLogonTimestamp=*))(lastLogonTimestamp<={cutoffFileTime})))",
+                    PageSize = 200,
+                    SizeLimit = _policy.MaxSearchResults
+                };
+                AddSearchComputerProperties(ds);
+                foreach (SearchResult r in ds.FindAll())
+                {
+                    var computer = DirectoryServicesComputerMapper.MapComputer(r);
+                    if (IsComputerExcluded(computer.Name)) continue;
+                    list.Add(computer);
+                }
+            }
+
+            return list
+                .OrderBy(c => c.LastLogonAt ?? DateTimeOffset.MinValue)
+                .ThenBy(c => c.Name, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException("未ログインコンピュータ検索の実行中にエラーが発生しました。", ex);
+        }
+    }
+
     public AdComputer? GetComputer(string name)
     {
         try
