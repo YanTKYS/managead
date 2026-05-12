@@ -13,13 +13,16 @@
 - `appsettings.json` の JSON 構文が壊れていないか。
 - 実行端末のセキュリティ製品や AppLocker 等でブロックされていないか。
 - ログ出力先フォルダにアクセスできるか。
+- 起動時 ServiceMode 選択後に画面が消える場合、`startup.log` に `ServiceMode selected` / `MainWindow shown` / `Startup failed` が記録されているか。
 
 対応:
 
 1. ZIP をローカルフォルダへ展開します。
 2. `appsettings.json` をサンプルから再作成して起動確認します。
-3. `InMemory` 設定で起動するか確認します。
-4. 端末側の実行制限を管理者に確認します。
+3. 起動時ダイアログで `InMemory` を選択して起動するか確認します。
+4. `LogPath` と同じフォルダの `startup.log` を確認します。書き込めない場合は `%ProgramData%\ManageAdTool\logs\startup.log`、さらに失敗した場合は一時フォルダの `ManageAdTool-startup.log` を確認します。
+5. 起動エラーダイアログが表示された場合は、表示されたログパスとエラーメッセージを記録します。
+6. 端末側の実行制限を管理者に確認します。
 
 ---
 
@@ -27,7 +30,7 @@
 
 確認点:
 
-- `ServiceMode` が `DirectoryReadOnly` になっているか。
+- 起動時ダイアログで `DirectoryReadOnly` を選択しているか。
 - 端末がドメインネットワークに接続されているか。
 - DNS が AD ドメインを解決できるか。
 - 実行ユーザーに参照権限があるか。

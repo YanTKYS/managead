@@ -150,6 +150,26 @@ public class InMemoryAdService : IAdService
             .ToList();
     }
 
+    public IReadOnlyList<AdUser> SearchInactiveUsers(int inactiveDays)
+    {
+        var cutoff = DateTimeOffset.UtcNow.AddDays(-inactiveDays);
+        return _users.Values
+            .Where(u => !u.LastLogonAt.HasValue || u.LastLogonAt.Value <= cutoff)
+            .OrderBy(u => u.LastLogonAt ?? DateTimeOffset.MinValue)
+            .ThenBy(u => u.SamAccountName, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    public IReadOnlyList<AdComputer> SearchInactiveComputers(int inactiveDays)
+    {
+        var cutoff = DateTimeOffset.UtcNow.AddDays(-inactiveDays);
+        return _computers.Values
+            .Where(c => !c.LastLogonAt.HasValue || c.LastLogonAt.Value <= cutoff)
+            .OrderBy(c => c.LastLogonAt ?? DateTimeOffset.MinValue)
+            .ThenBy(c => c.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
     public AdComputer? GetComputer(string name)
         => _computers.TryGetValue(name, out var computer) ? computer : null;
 
