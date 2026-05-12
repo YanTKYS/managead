@@ -106,6 +106,9 @@ ManageAdTool-vX.Y.Z/
   ManageAdTool.exe
   appsettings.json
   README.md
+  help/
+    index.html
+    style.css
   config-samples/
   docs/
 ```
@@ -165,8 +168,10 @@ ManageAdTool-vX.Y.Z/
 
 ---
 
-## 操作・運用資料
+## ヘルプと操作・運用資料
 
+- **利用者向けヘルプ**: `help/index.html` を既定ブラウザで開いて参照してください。アプリ画面の「ヘルプを開く」ボタンからも開けます。外部 CDN やインターネット接続は使用しないローカル HTML です。
+- **開発・運用保守向け Markdown**: 既存の `docs/*.md` は、詳細手順、検証、設定、受入テスト方針、保守記録用として維持します。
 - 詳細な操作手順は `docs/operation/user-manual.md` を参照してください。
 - 管理者向け設定手順は `docs/operation/admin-manual.md` を参照してください。
 - トラブル時は `docs/operation/troubleshooting.md` を参照してください。
@@ -189,6 +194,7 @@ dotnet test ManageAdTool.Tests/ManageAdTool.Tests.csproj
 
 | ファイル | 内容 |
 |---|---|
+| `help/index.html` | 一般利用者向けの単独ヘルプ（既定ブラウザで表示） |
 | `docs/acceptance-test-v0.9.7.md` | v0.9.7 受入テスト方針 |
 | `docs/backlog.md` | v0.9.7 受入テスト指摘の分類・バックログ方針 |
 | `docs/operation/deploy.md` | 配布・閉域端末への持ち込み手順 |

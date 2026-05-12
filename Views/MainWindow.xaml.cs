@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Windows;
@@ -2301,6 +2302,37 @@ public partial class MainWindow : Window
         catch
         {
             LogWarningText.Text = "読み込みに失敗しました。ファイルのアクセス権限またはパスを確認してください。";
+        }
+    }
+
+    private void OpenHelp_Click(object sender, RoutedEventArgs e)
+    {
+        var helpPath = Path.Combine(AppContext.BaseDirectory, "help", "index.html");
+        if (!File.Exists(helpPath))
+        {
+            MessageBox.Show(
+                $"ヘルプファイルが見つかりません。配布フォルダに help/index.html が含まれているか確認してください。\n\n確認したパス:\n{helpPath}",
+                "ヘルプを開けません",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+            return;
+        }
+
+        try
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = helpPath,
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                $"既定ブラウザでヘルプを開けませんでした。\n\n{ex.Message}",
+                "ヘルプを開けません",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
         }
     }
 

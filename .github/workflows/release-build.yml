@@ -70,6 +70,8 @@ jobs:
           Copy-Item appsettings.json $packageRoot/appsettings.json -Force
           Copy-Item config-samples $packageRoot/config-samples -Recurse -Force
           Copy-Item docs $packageRoot/docs -Recurse -Force
+          New-Item -ItemType Directory -Path "$packageRoot/help" -Force | Out-Null
+          Copy-Item help/* "$packageRoot/help" -Recurse -Force
 
       - name: Verify release package contents
         shell: pwsh
@@ -81,6 +83,9 @@ jobs:
             "README.md",
             "config-samples",
             "docs",
+            "help",
+            "help/index.html",
+            "help/style.css",
             "docs/README.md",
             "docs/operation/user-manual.md",
             "docs/operation/admin-manual.md",
