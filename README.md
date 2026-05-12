@@ -1,14 +1,46 @@
 # ManageAdTool
 
-閉域ネットワーク向けの Active Directory 参照・限定編集支援ツール（v0.9.5）です。
+閉域ネットワーク向けの Active Directory 確認支援ツール（v0.9.7 受入テスト版）です。
 
 > **重要**: 本ツールは「すべての AD 管理操作ができるツール」ではありません。  
-> ユーザー属性（mail / displayName / sn / givenName）・コンピュータ description・グループメンバー追加削除（ユーザーのみ）のみ更新可能です。
-> v0.9.5 は v1.0.0 前のリリースパッケージ・配布物整理版です。新しい AD 更新操作は追加していません。
+> v0.9.7 は、実運用担当者による受入テスト版です。受入テスト中も、参照専用 AD 確認支援ツールとしての方針を維持し、新しい AD 更新機能・グループ更新機能・GPO 操作は追加しません。  
+> v0.9.6 は、開発側打鍵テストの指摘を反映済みの版です。v0.9.7 では、その結果を前提に実運用目線で手順・表示・説明の妥当性を確認します。
 
 ---
 
-## できること（v0.9.5）
+## v0.9.7 受入テスト版の位置づけ
+
+v0.9.7 は v1.0.0 前に実運用担当者が確認する受入テスト版です。受入テストで出た指摘は、同じ v0.9.7 系で取り込めるものと、v1.0.0 以降へ回すものに分類します。
+
+### v0.9.7 系で取り込む指摘の範囲
+
+- 文言修正
+- 表示調整
+- 手順書修正
+- 参照専用であることの説明改善
+- 軽微な不具合修正
+
+### v1.0.0 以降に回す指摘の範囲
+
+- 新機能追加
+- CSV 出力拡張
+- ネストグループ展開
+- 大きな UI 変更
+- AD 更新機能
+- グループ更新機能
+- GPO 操作
+
+### 受入テストでの指摘分類
+
+| 区分 | 扱い |
+|---|---|
+| A | v1.0.0 前に必ず対応する指摘 |
+| B | v0.9.7 内で可能なら対応する指摘 |
+| C | v1.0.0 以降に回す指摘 |
+
+---
+
+## できること（v0.9.7 受入テスト版）
 
 ### 参照
 - AD ユーザー検索・詳細表示・所属グループ確認
@@ -54,7 +86,9 @@
 
 ---
 
-## ServiceMode
+## 起動時の ServiceMode 選択
+
+`ServiceMode` は `appsettings.json` へ記入せず、起動時の選択ダイアログで今回の起動モードを選びます。
 
 | 値 | 説明 |
 |---|---|
@@ -65,27 +99,30 @@
 
 ## リリースZIPの構成
 
-リリース ZIP は self-contained 形式を想定しており、利用端末への .NET Desktop Runtime の別途インストールは不要です。展開後は次の構成を想定しています。
+リリース ZIP は self-contained の単一 exe 形式を想定しており、利用端末への .NET Desktop Runtime の別途インストールは不要です。ルート直下に大量の DLL が並ばないよう、展開後は次の構成を想定しています。
 
 ```text
 ManageAdTool-vX.Y.Z/
   ManageAdTool.exe
   appsettings.json
   README.md
+  help/
+    index.html
+    style.css
   config-samples/
   docs/
 ```
 
-配布用 `appsettings.json` は `ServiceMode: "InMemory"`、OU 許可リスト空、`EditorAuthMode: "None"` の安全側初期値です。実 AD 参照・限定編集を行う場合は、`config-samples/` から用途に合うサンプルをコピーし、検証用 OU から設定してください。
+配布用 `appsettings.json` は OU 許可リスト空、`EditorAuthMode: "None"` の安全側初期値です。実 AD 参照・限定編集を行う場合は、`config-samples/` から用途に合うサンプルをコピーし、検証用 OU から設定してください。起動モードは起動時ダイアログで選択します。
 
 ---
 
 ## 基本的な使い方
 
-1. `config-samples/` から利用モードに応じたサンプルをコピーして `appsettings.json` を作成する
+1. `config-samples/` から用途に応じたサンプルをコピーして `appsettings.json` を作成する
 2. OU DN・除外ユーザー名・ログ出力先を環境に合わせて編集する
 3. `ManageAdTool.exe` を起動する
-4. まず `InMemory` モードで画面動作を確認し、次に `DirectoryReadOnly` で実 AD 接続を検証する
+4. 起動時ダイアログで、まず `InMemory` モードを選択して画面動作を確認し、次に `DirectoryReadOnly` で実 AD 接続を検証する
 
 > **利用方針**: 必ず **検証用 OU 限定** で動作確認を完了してから、本番 OU を設定に追加してください。  
 > `AllowedTargetOuDns` / `AllowedComputerOuDns` / `EditableGroupOuDns` が空の場合、対応する更新機能が無効化されます（セーフガード）。
@@ -106,7 +143,6 @@ ManageAdTool-vX.Y.Z/
 
 | フィールド | 説明 | デフォルト |
 |---|---|---|
-| `ServiceMode` | `"InMemory"` / `"DirectoryReadOnly"` | `"InMemory"` |
 | `AllowedTargetOuDns` | ユーザー参照・更新対象 OU | `[]` |
 | `ExcludedSamAccountNames` | 除外ユーザーアカウント | `[]` |
 | `AllowedComputerOuDns` | コンピュータ更新対象 OU | `[]` |
@@ -132,8 +168,10 @@ ManageAdTool-vX.Y.Z/
 
 ---
 
-## 操作・運用資料
+## ヘルプと操作・運用資料
 
+- **利用者向けヘルプ**: `help/index.html` を既定ブラウザで開いて参照してください。アプリ画面の「ヘルプを開く」ボタンからも開けます。外部 CDN やインターネット接続は使用しないローカル HTML です。
+- **開発・運用保守向け Markdown**: 既存の `docs/*.md` は、詳細手順、検証、設定、受入テスト方針、保守記録用として維持します。
 - 詳細な操作手順は `docs/operation/user-manual.md` を参照してください。
 - 管理者向け設定手順は `docs/operation/admin-manual.md` を参照してください。
 - トラブル時は `docs/operation/troubleshooting.md` を参照してください。
@@ -156,6 +194,9 @@ dotnet test ManageAdTool.Tests/ManageAdTool.Tests.csproj
 
 | ファイル | 内容 |
 |---|---|
+| `help/index.html` | 一般利用者向けの単独ヘルプ（既定ブラウザで表示） |
+| `docs/acceptance-test-v0.9.7.md` | v0.9.7 受入テスト方針 |
+| `docs/backlog.md` | v0.9.7 受入テスト指摘の分類・バックログ方針 |
 | `docs/operation/deploy.md` | 配布・閉域端末への持ち込み手順 |
 | `docs/operation/user-manual.md` | 利用者向け操作説明書 |
 | `docs/operation/admin-manual.md` | 管理者向け設定・運用手順 |

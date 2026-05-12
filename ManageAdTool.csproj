@@ -10,6 +10,12 @@
     <Compile Remove="ManageAdTool.Tests\**\*.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="help\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="System.DirectoryServices" Version="8.0.0" />
   </ItemGroup>
 </Project>
