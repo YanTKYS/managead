@@ -60,7 +60,7 @@ jobs:
           New-Item -ItemType Directory -Path "artifacts/package/${{ steps.notes.outputs.package_dir }}" -Force | Out-Null
 
       - name: Publish self-contained Release
-        run: dotnet publish ManageAdTool.csproj -c Release -r ${{ env.RUNTIME_IDENTIFIER }} --self-contained true -p:Version=${{ steps.notes.outputs.normalized_version }} -o "artifacts/package/${{ steps.notes.outputs.package_dir }}" --no-restore
+        run: dotnet publish ManageAdTool.csproj -c Release -r ${{ env.RUNTIME_IDENTIFIER }} --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=None -p:DebugSymbols=false -p:Version=${{ steps.notes.outputs.normalized_version }} -o "artifacts/package/${{ steps.notes.outputs.package_dir }}" --no-restore
 
       - name: Add release docs and sample configs
         shell: pwsh
@@ -70,6 +70,8 @@ jobs:
           Copy-Item appsettings.json $packageRoot/appsettings.json -Force
           Copy-Item config-samples $packageRoot/config-samples -Recurse -Force
           Copy-Item docs $packageRoot/docs -Recurse -Force
+          New-Item -ItemType Directory -Path "$packageRoot/help" -Force | Out-Null
+          Copy-Item help/* "$packageRoot/help" -Recurse -Force
 
       - name: Verify release package contents
         shell: pwsh
@@ -81,7 +83,14 @@ jobs:
             "README.md",
             "config-samples",
             "docs",
+            "help",
+            "help/index.html",
+            "help/style.css",
             "docs/README.md",
+            "docs/roadmap.md",
+            "docs/backlog.md",
+            "docs/test-record-v0.9.6.md",
+            "docs/test-record-v0.9.7.md",
             "docs/operation/user-manual.md",
             "docs/operation/admin-manual.md",
             "docs/operation/troubleshooting.md",
@@ -107,6 +116,9 @@ jobs:
             $fullPath = Join-Path $packageRoot $relativePath
             if (-not (Test-Path $fullPath)) { throw "Release package missing required path: $relativePath" }
           }
+
+          $rootDlls = Get-ChildItem $packageRoot -File -Filter "*.dll"
+          if ($rootDlls.Count -gt 0) { throw "Release package root contains DLL files: $($rootDlls.Name -join ', ')" }
 
       - name: Create ZIP artifact
         shell: pwsh

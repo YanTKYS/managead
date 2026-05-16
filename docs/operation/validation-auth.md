@@ -25,7 +25,6 @@
 ```json
 {
   "AppPolicy": {
-    "ServiceMode": "DirectoryReadOnly",
     "EditorAuthMode": "DomainAdmins",
     "AdminGroupDn": "CN=Domain Admins,CN=Users,DC=example,DC=local",
     "AllowNestedAdminGroupMembership": false,
@@ -155,7 +154,7 @@
 
 | # | 確認項目 | 期待値 | 結果 | 備考 |
 |---|---|---|---|---|
-| 40 | `ServiceMode: InMemory` で起動 | 正常起動 | | |
+| 40 | 起動時ダイアログで `InMemory` を選択して起動 | 正常起動 | | |
 | 41 | 編集者ログイン GroupBox が表示される | 表示あり | | |
 | 42 | セッション状態欄に「編集セッション機能は未設定です」と表示される | 表示あり | | |
 | 43 | ログイン入力・ログインボタンが無効 | 無効 | | |

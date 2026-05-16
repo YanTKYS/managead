@@ -1,8 +1,10 @@
 # デプロイ手順（閉域端末向け / v0.9.5）
 
+> **v1.0.0 本番初版の方針**: v1.0.0 は参照専用 AD 確認支援ツールです。配布・設定時は `DirectoryReadOnly` による実 AD 参照のみを前提とし、AD 更新・削除・無効化・グループ変更・GPO 編集を有効化しないでください。
+
 本手順は ManageAdTool のリリース ZIP を取得し、閉域端末へ持ち込み、初回起動と実 AD 検証へ進むための手順です。
 
-> **重要**: v0.9.5 はリリースパッケージ・配布物の整理バージョンです。新しい AD 更新操作は追加していません。更新可能範囲はユーザー属性（mail / displayName / sn / givenName）、コンピュータ description、ユーザー限定のグループメンバー追加・削除のみです。
+> **重要**: v1.0.0 は本番初版です。参照専用 AD 確認支援ツールとして提供し、AD 更新・削除・無効化・グループ変更・GPO 編集は行いません。
 
 ---
 
@@ -13,7 +15,7 @@
 3. 必要に応じて、組織の手順に従いハッシュ値や取得元を記録します。
 4. ZIP 名とバージョンが作業予定と一致していることを確認します。
 
-リリース ZIP は self-contained 形式を想定しており、利用端末への .NET Desktop Runtime の別途インストールは不要です。
+リリース ZIP は self-contained の単一 exe 形式を想定しており、利用端末への .NET Desktop Runtime の別途インストールは不要です。パッケージ直下に大量の DLL が並ばない構成にします。
 
 ---
 
@@ -70,7 +72,6 @@ C:\Apps\ManageAdTool\ManageAdTool-v0.9.5\
 
 配布用 `appsettings.json` は安全側の初期値です。
 
-- `ServiceMode`: `InMemory`
 - `EditorAuthMode`: `None`
 - `AllowedTargetOuDns`: `[]`
 - `AllowedComputerOuDns`: `[]`
@@ -79,7 +80,7 @@ C:\Apps\ManageAdTool\ManageAdTool-v0.9.5\
 - `MaxSearchResults`: `200`
 - `MaxLogDisplayRows`: `1000`
 
-実 AD 参照や限定編集を行う場合は、`config-samples/` から用途に合うサンプルをコピーして `appsettings.json` として編集します。
+実 AD 参照や限定編集を行う場合は、`config-samples/` から用途に合うサンプルをコピーして `appsettings.json` として編集します。`ServiceMode` は `appsettings.json` ではなく起動時ダイアログで選択します。
 
 注意:
 
@@ -93,7 +94,7 @@ C:\Apps\ManageAdTool\ManageAdTool-v0.9.5\
 
 ## 6. まず InMemory で起動確認する
 
-1. `ServiceMode` が `InMemory` であることを確認します。
+1. 起動時ダイアログで `InMemory` を選択します。
 2. `ManageAdTool.exe` を起動します。
 3. 画面が起動することを確認します。
 4. ダミーデータでユーザー、コンピュータ、グループ検索を確認します。
@@ -106,7 +107,7 @@ C:\Apps\ManageAdTool\ManageAdTool-v0.9.5\
 ## 7. 次に DirectoryReadOnly で参照確認する
 
 1. `config-samples/appsettings.DirectoryReadOnly.sample.json` を参考に `appsettings.json` を作成します。
-2. `ServiceMode` を `DirectoryReadOnly` にします。
+2. 起動時ダイアログで `DirectoryReadOnly` を選択します。
 3. `AllowedTargetOuDns` は検証用 OU の DN から開始します。
 4. `LogPath` が書き込み可能な場所であることを確認します。
 5. アプリを再起動します。

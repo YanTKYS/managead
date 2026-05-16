@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ManageAdTool ヘルプ</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="hero">
+    <div class="hero__label">利用者向けヘルプ</div>
+    <h1>ManageAdTool ヘルプ</h1>
+    <p>閉域ネットワーク内で Active Directory の情報を確認するための支援ツールです。</p>
+  </header>
+
+  <main>
+    <section class="notice notice--important" aria-labelledby="readonly-title">
+      <h2 id="readonly-title">最初に確認してください</h2>
+      <p><strong>ManageAdTool は参照専用 AD 確認支援ツールです。</strong></p>
+      <ul>
+        <li>AD 更新、AD アカウントの削除、無効化、パスワードリセットは行いません。</li>
+        <li>OU 移動、グループ作成・削除・メンバー変更、GPO 編集は行いません。</li>
+        <li>表示される情報は、問い合わせ前の確認や運用判断の補助に使います。</li>
+      </ul>
+    </section>
+
+    <section aria-labelledby="about-title">
+      <h2 id="about-title">ManageAdToolとは</h2>
+      <p>ユーザー、グループ、コンピュータなどの AD 情報を検索し、現在の状態を確認するためのデスクトップアプリです。実運用担当者が日常的な問い合わせ対応や事前確認を行いやすいように、よく使う確認項目を画面上にまとめています。</p>
+      <div class="grid">
+        <div class="card">
+          <h3>確認できるもの</h3>
+          <ul>
+            <li>ユーザー情報と所属グループ</li>
+            <li>グループのメンバー</li>
+            <li>コンピュータ情報</li>
+            <li>未ログインユーザー・コンピュータの候補</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>行わないもの</h3>
+          <ul>
+            <li>AD 情報の更新・削除</li>
+            <li>ユーザーの無効化・退職処理</li>
+            <li>パスワード変更・リセット</li>
+            <li>グループ変更、GPO の作成・変更・削除</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="startup-title">
+      <h2 id="startup-title">起動方法</h2>
+      <ol class="steps">
+        <li><span>1</span><div><strong>ManageAdTool.exe を起動します。</strong><br>配布フォルダ内の EXE をダブルクリックします。</div></li>
+        <li><span>2</span><div><strong>起動時のモードを選択します。</strong><br>画面確認だけの場合は InMemory、実 AD を確認する場合は DirectoryReadOnly を選択します。</div></li>
+        <li><span>3</span><div><strong>必要なタブで検索します。</strong><br>ユーザー詳細、グループ確認、コンピュータ確認など、目的に合うタブを開きます。</div></li>
+      </ol>
+    </section>
+
+    <section aria-labelledby="mode-title">
+      <h2 id="mode-title">モード選択</h2>
+      <table>
+        <thead>
+          <tr><th>モード</th><th>使う場面</th><th>説明</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>InMemory</td><td>画面確認・操作練習</td><td>実 AD に接続しません。サンプルデータで画面の動きを確認します。</td></tr>
+          <tr><td>DirectoryReadOnly</td><td>実 AD の確認</td><td>設定された範囲の AD 情報を検索・表示します。参照専用の確認用途です。</td></tr>
+        </tbody>
+      </table>
+      <p class="hint">迷った場合は、まず InMemory で画面を確認してから DirectoryReadOnly を使用してください。</p>
+    </section>
+
+    <section aria-labelledby="user-title">
+      <h2 id="user-title">ユーザー検索</h2>
+      <ol class="steps">
+        <li><span>1</span><div>「ユーザー詳細」タブを開きます。</div></li>
+        <li><span>2</span><div>検索語にユーザー名、表示名などを入力します。</div></li>
+        <li><span>3</span><div>「検索」を押して、一覧から対象ユーザーを選択します。</div></li>
+        <li><span>4</span><div>ユーザー属性や所属グループを確認します。</div></li>
+      </ol>
+      <div class="notice">
+        <strong>注意:</strong> ユーザー名（sAMAccountName）は参照専用です。AD 更新・削除・無効化・パスワード操作はできません。
+      </div>
+    </section>
+
+    <section aria-labelledby="group-title">
+      <h2 id="group-title">グループ確認</h2>
+      <p>グループ名などで検索し、対象グループのメンバーを確認します。ユーザー、コンピュータ、ネストグループなどの分類を画面上で確認できます。</p>
+      <ul class="checklist">
+        <li>目的のグループ名で検索する</li>
+        <li>検索結果から対象グループを選ぶ</li>
+        <li>メンバー一覧と memberOf 情報を確認する</li>
+      </ul>
+      <p class="hint">ネストグループの完全展開やグループ更新機能は、v1.0.0 本番初版では提供しません。</p>
+    </section>
+
+    <section aria-labelledby="computer-title">
+      <h2 id="computer-title">コンピュータ確認</h2>
+      <p>コンピュータ名などで検索し、対象コンピュータの情報や所属グループを確認します。問い合わせ対応時は、コンピュータ名の入力間違いがないかも確認してください。</p>
+    </section>
+
+    <section aria-labelledby="errors-title">
+      <h2 id="errors-title">よくあるエラー</h2>
+      <table>
+        <thead>
+          <tr><th>表示・状況</th><th>確認すること</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>検索結果が出ない</td><td>検索語、対象 OU 設定、無効ユーザーを含めるかどうかを確認します。</td></tr>
+          <tr><td>AD に接続できない</td><td>DirectoryReadOnly を選択しているか、ネットワーク接続、ドメイン接続、設定ファイルを確認します。</td></tr>
+          <tr><td>権限に関するエラー</td><td>参照権限、Domain Admins セッション、管理者向け設定を確認します。</td></tr>
+          <tr><td>ログを開けない</td><td>ログフォルダの存在、ファイルアクセス権限、保存先パスを確認します。</td></tr>
+          <tr><td>ヘルプが開かない</td><td>配布フォルダ内に help/index.html と help/style.css があるか確認します。</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section aria-labelledby="before-contact-title">
+      <h2 id="before-contact-title">問い合わせ前に確認すること</h2>
+      <ul class="checklist">
+        <li>起動時に選択したモード（InMemory / DirectoryReadOnly）</li>
+        <li>検索したキーワードと対象タブ</li>
+        <li>対象ユーザー、グループ、コンピュータの名前</li>
+        <li>表示されたエラーメッセージ全文</li>
+        <li>配布フォルダに help/、docs/、config-samples/ が含まれているか</li>
+        <li>管理者から指定された appsettings.json を使用しているか</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <p>このヘルプはローカル HTML です。外部 CDN やインターネット接続は使用しません。</p>
+  </footer>
+</body>
+</html>

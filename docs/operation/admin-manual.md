@@ -2,6 +2,8 @@
 
 対象読者: ManageAdTool の配布・設定・保守を行う管理者
 
+> **v1.0.0 本番初版の方針**: v1.0.0 は参照専用 AD 確認支援ツールとして運用します。実 AD に対する操作は `DirectoryReadOnly` による参照のみとし、AD 更新・グループ変更・ユーザー無効化・OU 移動・GPO 編集は行いません。
+
 > **重要**: 本書は設定・運用手順を整理するものです。v0.9.5 ではリリースパッケージ・配布物を整理しています。新しい AD 更新機能や AD 操作ロジックの変更はありません。
 
 ---
@@ -43,14 +45,13 @@ C:\Tools\ManageAdTool\ManageAdTool-v0.9.5\
 
 ## 2. appsettings.json の基本構成
 
-`appsettings.json` の `AppPolicy` セクションで ServiceMode、対象 OU、除外対象、ログ出力先、認証設定などを指定します。配布直後の `appsettings.json` は `ServiceMode: "InMemory"`、OU 許可リスト空、`EditorAuthMode: "None"` の安全側初期値です。
+`appsettings.json` の `AppPolicy` セクションで対象 OU、除外対象、ログ出力先、認証設定などを指定します。ServiceMode は起動時ダイアログで選択します。配布直後の `appsettings.json` は OU 許可リスト空、`EditorAuthMode: "None"` の安全側初期値です。
 
 DirectoryReadOnly / 限定編集を有効にする場合の代表的な構成例:
 
 ```json
 {
   "AppPolicy": {
-    "ServiceMode": "DirectoryReadOnly",
     "AllowedTargetOuDns": ["OU=Users,DC=example,DC=local"],
     "AllowedComputerOuDns": ["OU=Computers,DC=example,DC=local"],
     "EditableGroupOuDns": ["OU=Groups,DC=example,DC=local"],
@@ -89,12 +90,14 @@ DirectoryReadOnly / 限定編集を有効にする場合の代表的な構成例
 
 ## 4. 主な設定項目
 
-### ServiceMode
+### 起動時 ServiceMode 選択
 
 | 値 | 説明 |
 |---|---|
 | `InMemory` | デモ・画面確認用。実 AD 接続・更新なし。 |
 | `DirectoryReadOnly` | 実 AD 参照 + Domain Admins セッション有効時の限定更新。 |
+
+ServiceMode は `appsettings.json` へ記入せず、起動時ダイアログで選択します。
 
 ### AllowedTargetOuDns
 

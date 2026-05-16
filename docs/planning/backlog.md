@@ -1,94 +1,18 @@
-# Backlog
+# Backlog（保守用メモ）
 
-完了済み作業の詳細は `docs/planning/completed-work.md` を参照してください。
+v1.0.0 以降の正式なバックログは `../backlog.md` を参照してください。
 
----
+## v1.0.0 前に必要だった項目
 
-## v0.9.6 Release Candidate に向けた残作業
+v0.9.6 開発側打鍵テスト、v0.9.7 受入テスト、利用者向けヘルプ追加、release-build 整備、v1.0.0 リリースノート追加は完了扱いです。
 
-v0.9.5 でリリースパッケージ・配布物の整理は完了済みです。以降は v1.0.0 Release Candidate として、実機確認・検証結果・制約一覧・リリースノートの最終化を行います。
+## 現在の分類
 
-### Release Candidate 準備
+- v1.0.x: 安定化、文言修正、ヘルプ・手順書改善、軽微な不具合修正
+- v1.1.x: 参照機能強化、表示改善、CSV 出力改善
+- v1.2.x: 運用支援、設定チェック、エラー診断、FAQ、ヘルプ自動生成
+- 対象外または慎重検討: AD 更新、グループ追加・削除、ユーザー無効化、退職処理、OU 移動、GPO 編集、一括更新
 
-- [ ] v0.9.6 Release Candidate の作成
-- [ ] 配布 ZIP の実機展開確認
-  - [ ] ZIP 展開後に `ManageAdTool.exe` が起動する
-  - [ ] `README.md` / `docs/` / `config-samples/` / `appsettings.json` が同梱されている
-  - [ ] 配布用 `appsettings.json` が安全側初期値のままである
-  - [ ] `config-samples/` から `appsettings.json` を作成して起動できる
-- [ ] バージョン表記最終確認
-  - [ ] README
-  - [ ] release-note
-  - [ ] roadmap / backlog / completed-work
-  - [ ] GitHub Release タグ / ZIP 名
+## 方針
 
-### 検証結果の最終確認
-
-- [ ] validation 結果の最終確認
-  - [ ] `validation-readonly.md`
-  - [ ] `validation-auth.md`
-  - [ ] `validation-user-edit.md`
-  - [ ] `validation-computer-edit.md`
-  - [ ] `validation-group-edit.md`
-  - [ ] `validation-gpo-simulation.md`
-  - [ ] `validation-operation-support.md`
-  - [ ] `validation-log-viewer.md`
-- [ ] 実 AD 検証で判明した問題の反映要否確認
-
-### v1.0.0 リリース準備
-
-- [ ] 既知の制約一覧の確定
-  - [ ] GPOシミュレーションが RSOP 代替ではないこと
-  - [ ] 更新対象属性・更新対象操作の制限
-  - [ ] ログ改ざん検知・ログローテーション・外部 DB 保存が対象外であること
-  - [ ] オペレーション支援は変更予定作成のみで AD 更新しないこと
-- [ ] v1.0.0 release-note 草案
-  - [ ] 利用者向けの変更点
-  - [ ] できること / できないこと
-  - [ ] 既知の制約
-  - [ ] 実 AD 検証結果の要約
-
----
-
-## v1.0.0 後の改善候補
-
-### テスト拡張候補
-
-- ViewModel の状態遷移テスト（WPF UI 自動操作ではなく、表示状態・コマンド可否の単体テスト）
-- コンピュータ編集ポリシー、グループ編集ポリシーの境界値テスト追加
-- 監査ログ出力クラスの JSON スキーマ・マスク漏れ回帰テスト追加
-- DirectoryServices マッパーの純粋な属性変換テスト追加（実 AD 接続なしの `SearchResult` 代替データで検証可能な範囲）
-- CSV 出力の BOM・エスケープ・列順の単体テスト追加
-
-### 既存機能の安定化
-
-- キャッシュ評価（DirectoryReadOnly 実運用後に評価）
-  - ユーザー選択切替ごとの `memberOf` 再取得削減
-  - セッション内メモリキャッシュ（TTL: 30〜120秒）
-- `accountExpires` 更新設計継続（`docs/design/design-account-expiration.md` 参照）
-
-### オペレーション支援の設定反映
-
-- `OperationChecklistItems` からチェック項目 UI およびサマリーを生成する（設定は読み込まれるが現バージョンではチェックリストに反映されない）
-- ※ `EnableOperationSupport` によるタブ表示制御は v0.9.1 で実装済み
-
-### 編集機能の拡張（要件定義後に検討）
-
-- ユーザー更新対象属性の追加（v1.0.0 前は追加しない方針）
-
----
-
-## 対象外（今後も実装しない）
-
-- グループ作成・削除・リネーム
-- グループをグループに追加
-- コンピュータをグループに追加
-- GPO 編集・GPO リンク変更・セキュリティフィルタ変更・WMI フィルタ変更
-- OU 移動
-- ユーザー無効化・退職処理
-- パスワードリセット
-- 新規ユーザー作成
-- サービスアカウント方式（パスワードを設定ファイルに保存する方式）
-- 一括更新
-- ログ編集・ログ削除・ログ改ざん検知
-- ログローテーション・外部 DB 保存
+参照専用 AD 確認支援ツールとして安全に展開するため、AD 更新系の項目は通常の改善バックログには含めません。
