@@ -12,12 +12,15 @@ ManageAdTool のドキュメント一覧です。
 
 ---
 
-## acceptance / backlog — 受入テスト方針
+## roadmap / acceptance / backlog — v1.0.0 後方針
 
 | ファイル | 内容 |
 |---|---|
-| `acceptance-test-v0.9.7.md` | v0.9.7 受入テスト版の位置づけ・指摘分類 |
-| `backlog.md` | v0.9.7 受入テスト指摘の取り込み範囲・先送り範囲 |
+| `roadmap.md` | v1.0.0 後ロードマップ |
+| `backlog.md` | v1.0.0 後バックログ |
+| `acceptance-test-v0.9.7.md` | v0.9.7 受入テスト版の位置づけ・完了記録 |
+| `test-record-v0.9.6.md` | v0.9.6 開発側打鍵テスト要約 |
+| `test-record-v0.9.7.md` | v0.9.7 受入テスト結果記録 |
 
 ---
 
@@ -30,11 +33,11 @@ ManageAdTool のドキュメント一覧です。
 | `admin-manual.md` | 管理者向け設定・運用手順 |
 | `troubleshooting.md` | トラブルシューティング |
 | `validation-readonly.md` | 参照機能（DirectoryReadOnly）の検証手順 |
-| `validation-auth.md` | 認証機能（Domain Admins ログイン）の検証手順 |
-| `validation-user-edit.md` | ユーザー属性編集の検証手順 |
-| `validation-computer-edit.md` | コンピュータ description 編集の検証手順 |
-| `validation-group-edit.md` | グループメンバー編集の検証手順 |
-| `validation-group-member-edit.md` | グループメンバー編集の補足検証手順 |
+| `validation-auth.md` | 認証機能（Domain Admins ログイン）の旧検証手順（保守記録） |
+| `validation-user-edit.md` | ユーザー属性編集の旧検証手順（v1.0.0 では参照専用方針） |
+| `validation-computer-edit.md` | コンピュータ description 編集の旧検証手順（v1.0.0 では参照専用方針） |
+| `validation-group-edit.md` | グループ参照・旧グループメンバー編集の検証手順（v1.0.0 では参照専用方針） |
+| `validation-group-member-edit.md` | 旧グループメンバー編集の補足検証手順（保守記録） |
 | `validation-operation-support.md` | オペレーション支援機能の検証手順 |
 | `validation-gpo-simulation.md` | GPOシミュレーション機能の検証手順 |
 | `validation-log-viewer.md` | ログ確認機能の検証手順 |
@@ -60,8 +63,8 @@ ManageAdTool のドキュメント一覧です。
 
 | ファイル | 内容 |
 |---|---|
-| `roadmap.md` | 今後の方向性・v1.0.0 候補・対象外事項 |
-| `backlog.md` | 今後やること・検討事項（v0.9.7 受入テスト版に向けた残作業） |
+| `roadmap.md` | 保守用ロードマップメモ（正式版は `../roadmap.md`） |
+| `backlog.md` | 保守用バックログメモ（正式版は `../backlog.md`） |
 | `completed-work.md` | 完了済み作業の詳細履歴（v0.1.0〜） |
 
 ---
