@@ -201,6 +201,12 @@ public class MainWindowViewModel : INotifyPropertyChanged
     public string ReadOnlyModeLabel
         => IsReadOnlyMode ? "DirectoryReadOnly モード（編集にはログインが必要）" : string.Empty;
 
+    public string ServiceModeText
+        => IsReadOnlyMode ? "DirectoryReadOnly" : "InMemory";
+
+    public string ServiceModeDescText
+        => IsReadOnlyMode ? "参照専用・AD更新なし" : "テスト用・実AD未接続";
+
     public void SetPendingReady(bool value)
     {
         _isPendingReady = value;

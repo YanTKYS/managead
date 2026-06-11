@@ -294,6 +294,7 @@ public partial class MainWindow : Window
             GroupOtherMembersBox.Text = FormatGroupOtherMembers(detail);
 
             var total = detail.UserMembers.Count + detail.ComputerMemberNames.Count + detail.GroupMemberNames.Count;
+            GroupMemberCountText.Text = $"ユーザー {detail.UserMembers.Count} 名　合計 {total} 件";
             OutputBox.Text = $"グループ詳細表示: {detail.Name} / ユーザー{detail.UserMembers.Count}名 / コンピュータ{detail.ComputerMemberNames.Count}台 / ネストグループ{detail.GroupMemberNames.Count}件 / 合計{total}件";
             _auditLogger.Log("GroupDetail", _selectedGroup.Name, total, success: true);
         }
@@ -710,6 +711,7 @@ public partial class MainWindow : Window
         GroupUserMemberGrid.ItemsSource = Array.Empty<AdUser>();
         GroupDetailBox.Text = string.Empty;
         GroupOtherMembersBox.Text = string.Empty;
+        GroupMemberCountText.Text = string.Empty;
         _vm.GroupCanEdit = false;
         _vm.GroupEditBlockedReason = "グループ未選択";
     }
